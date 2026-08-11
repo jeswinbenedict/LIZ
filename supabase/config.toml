@@ -1,0 +1,52 @@
+# Supabase local dev config. `supabase start` uses this; `supabase db reset`
+# applies migrations/ then seed.sql. Edge Functions live in functions/.
+project_id = "liz"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000", "io.supabase.liz://login-callback"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+# Fill these in for social sign-in (see README).
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = ""
+
+[functions.ask-liz]
+verify_jwt = false
+
+[functions.summarize]
+verify_jwt = false
+
+[functions.report]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
