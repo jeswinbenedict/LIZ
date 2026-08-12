@@ -19,6 +19,10 @@ const kNavDestinations = <NavDestinationSpec>[
   NavDestinationSpec(
       label: 'Discover', icon: Icons.explore_outlined, selectedIcon: Icons.explore),
   NavDestinationSpec(
+      label: 'News',
+      icon: Icons.newspaper_outlined,
+      selectedIcon: Icons.newspaper),
+  NavDestinationSpec(
       label: 'Community',
       icon: Icons.forum_outlined,
       selectedIcon: Icons.forum),

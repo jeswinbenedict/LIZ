@@ -1,0 +1,30 @@
+# Free, reliable hourly scheduler for the tech-news ingestion.
+# Calls the `fetch-news` Supabase Edge Function, which pulls the latest tech
+# headlines (RSS + Hacker News + Dev.to) into the `news` table. New articles are
+# pushed to the app live over Supabase Realtime.
+#
+# Setup (one time):
+#   1. Deploy the function:  supabase functions deploy fetch-news
+#   2. In GitHub → repo → Settings → Secrets and variables → Actions, add:
+#        SUPABASE_FUNCTIONS_URL   e.g. https://<ref>.functions.supabase.co
+#        SUPABASE_ANON_KEY        your project's anon key (public)
+#   3. That's it — it runs hourly, and you can trigger it manually below.
+
+name: fetch-news
+
+on:
+  schedule:
+    - cron: '0 * * * *' # every hour (UTC)
+  workflow_dispatch: {} # manual "Run workflow" button
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger tech-news ingestion
+        run: |
+          curl -sS -X POST "${{ secrets.SUPABASE_FUNCTIONS_URL }}/fetch-news" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            --fail-with-body

@@ -130,6 +130,39 @@ rankings.
 
 ---
 
+## Technology News Feed
+
+The **News** tab shows live technology headlines, updated continuously — all from
+**free, open-source** sources.
+
+**How content arrives:**
+1. The [`fetch-news`](supabase/functions/fetch-news/index.ts) Edge Function pulls the
+   latest tech news from:
+   - **RSS/Atom feeds** (open standard): TechCrunch, The Verge, Ars Technica, Wired,
+     Engadget, VentureBeat, and Hacker News (via `hnrss.org`).
+   - The **Dev.to** public API (free, no key).
+   - A **`deno-dom` scraping fallback** (`scrapeHeadlines`) for sources without a feed.
+     For JS-heavy sites that need a real browser, point a **Playwright/Cheerio** worker
+     (n8n or a small VPS) at the same `news` table.
+   It normalizes, dedupes by URL, and upserts — safe to run repeatedly.
+2. It runs **hourly** via a free **GitHub Actions** cron
+   ([`.github/workflows/fetch-news.yml`](.github/workflows/fetch-news.yml)), or via the
+   `pg_cron` template in [`0004_news_realtime.sql`](supabase/migrations/0004_news_realtime.sql).
+3. New rows are pushed to the app **in real time** via **Supabase Realtime** — the feed
+   shows a **LIVE** badge and prepends articles as they land.
+
+**Set it up:**
+```bash
+supabase functions deploy fetch-news
+supabase functions invoke fetch-news    # one-time backfill
+```
+Then add repo secrets `SUPABASE_FUNCTIONS_URL` and `SUPABASE_ANON_KEY` in GitHub
+(Settings → Secrets → Actions) and the hourly job runs itself. Optionally set
+`ANTHROPIC_API_KEY` to attach 3-bullet AI "quick takes" per article.
+
+> Liz shows a **snippet + link out** to the original source — it never republishes full
+> articles.
+
 ## Build targets
 
 ```bash

@@ -9,6 +9,7 @@ import '../features/community/post_detail_screen.dart';
 import '../features/compare/compare_screen.dart';
 import '../features/discover/discover_screen.dart';
 import '../features/discover/search_screen.dart';
+import '../features/news/news_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/profile/settings_screen.dart';
 import '../features/profile/user_profile_screen.dart';
@@ -18,6 +19,7 @@ import 'responsive/adaptive_shell.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _discoverKey = GlobalKey<NavigatorState>(debugLabel: 'discover');
+final _newsKey = GlobalKey<NavigatorState>(debugLabel: 'news');
 final _communityKey = GlobalKey<NavigatorState>(debugLabel: 'community');
 final _askKey = GlobalKey<NavigatorState>(debugLabel: 'ask');
 final _savedKey = GlobalKey<NavigatorState>(debugLabel: 'saved');
@@ -46,6 +48,15 @@ GoRouter buildRouter() {
                         DiscoverScreen(initialCategory: s.pathParameters['slug']),
                   ),
                 ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _newsKey,
+            routes: [
+              GoRoute(
+                path: '/news',
+                pageBuilder: (c, s) => const NoTransitionPage(child: NewsScreen()),
               ),
             ],
           ),

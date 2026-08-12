@@ -700,5 +700,85 @@ class MockData {
       publishedAt: _ago(days: 3),
       status: PublishStatus.published,
     ),
+    NewsItem(
+      id: 'n-4',
+      title: 'Open-source LLMs close the gap with proprietary models on coding benchmarks',
+      url: 'https://example.com/news/open-llms-coding',
+      snippet:
+          'The latest open-weight models post coding scores within striking distance of the top closed systems, reshaping build-vs-buy decisions.',
+      aiSummary: [
+        'Open models near closed-model coding scores.',
+        'Self-hosting becomes viable for more teams.',
+        'Cost and privacy drive adoption.',
+      ],
+      source: 'hackernews',
+      category: 'ai-dev',
+      publishedAt: _ago(hours: 5),
+      status: PublishStatus.published,
+    ),
+    NewsItem(
+      id: 'n-5',
+      title: 'Startups race to build the "agent browser" — an AI that navigates the web for you',
+      url: 'https://example.com/news/agent-browser',
+      snippet:
+          'A new crop of tools lets an AI agent click, type, and complete multi-step tasks across websites on your behalf.',
+      aiSummary: [
+        'AI agents now operate real browser sessions.',
+        'Early use cases: research, booking, data entry.',
+        'Reliability and safety remain open questions.',
+      ],
+      source: 'techcrunch',
+      category: 'ai-agents',
+      publishedAt: _ago(hours: 9),
+      status: PublishStatus.published,
+    ),
+    NewsItem(
+      id: 'n-6',
+      title: 'On-device AI is the new battleground as phone makers ship bigger NPUs',
+      url: 'https://example.com/news/on-device-npu',
+      snippet:
+          'Flagship chips now dedicate large blocks to neural processing, pushing more AI features off the cloud and onto the handset.',
+      aiSummary: [
+        'NPUs grow to run models locally.',
+        'Lower latency and better privacy.',
+        'Battery and thermal limits still bite.',
+      ],
+      source: 'theverge',
+      category: 'new-apps',
+      publishedAt: _ago(hours: 14),
+      status: PublishStatus.published,
+    ),
+    NewsItem(
+      id: 'n-7',
+      title: 'Developers flock to typed, local-first frameworks for AI apps',
+      url: 'https://example.com/news/local-first-ai',
+      snippet:
+          'A shift toward local-first architectures promises instant apps that sync in the background and keep working offline.',
+      aiSummary: [
+        'Local-first design gains momentum.',
+        'Offline-capable, instantly responsive apps.',
+        'Sync engines mature and open up.',
+      ],
+      source: 'dev.to',
+      category: 'ai-dev',
+      publishedAt: _ago(hours: 20),
+      status: PublishStatus.published,
+    ),
+    NewsItem(
+      id: 'n-8',
+      title: 'Text-to-video quality jumps again as consistency problems get solved',
+      url: 'https://example.com/news/text-to-video-leap',
+      snippet:
+          'New models hold characters and scenes steady across shots, a milestone that unlocks longer, usable generated clips.',
+      aiSummary: [
+        'Character consistency across shots improves.',
+        'Longer, more coherent clips are possible.',
+        'Creative and ad workflows adopt fast.',
+      ],
+      source: 'wired',
+      category: 'ai-video',
+      publishedAt: _ago(days: 1, hours: 4),
+      status: PublishStatus.published,
+    ),
   ];
 }
