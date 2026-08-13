@@ -8,10 +8,10 @@ import '../../core/providers.dart';
 import '../../shared/models/profile.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
-import '../../shared/widgets/user_avatar.dart';
 import '../community/community_controller.dart';
 import '../community/community_widgets.dart';
 import '../auth/sign_in_view.dart';
+import 'editable_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -78,7 +78,7 @@ class _ProfileBody extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  UserAvatar(profile: profile, radius: 34),
+                  EditableAvatar(profile: profile, radius: 34),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(

@@ -1,10 +1,7 @@
--- ============================================================================
--- Liz — ONE-PASTE SETUP  (generated; do not edit — regenerate from migrations/)
--- Paste this whole file into: Supabase Dashboard -> SQL Editor -> New query -> Run
--- Runs schema + RLS + triggers + seed + news realtime, in order. Safe to re-run.
--- ============================================================================
+-- Liz — ONE-PASTE SETUP (generated from migrations/ + seed). Safe to re-run.
+-- Paste into: Supabase Dashboard -> SQL Editor -> New query -> Run
 
--- ========================= 0001_schema.sql =================================
+-- ===== migrations/0001_schema.sql =====
 -- ============================================================================
 -- Liz — core schema (Postgres / Supabase)
 -- Migration 0001: tables, types, indexes.
@@ -276,7 +273,7 @@ alter table reports        enable row level security;
 alter table notifications  enable row level security;
 alter table devices        enable row level security;
 
--- ========================= 0002_rls.sql ====================================
+-- ===== migrations/0002_rls.sql =====
 -- ============================================================================
 -- Liz — Row Level Security policies
 -- Migration 0002. Principle: deny by default, allow explicitly (§9, §13).
@@ -447,7 +444,7 @@ create policy "own notifications" on notifications
 create policy "own devices" on devices
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- ========================= 0003_functions.sql ==============================
+-- ===== migrations/0003_functions.sql =====
 -- ============================================================================
 -- Liz — functions & triggers
 -- Migration 0003: keep denormalized counts correct, auto-create profiles,
@@ -655,7 +652,7 @@ create or replace view tools_rising as
   where status = 'published'
   order by rising_score desc;
 
--- ========================= 0004_news_realtime.sql ==========================
+-- ===== migrations/0004_news_realtime.sql =====
 -- ============================================================================
 -- Liz — Technology News Feed: Realtime + (optional) scheduled ingestion.
 -- Migration 0004. Safe to re-run.
@@ -705,7 +702,48 @@ create index if not exists idx_news_status_pub on news (status, published_at des
 --   $$
 -- );
 
--- ========================= seed.sql ========================================
+-- ===== migrations/0005_storage.sql =====
+-- ============================================================================
+-- Liz — Storage: buckets + access policies for avatars and post images.
+-- Migration 0005. Safe to re-run.
+--
+-- Convention: files are stored under a per-user folder — "<user_id>/<file>",
+-- so a user can only write within their own prefix, while reads are public
+-- (avatars and post images are shown to everyone).
+-- ============================================================================
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values
+  ('avatars',     'avatars',     true, 5242880,  array['image/jpeg','image/png','image/webp']),
+  ('post-images', 'post-images', true, 10485760, array['image/jpeg','image/png','image/webp','image/gif'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+-- Public read for both buckets ------------------------------------------------
+drop policy if exists "public read avatars" on storage.objects;
+create policy "public read avatars" on storage.objects
+  for select using (bucket_id = 'avatars');
+
+drop policy if exists "public read post-images" on storage.objects;
+create policy "public read post-images" on storage.objects
+  for select using (bucket_id = 'post-images');
+
+-- Authenticated users manage only files under their own "<uid>/" folder -------
+drop policy if exists "own avatar writes" on storage.objects;
+create policy "own avatar writes" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "own post-image writes" on storage.objects;
+create policy "own post-image writes" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ===== seed.sql =====
 -- ============================================================================
 -- Liz — seed content (categories, tools, news)
 -- Mirrors the app's bundled mock data so a fresh project launches with a full,

@@ -9,6 +9,7 @@ export 'repository/repositories.dart' show ToolQuery, ToolSort;
 import 'auth/mock_auth_repository.dart';
 import 'auth/supabase_auth_repository.dart';
 import 'config/env.dart';
+import 'storage/storage_service.dart';
 import 'repository/mock_repositories.dart';
 import 'repository/repositories.dart';
 import 'repository/supabase_repositories.dart';
@@ -76,6 +77,13 @@ final adminRepositoryProvider = Provider<AdminRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   if (client != null) return SupabaseAdminRepository(client);
   return MockAdminRepository(ref.watch(_mockStoreProvider));
+});
+
+final storageServiceProvider = Provider<StorageService>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  final auth = ref.watch(authRepositoryProvider);
+  if (client != null) return SupabaseStorageService(client, auth);
+  return MockStorageService();
 });
 
 final categoriesProvider = FutureProvider<List<Category>>((ref) {

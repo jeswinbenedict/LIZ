@@ -111,7 +111,8 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> signOut() => _client.auth.signOut();
 
   @override
-  Future<Profile> updateProfile({String? displayName, String? bio}) async {
+  Future<Profile> updateProfile(
+      {String? displayName, String? bio, String? avatarUrl}) async {
     final id = currentUserId;
     if (id == null) throw const AuthRequiredException();
     final row = await _client
@@ -119,6 +120,7 @@ class SupabaseAuthRepository implements AuthRepository {
         .update({
           if (displayName != null) 'display_name': displayName,
           if (bio != null) 'bio': bio,
+          if (avatarUrl != null) 'avatar_url': avatarUrl,
         })
         .eq('id', id)
         .select()

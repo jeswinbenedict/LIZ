@@ -24,7 +24,7 @@ abstract interface class AuthRepository {
 
   Future<void> signOut();
 
-  Future<Profile> updateProfile({String? displayName, String? bio});
+  Future<Profile> updateProfile({String? displayName, String? bio, String? avatarUrl});
 
   /// Store an FCM token for push (idempotent).
   Future<void> registerDevice(String token, String platform);

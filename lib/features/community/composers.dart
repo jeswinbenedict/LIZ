@@ -1,10 +1,28 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
+import '../../core/providers.dart';
+import '../../core/storage/storage_service.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../auth/guard.dart';
 import 'community_controller.dart';
+
+String _mimeFor(String ext) {
+  switch (ext.toLowerCase()) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    default:
+      return 'image/jpeg';
+  }
+}
 
 /// Bottom sheet to write / edit a review for a tool (one per user per tool).
 Future<void> showReviewComposer(
@@ -150,11 +168,30 @@ class _PostComposer extends ConsumerStatefulWidget {
 class _PostComposerState extends ConsumerState<_PostComposer> {
   final _content = TextEditingController();
   bool _busy = false;
+  Uint8List? _imageBytes;
+  String _imageExt = 'jpg';
 
   @override
   void dispose() {
     _content.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    if (!ref.read(storageServiceProvider).available) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Image upload needs the live backend.')));
+      return;
+    }
+    final picked = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 82);
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _imageBytes = bytes;
+      _imageExt = picked.name.split('.').last.toLowerCase();
+    });
   }
 
   @override
@@ -191,12 +228,33 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
               hintText: 'What did you discover? Share your experience…',
             ),
           ),
+          if (_imageBytes != null) ...[
+            const SizedBox(height: 10),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(LizRadius.md),
+                  child: Image.memory(_imageBytes!,
+                      height: 150, width: double.infinity, fit: BoxFit.cover),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: IconButton.filledTonal(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => setState(() => _imageBytes = null),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 4),
           Row(
             children: [
               IconButton(
-                tooltip: 'Add image (coming soon)',
-                onPressed: null,
+                tooltip: 'Add image',
+                onPressed: _busy ? null : _pickImage,
                 icon: Icon(Icons.image_outlined, color: scheme.onSurfaceVariant),
               ),
               const Spacer(),
@@ -208,10 +266,25 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                         await runGuardedAction(
                           context,
                           prompt: 'Sign in to post.',
-                          action: () => ref.read(communityActionsProvider).createPost(
-                                content: _content.text.trim(),
-                                toolId: widget.toolId,
-                              ),
+                          action: () async {
+                            String? imageUrl;
+                            final bytes = _imageBytes;
+                            if (bytes != null) {
+                              imageUrl = await ref
+                                  .read(storageServiceProvider)
+                                  .uploadImage(
+                                    bucket: Buckets.postImages,
+                                    bytes: bytes,
+                                    ext: _imageExt,
+                                    contentType: _mimeFor(_imageExt),
+                                  );
+                            }
+                            await ref.read(communityActionsProvider).createPost(
+                                  content: _content.text.trim(),
+                                  toolId: widget.toolId,
+                                  imageUrl: imageUrl,
+                                );
+                          },
                           onDone: () {
                             if (context.mounted) Navigator.of(context).pop();
                           },

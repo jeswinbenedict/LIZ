@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -182,6 +183,18 @@ class PostCard extends ConsumerWidget {
               onTap: () => context.push('/post/${post.id}'),
               child: Text(post.content, style: const TextStyle(height: 1.35)),
             ),
+            if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(LizRadius.md),
+                child: CachedNetworkImage(
+                  imageUrl: post.imageUrl!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ],
             if (post.toolId != null && post.toolName != null) ...[
               const SizedBox(height: 10),
               InkWell(

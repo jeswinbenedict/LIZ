@@ -65,14 +65,15 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Profile> updateProfile({String? displayName, String? bio}) async {
+  Future<Profile> updateProfile(
+      {String? displayName, String? bio, String? avatarUrl}) async {
     final c = _current;
     if (c == null) throw StateError('Not signed in');
     _current = Profile(
       id: c.id,
       username: c.username,
       displayName: displayName ?? c.displayName,
-      avatarUrl: c.avatarUrl,
+      avatarUrl: avatarUrl ?? c.avatarUrl,
       bio: bio ?? c.bio,
       role: c.role,
       createdAt: c.createdAt,
