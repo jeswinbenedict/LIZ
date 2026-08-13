@@ -51,8 +51,22 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
       _loading = true;
       _answered = q;
     });
-    // Local retrieval + naive ranking. The reason string mimics the LLM's
-    // "why this fits" output.
+
+    // Prefer the server-side AI (free provider via the ask-liz Edge Function);
+    // fall back to on-device ranking if the backend/AI isn't available.
+    final server = await _askServer(q);
+    if (server != null && server.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _results = server;
+        });
+      }
+      return;
+    }
+
+    // Local retrieval + naive ranking (fallback). The reason string mimics the
+    // LLM's "why this fits" output.
     final repo = ref.read(contentRepositoryProvider);
     final terms = q.toLowerCase().split(RegExp(r'\s+')).toSet();
     final candidates = await repo.searchTools(q);
@@ -88,6 +102,36 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
           .map((t) => _Suggestion(t, _reasonFor(t, terms)))
           .toList();
     });
+  }
+
+  /// Calls the ask-liz Edge Function (server-side LLM). Returns null on
+  /// mock/offline mode or any failure, so the caller falls back to local rank.
+  Future<List<_Suggestion>?> _askServer(String q) async {
+    final client = ref.read(supabaseClientProvider);
+    if (client == null) return null;
+    try {
+      final res = await client.functions
+          .invoke('ask-liz', body: {'query': q, 'limit': 5});
+      final payload = res.data;
+      if (payload is! Map || payload['data'] is! List) return null;
+      final picks = (payload['data'] as List)
+          .whereType<Map>()
+          .map((e) => e.cast<String, dynamic>())
+          .toList();
+      final ids = picks.map((p) => p['tool_id'].toString()).toList();
+      if (ids.isEmpty) return null;
+      final tools =
+          await ref.read(contentRepositoryProvider).compareTools(ids);
+      final byId = {for (final t in tools) t.id: t};
+      final out = <_Suggestion>[];
+      for (final p in picks) {
+        final t = byId[p['tool_id'].toString()];
+        if (t != null) out.add(_Suggestion(t, (p['reason'] ?? '').toString()));
+      }
+      return out;
+    } catch (_) {
+      return null;
+    }
   }
 
   String _reasonFor(Tool t, Set<String> terms) {

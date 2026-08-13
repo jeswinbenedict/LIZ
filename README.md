@@ -89,10 +89,13 @@ URLs including your app scheme (see `supabase/config.toml`).
 
 ```bash
 supabase functions deploy ask-liz summarize report delete-account
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...      # server-side only
-# ANTHROPIC_MODEL defaults to claude-opus-5; set a cheaper model for high-volume
-# ingest summarization if you like:
-# supabase secrets set ANTHROPIC_MODEL=claude-haiku-4-5
+# AI (summaries + Ask Liz) uses a FREE, OpenAI-compatible provider — Groq by
+# default (open-source Llama models). Get a free key at console.groq.com:
+supabase secrets set AI_API_KEY=gsk_...                # server-side only
+# Optional overrides to switch providers (all OpenAI-compatible):
+#   Groq (default):  AI_BASE_URL=https://api.groq.com/openai/v1  AI_MODEL=llama-3.3-70b-versatile
+#   OpenRouter:      AI_BASE_URL=https://openrouter.ai/api/v1    AI_MODEL=meta-llama/llama-3.3-70b-instruct:free
+#   Gemini:          AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai  AI_MODEL=gemini-2.0-flash
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected
@@ -158,7 +161,7 @@ supabase functions invoke fetch-news    # one-time backfill
 ```
 Then add repo secrets `SUPABASE_FUNCTIONS_URL` and `SUPABASE_ANON_KEY` in GitHub
 (Settings → Secrets → Actions) and the hourly job runs itself. Optionally set
-`ANTHROPIC_API_KEY` to attach 3-bullet AI "quick takes" per article.
+a free `AI_API_KEY` (Groq/OpenRouter/Gemini) to attach 3-bullet AI "quick takes" per article.
 
 > Liz shows a **snippet + link out** to the original source — it never republishes full
 > articles.

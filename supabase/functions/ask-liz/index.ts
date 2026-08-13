@@ -8,7 +8,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { completeText, extractJson } from '../_shared/anthropic.ts';
+import { completeText, extractJson } from '../_shared/ai.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

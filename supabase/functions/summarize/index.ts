@@ -5,7 +5,7 @@
 // Returns: { data: { bullets: string[] }, error }
 
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { completeText, extractJson } from '../_shared/anthropic.ts';
+import { completeText, extractJson } from '../_shared/ai.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
