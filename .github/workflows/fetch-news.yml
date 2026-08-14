@@ -22,9 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger tech-news ingestion
+        env:
+          FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
+          ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          curl -sS -X POST "${{ secrets.SUPABASE_FUNCTIONS_URL }}/fetch-news" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+          if [ -z "$FUNCTIONS_URL" ] || [ -z "$ANON_KEY" ]; then
+            echo "::warning::SUPABASE_FUNCTIONS_URL / SUPABASE_ANON_KEY not set — skipping."
+            echo "Add them in Settings → Secrets and variables → Actions to enable ingestion."
+            exit 0
+          fi
+          curl -sS -X POST "$FUNCTIONS_URL/fetch-news" \
+            -H "Authorization: Bearer $ANON_KEY" \
             -H "Content-Type: application/json" \
             -d '{}' \
             --fail-with-body
