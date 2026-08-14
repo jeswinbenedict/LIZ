@@ -7,6 +7,8 @@ import 'app/router.dart';
 import 'app/settings_controller.dart';
 import 'app/theme.dart';
 import 'core/config/env.dart';
+import 'core/notifications/push_service.dart';
+import 'core/providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,13 +34,46 @@ Future<void> main() async {
   );
 }
 
-class LizApp extends ConsumerWidget {
+class LizApp extends ConsumerStatefulWidget {
   const LizApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LizApp> createState() => _LizAppState();
+}
+
+class _LizAppState extends ConsumerState<LizApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Kick off push registration after first frame. Fully guarded: if Firebase
+    // isn't configured on this platform/build, it silently no-ops.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PushService.instance.init(
+        onToken: _persistToken,
+        onOpen: _openRoute,
+      );
+    });
+  }
+
+  Future<void> _persistToken(String token, String platform) =>
+      ref.read(authRepositoryProvider).registerDevice(token, platform);
+
+  void _openRoute(String route) {
+    if (route.startsWith('/')) ref.read(_routerProvider).go(route);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final router = ref.watch(_routerProvider);
+
+    // When the user signs in, link the cached device token to their account
+    // (registerDevice no-ops while signed out, so this is when it takes effect).
+    ref.listen(currentUserProvider, (prev, next) {
+      if (prev == null && next != null) {
+        PushService.instance.reregister(_persistToken);
+      }
+    });
 
     return MaterialApp.router(
       title: 'Liz',

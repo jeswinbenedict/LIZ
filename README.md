@@ -166,6 +166,17 @@ a free `AI_API_KEY` (Groq/OpenRouter/Gemini) to attach 3-bullet AI "quick takes"
 > Liz shows a **snippet + link out** to the original source — it never republishes full
 > articles.
 
+## Push notifications (FCM)
+
+Activity notifications are built and **fail-open**: in-app notifications (a reply
+to your post, a new follower) work as soon as `0007_notifications.sql` is applied
+— **no Firebase required**. Device **push** layers on top via the
+[`send-notification`](supabase/functions/send-notification/index.ts) Edge Function
+(FCM HTTP v1) and the guarded [`PushService`](lib/core/notifications/push_service.dart),
+which registers each device's token to the `devices` table and no-ops cleanly when
+Firebase isn't configured. To switch push on (free for Android + Web), follow
+[`docs/FCM_SETUP.md`](docs/FCM_SETUP.md).
+
 ## Build targets
 
 ```bash
@@ -180,9 +191,28 @@ Pass the same `--dart-define` values shown above to production builds.
 
 ## Security & production notes
 
+### What's public vs secret (and why the repo is safe)
+Some keys **belong** in the client and are committed on purpose; the real secrets
+never touch the repo:
+
+| Value | In repo? | Why it's safe / where it lives |
+|---|---|---|
+| Supabase **anon** key | ✅ committed (`run_web.ps1`, `.claude/launch.json`) | Public by design — ships in every client bundle, gated by RLS |
+| Firebase **web config** (`apiKey`, `appId`, VAPID) | ✅ committed (`push_service.dart`, `firebase-messaging-sw.js`) | Public project identifiers, gated by Firebase security rules |
+| Supabase **service_role** key | ❌ never | Supabase **Vault** + Edge Function env only |
+| **Groq** `AI_API_KEY` | ❌ never | Supabase Edge Function secret |
+| **Firebase service account** JSON | ❌ never | `FIREBASE_SERVICE_ACCOUNT` Edge secret |
+| DB password | ❌ never | Not stored anywhere in the project |
+
+Secret-bearing files (`.env`, `google-services.json`, `GoogleService-Info.plist`,
+`*serviceAccount*.json`, `*.p8/.p12/.jks/.keystore`, `key.properties`) are
+`.gitignore`d so they can't be committed by accident.
+
+### Other measures
 - **RLS on every table**, deny-by-default; users edit only their own content;
   moderators/admins can hide/remove any content (see `0002_rls.sql`).
 - **Service-role key never ships to the client** — server-side only.
+- **`send-notification` is locked to service-role callers** — clients can't send pushes.
 - **Moderation from day one**: report button → `handle_report` trigger auto-hides
   at 3 reports → admin review queue.
 - **Delete-account flow** (`/delete-account` function) for App Store compliance.
@@ -190,6 +220,8 @@ Pass the same `--dart-define` values shown above to production builds.
 
 ## Status
 
-Phase 1 (MVP) is implemented. Phase 2 (full "Rising Early" engine, richer Ask Liz,
-comments, collections UI, FCM push, analytics dashboard) and Phase 3 hooks are
-scaffolded in the models, schema, and repository interfaces.
+Phase 1 (MVP) is implemented, plus the live Supabase backend, the Technology News
+Feed, image uploads (Storage), and **FCM push + activity notifications**. Remaining
+Phase 2 items (full "Rising Early" engine, richer Ask Liz, collections UI, analytics
+dashboard) and Phase 3 hooks are scaffolded in the models, schema, and repository
+interfaces.

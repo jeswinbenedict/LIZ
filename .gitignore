@@ -47,3 +47,39 @@ app.*.map.json
 # Android build artifacts
 android/build/
 android/.gradle/
+
+# ============================================================================
+# Secrets & credentials — NEVER commit these.
+# (App config uses --dart-define / Supabase secrets / Vault instead.)
+# ============================================================================
+
+# Environment files
+.env
+.env.*
+*.env
+!.env.example
+
+# Firebase / FCM credentials (private per project or per developer)
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase-adminsdk-*.json
+*service-account*.json
+*serviceAccount*.json
+serviceAccountKey*.json
+
+# Signing keys & certificates
+*.pem
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+**/key.properties
+
+# Local machine config
+android/local.properties
+ios/Flutter/flutter_export_environment.sh
+
+# Supabase CLI local state (machine-specific; not app source)
+supabase/.temp/
+supabase/.branches/
