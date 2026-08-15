@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Liz — Chrome (live backend)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "toolArgs": [
+        "--dart-define=SUPABASE_URL=https://yluabeijvbydxczfxclk.supabase.co",
+        "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWFiZWlqdmJ5ZHhjemZ4Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzODY4NTUsImV4cCI6MjEwMTk2Mjg1NX0.zvbMoLLaPxmXxCbtDsTQ8Io3UDy4lq-wA5TQ6g_l-sI",
+        "--dart-define=FCM_VAPID_KEY=BIitqxiFRR0cEvigb_4tP1W4kmhgCdTgV4mGvNU65dCYeGSre8u7HKfnDz8BS_V9sbI0nKRtidktjklXSR2J5AY"
+      ]
+    },
+    {
+      "name": "Liz — Android / selected device (live backend)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": [
+        "--dart-define=SUPABASE_URL=https://yluabeijvbydxczfxclk.supabase.co",
+        "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWFiZWlqdmJ5ZHhjemZ4Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzODY4NTUsImV4cCI6MjEwMTk2Mjg1NX0.zvbMoLLaPxmXxCbtDsTQ8Io3UDy4lq-wA5TQ6g_l-sI"
+      ]
+    },
+    {
+      "name": "Liz — Demo mode (no backend, mock data)",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
+}
