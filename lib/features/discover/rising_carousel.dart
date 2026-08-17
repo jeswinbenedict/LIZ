@@ -82,7 +82,7 @@ class _RisingCard extends StatelessWidget {
                   children: [
                     ToolLogo(tool: tool, size: 40),
                     const Spacer(),
-                    TrendBadge(tool.trendScore),
+                    TrendBadge(tool),
                   ],
                 ),
                 const SizedBox(height: 10),

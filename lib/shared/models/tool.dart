@@ -67,6 +67,7 @@ class Tool {
     required this.ratingCount,
     required this.status,
     required this.createdAt,
+    this.trendRank,
   });
 
   final String id;
@@ -94,6 +95,10 @@ class Tool {
   final int ratingCount;
   final PublishStatus status;
   final DateTime createdAt;
+
+  /// Unique leaderboard position (1 = top), recomputed with the trend score.
+  /// Null in mock/demo mode (where the badge falls back to the raw score).
+  final int? trendRank;
 
   bool get isNew =>
       DateTime.now().difference(createdAt).inDays <= 14;
@@ -134,6 +139,7 @@ class Tool {
       ratingCount: asInt(j['rating_count']),
       status: PublishStatus.parse(asStringOrNull(j['status'])),
       createdAt: asDate(j['created_at']),
+      trendRank: j['trend_rank'] == null ? null : asInt(j['trend_rank']),
     );
   }
 
@@ -161,6 +167,7 @@ class Tool {
         'rating_count': ratingCount,
         'status': status.value,
         'created_at': createdAt.toIso8601String(),
+        'trend_rank': trendRank,
       };
 
   Tool copyWith({
@@ -194,5 +201,6 @@ class Tool {
         ratingCount: ratingCount ?? this.ratingCount,
         status: status ?? this.status,
         createdAt: createdAt,
+        trendRank: trendRank,
       );
 }

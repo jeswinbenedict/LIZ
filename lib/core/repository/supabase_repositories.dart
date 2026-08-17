@@ -28,7 +28,7 @@ class SupabaseContentRepository implements ContentRepository {
       'id,name,slug,tagline,description,ai_summary,website_url,logo_url,'
       'category,tags,platforms,pricing_type,price_note,source,source_url,'
       'launched_at,trend_score,view_count,save_count,avg_rating,rating_count,'
-      'status,created_at';
+      'status,created_at,trend_rank';
 
   @override
   Future<List<Category>> categories() async {

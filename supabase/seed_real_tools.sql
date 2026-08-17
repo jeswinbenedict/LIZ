@@ -4,8 +4,8 @@
 -- Safe to re-run: clears curated/published tools, then re-inserts.
 -- ============================================================================
 
-delete from public.tools;
-
+-- Upsert curated tools by content_hash: restores editorial engagement
+-- without deleting ingested (GitHub) tools or overwriting good summaries.
 insert into public.tools
   (name, slug, tagline, description, ai_summary, website_url, logo_url, category,
    tags, platforms, pricing_type, price_note, source, source_url, content_hash,
@@ -51,6 +51,12 @@ values
   ('Zapier','zapier','Automate work across 7000+ apps, now with AI.','Zapier connects apps into automated workflows and adds AI agents and steps to handle tasks without code.','["Automate work across 7000+ apps, now with AI.","freemium pricing."]'::jsonb,'https://zapier.com','https://unavatar.io/zapier.com','ai-agents','{automation,integrations,agents,workflows}','{web}','freemium','Free; paid plans','curated','https://zapier.com','curated:zapier',(now() - interval '900 days')::date,83,380000,16800,4.4,9100,'published'),
   ('n8n','n8n','Open-source workflow automation with AI.','n8n is a fair-code automation tool for building AI-powered workflows and agents you can self-host or run in the cloud.','["Open-source workflow automation with AI.","freemium pricing."]'::jsonb,'https://n8n.io','https://unavatar.io/n8n.io','ai-agents','{automation,workflows,open-source,agents}','{web}','freemium','Open-source; paid cloud','curated','https://n8n.io','curated:n8n',(now() - interval '540 days')::date,82,170000,13100,4.6,3600,'published'),
   ('Character.AI','character-ai','Chat with AI characters and companions.','Character.AI lets you create and chat with customizable AI characters for entertainment, practice, and support.','["Chat with AI characters and companions.","freemium pricing."]'::jsonb,'https://character.ai','https://unavatar.io/character.ai','ai-agents','{chat,characters,roleplay,companions}','{web,ios,android}','freemium','Free; c.ai+ plan','curated','https://character.ai','curated:character-ai',(now() - interval '540 days')::date,81,300000,15400,4.2,8700,'published'),
-  ('Mistral','mistral','Open-weight European AI models and chat.','Mistral builds efficient open-weight language models and offers Le Chat plus a developer API.','["Open-weight European AI models and chat.","freemium pricing."]'::jsonb,'https://mistral.ai','https://unavatar.io/mistral.ai','ai-research','{models,open-weights,chat,api}','{web}','freemium','Free; paid API','curated','https://mistral.ai','curated:mistral',(now() - interval '420 days')::date,85,200000,12200,4.5,4200,'published');
+  ('Mistral','mistral','Open-weight European AI models and chat.','Mistral builds efficient open-weight language models and offers Le Chat plus a developer API.','["Open-weight European AI models and chat.","freemium pricing."]'::jsonb,'https://mistral.ai','https://unavatar.io/mistral.ai','ai-research','{models,open-weights,chat,api}','{web}','freemium','Free; paid API','curated','https://mistral.ai','curated:mistral',(now() - interval '420 days')::date,85,200000,12200,4.5,4200,'published')
+on conflict (content_hash) do update set
+  view_count = excluded.view_count,
+  save_count = excluded.save_count,
+  rating_count = excluded.rating_count,
+  avg_rating = excluded.avg_rating,
+  updated_at = now();
 
 select public.refresh_trend_scores();

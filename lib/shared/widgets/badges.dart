@@ -68,13 +68,16 @@ class PricingBadge extends StatelessWidget {
 }
 
 class TrendBadge extends StatelessWidget {
-  const TrendBadge(this.score, {super.key});
-  final double score;
+  const TrendBadge(this.tool, {super.key});
+  final Tool tool;
 
   @override
   Widget build(BuildContext context) {
+    // Live mode: a unique leaderboard position (#1, #2, …). Mock/demo mode
+    // (no rank): fall back to the compact trend score.
+    final rank = tool.trendRank;
     return LizPill(
-      label: compactCount(score.round()),
+      label: rank != null ? '#$rank' : compactCount(tool.trendScore.round()),
       color: LizColors.rising,
       icon: Icons.trending_up,
     );

@@ -77,7 +77,7 @@ class ToolCard extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   PricingBadge(tool.pricingType),
-                  TrendBadge(tool.trendScore),
+                  TrendBadge(tool),
                   for (final tag in tool.tags.take(2))
                     LizPill(label: '#$tag', color: scheme.onSurfaceVariant),
                 ],

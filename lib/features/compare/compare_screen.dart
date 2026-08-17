@@ -74,7 +74,7 @@ class _CompareTable extends StatelessWidget {
         const _String('Platforms'),
         (t) => Text(t.platforms.isEmpty ? '—' : t.platforms.join(', '))
       ),
-      (const _String('Trend score'), (t) => TrendBadge(t.trendScore)),
+      (const _String('Rank'), (t) => TrendBadge(t)),
       (
         const _String('Key features'),
         (t) => Wrap(

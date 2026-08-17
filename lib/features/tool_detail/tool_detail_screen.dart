@@ -117,7 +117,7 @@ class _ToolBody extends ConsumerWidget {
               PricingBadge(tool.pricingType),
               if (tool.priceNote != null)
                 LizPill(label: tool.priceNote!, color: scheme.onSurfaceVariant),
-              TrendBadge(tool.trendScore),
+              TrendBadge(tool),
               if (tool.isNew)
                 const LizPill(label: 'NEW', color: LizColors.positive, filled: true),
               for (final p in tool.platforms)
