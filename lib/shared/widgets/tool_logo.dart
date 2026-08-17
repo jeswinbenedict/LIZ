@@ -22,16 +22,26 @@ class ToolLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = size * 0.28;
     if (tool.logoUrl != null && tool.logoUrl!.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: CachedNetworkImage(
-          imageUrl: tool.logoUrl!,
+      // Present every logo as a clean, padded "app-icon" tile on a light
+      // background so dark, transparent, or oddly-cropped marks all look uniform
+      // and professional (instead of a raw edge-to-edge black square). The tile
+      // only appears once the image actually loads; otherwise we show the
+      // branded initial fallback full-bleed.
+      return CachedNetworkImage(
+        imageUrl: tool.logoUrl!,
+        imageBuilder: (context, imageProvider) => Container(
           width: size,
           height: size,
-          fit: BoxFit.cover,
-          placeholder: (c, _) => _fallback(radius),
-          errorWidget: (c, _, __) => _fallback(radius),
+          padding: EdgeInsets.all(size * 0.14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: const Color(0x14000000)),
+          ),
+          child: Image(image: imageProvider, fit: BoxFit.contain),
         ),
+        placeholder: (c, _) => _fallback(radius),
+        errorWidget: (c, _, __) => _fallback(radius),
       );
     }
     return _fallback(radius);

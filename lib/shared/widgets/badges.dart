@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 import '../models/tool.dart';
+import 'time_ago.dart';
 
 /// Small pill used for pricing, "New", "Rising", etc.
 class LizPill extends StatelessWidget {
@@ -73,7 +74,7 @@ class TrendBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LizPill(
-      label: '${score.round()}',
+      label: compactCount(score.round()),
       color: LizColors.rising,
       icon: Icons.trending_up,
     );
