@@ -17,6 +17,7 @@ import '../community/community_widgets.dart';
 import '../community/composers.dart';
 import '../track/bookmark_button.dart';
 import '../track/follow_button.dart';
+import 'tool_news.dart';
 
 class ToolDetailScreen extends ConsumerWidget {
   const ToolDetailScreen({super.key, required this.toolId});
@@ -187,6 +188,9 @@ class _ToolBody extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(tool.description, style: const TextStyle(height: 1.5)),
           const SizedBox(height: 28),
+
+          // Live news for this specific tool (Google News + Hacker News).
+          ToolNewsSection(query: tool.name),
 
           // Ratings
           _SectionHeader(
