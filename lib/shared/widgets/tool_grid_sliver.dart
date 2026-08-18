@@ -45,7 +45,7 @@ class ToolGridSliver extends ConsumerWidget {
           crossAxisCount: columns,
           mainAxisSpacing: 14,
           crossAxisSpacing: 14,
-          mainAxisExtent: 214,
+          mainAxisExtent: 222,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {

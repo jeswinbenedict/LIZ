@@ -71,16 +71,27 @@ class ToolCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  PricingBadge(tool.pricingType),
-                  TrendBadge(tool),
-                  for (final tag in tool.tags.take(2))
-                    LizPill(label: '#$tag', color: scheme.onSurfaceVariant),
-                ],
+              // Single-line badge strip: clip any overflow so cards stay a
+              // fixed height in the grid (long tags no longer push a 2nd row).
+              ClipRect(
+                child: SizedBox(
+                  height: 30,
+                  child: OverflowBox(
+                    alignment: Alignment.topLeft,
+                    maxHeight: double.infinity,
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        PricingBadge(tool.pricingType),
+                        TrendBadge(tool),
+                        for (final tag in tool.tags.take(2))
+                          LizPill(label: '#$tag', color: scheme.onSurfaceVariant),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               const Divider(height: 1),
