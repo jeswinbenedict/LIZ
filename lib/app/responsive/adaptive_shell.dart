@@ -234,22 +234,14 @@ class _Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final mark = Container(
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final mark = Image.asset(
+      'assets/branding/liz-logo-light.png',
       width: 36,
       height: 36,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.primary, LizColors.rising],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      alignment: Alignment.center,
-      child: const Text('L',
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w800, fontSize: 20)),
+      cacheWidth: (36 * dpr).round(),
+      cacheHeight: (36 * dpr).round(),
+      filterQuality: FilterQuality.high,
     );
     if (compact) return Center(child: mark);
     return Row(
