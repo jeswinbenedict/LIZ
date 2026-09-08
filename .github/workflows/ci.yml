@@ -1,0 +1,35 @@
+# Gate every push/PR on a clean analyze + test run so broken code can't reach main.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # Errors and warnings block the merge. The repo still carries ~43
+      # info-level lints; promote these to fatal once that backlog is cleared.
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
+  scrapers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r scrapers/requirements.txt
+      - run: python -m pytest scrapers/tests -q
