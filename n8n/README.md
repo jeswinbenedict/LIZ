@@ -77,4 +77,27 @@ The `tools_rising` view exposes the velocity-based "Rising Early" ranking.
 - New items land as `status = 'pending'`; an admin approves them in the app's admin panel
   (or you can auto-publish trusted API sources).
 
-> Export your finished workflows to `n8n/workflows/*.json` and commit them.
+## Ready-made workflow
+
+`workflows/liz-ingestion.json` is importable as-is (n8n → Workflows → Import from
+File). Every 6 hours it runs three branches in parallel:
+
+1. **BeautifulSoup scraper** (Execute Command) — `scrapers/`, discovers from
+   Product Hunt RSS + Hacker News and enriches from each product's own site.
+2. **GitHub tools** (HTTP) — the `fetch-tools` Edge Function.
+3. **Tech news** (HTTP) — the `fetch-news` Edge Function.
+
+then refreshes the trend ranking once new rows have landed.
+
+Set these in the n8n container's environment before activating it:
+
+```
+SUPABASE_URL
+SUPABASE_FUNCTIONS_URL
+SUPABASE_SERVICE_ROLE_KEY
+```
+
+The Execute Command node expects the repo checked out at `/data/liz` with the
+scraper's dependencies installed — adjust the path in the node if yours differs.
+
+> Export any further workflows to `n8n/workflows/*.json` and commit them.

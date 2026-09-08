@@ -1,0 +1,48 @@
+# Free scheduler for the BeautifulSoup tool scraper.
+#
+# Runs discovery + enrichment and upserts into `tools` with status='pending',
+# so nothing reaches Discover until an admin approves it.
+#
+# Setup (one time): repo → Settings → Secrets and variables → Actions, add
+#   SUPABASE_URL                e.g. https://<ref>.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY   server-side key (never ship this in the app)
+
+name: scrape-tools
+
+on:
+  schedule:
+    - cron: '30 3 * * *' # daily, offset from the 04:15 fetch-tools cron
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run without writing to Supabase'
+        type: boolean
+        default: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r scrapers/requirements.txt
+
+      - name: Run scraper
+        working-directory: scrapers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets not set — running dry."
+            python -m liz_scraper --dry-run --limit 20
+            exit 0
+          fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python -m liz_scraper --dry-run --limit 20
+          else
+            python -m liz_scraper --limit 20 --status pending
+          fi
