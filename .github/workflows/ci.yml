@@ -14,10 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Pinned so a new stable release can't fail unrelated PRs with lints the
-      # team hasn't seen locally. Bump deliberately, together with the dev SDK.
+      # team hasn't seen locally. This is the oldest stable whose Dart SDK
+      # satisfies the ^3.11.0 constraint in pubspec.yaml — bump both together.
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.38.4
+          flutter-version: 3.47.2
           channel: stable
           cache: true
       - run: flutter pub get
