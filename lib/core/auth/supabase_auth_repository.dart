@@ -65,7 +65,7 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       final res = await _client.auth
           .signInWithPassword(email: email, password: password);
-      return _afterAuth(res);
+      return await _afterAuth(res);
     } on AuthException catch (e) {
       throw LizException(e.message);
     }
@@ -80,7 +80,7 @@ class SupabaseAuthRepository implements AuthRepository {
         password: password,
         data: {'display_name': displayName},
       );
-      return _afterAuth(res);
+      return await _afterAuth(res);
     } on AuthException catch (e) {
       throw LizException(e.message);
     }
