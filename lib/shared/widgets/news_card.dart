@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
+import '../../core/config/env.dart';
 import '../models/news_item.dart';
 import 'badges.dart';
 import 'time_ago.dart';
@@ -34,7 +35,7 @@ class NewsCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(LizRadius.lg)),
                 child: CachedNetworkImage(
-                  imageUrl: item.imageUrl!,
+                  imageUrl: Env.proxiedImage(item.imageUrl!),
                   height: 168,
                   width: double.infinity,
                   fit: BoxFit.cover,

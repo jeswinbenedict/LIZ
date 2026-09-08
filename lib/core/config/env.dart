@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Compile-time environment configuration.
 ///
 /// Values are injected at build/run time via `--dart-define`, e.g.:
@@ -38,5 +40,18 @@ class Env {
     if (functionsUrl.isNotEmpty) return functionsUrl;
     if (supabaseUrl.isEmpty) return '';
     return '$supabaseUrl/functions/v1';
+  }
+
+  /// Routes a third-party image through the CORS-friendly proxy.
+  ///
+  /// Flutter web fetches image *bytes*, so a host that sends no
+  /// Access-Control-Allow-Origin (media.wired.com, for one) leaves the widget
+  /// stuck on its placeholder forever. Native builds have no such restriction
+  /// and fetch the original directly.
+  static String proxiedImage(String url) {
+    if (!kIsWeb) return url;
+    final base = resolvedFunctionsUrl;
+    if (base.isEmpty) return url;
+    return '$base/logo?url=${Uri.encodeComponent(url)}';
   }
 }
