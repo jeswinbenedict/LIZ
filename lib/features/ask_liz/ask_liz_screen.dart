@@ -78,22 +78,18 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
       pool = all.items;
     }
 
-    int score(Tool t) {
-      final hay =
-          '${t.name} ${t.tagline} ${t.description} ${t.tags.join(' ')} ${t.category}'
-              .toLowerCase();
-      var s = 0;
-      for (final term in terms) {
-        if (term.length < 3) continue;
-        if (hay.contains(term)) s += 2;
-      }
+    int rank(Tool t) {
+      var s = _topicScore(t, terms);
       if (terms.contains('free') && t.pricingType.name == 'free') s += 3;
       s += (t.trendScore / 40).round();
       return s;
     }
 
-    final ranked = pool.where((t) => score(t) > 0).toList()
-      ..sort((a, b) => score(b).compareTo(score(a)));
+    // Being free or trending is a tiebreaker, never a reason to surface a tool:
+    // without overlap on what the tool actually does, it is not an answer to
+    // the question that was asked.
+    final ranked = pool.where((t) => _topicScore(t, terms) > 0).toList()
+      ..sort((a, b) => rank(b).compareTo(rank(a)));
     final top = ranked.take(5).toList();
 
     setState(() {
@@ -134,14 +130,40 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     }
   }
 
-  String _reasonFor(Tool t, Set<String> terms) {
-    if (terms.contains('free') && t.pricingType.name == 'free') {
-      return 'Free, and matches what you described.';
+  /// Words that appear in almost any request for a tool. Overlap on these says
+  /// nothing about whether the tool does what was asked for.
+  static const _genericTerms = {
+    'free', 'paid', 'cheap', 'best', 'good', 'great', 'tool', 'tools', 'app',
+    'apps', 'software', 'online', 'website', 'need', 'want', 'find', 'looking',
+    'help', 'something', 'anything', 'that', 'this', 'with', 'for', 'and',
+    'the', 'you', 'your', 'can', 'from', 'use', 'using', 'make', 'get',
+  };
+
+  static String _haystack(Tool t) =>
+      '${t.name} ${t.tagline} ${t.description} ${t.tags.join(' ')} ${t.category}'
+          .toLowerCase();
+
+  /// Overlap on terms that actually describe the job to be done.
+  static int _topicScore(Tool t, Set<String> terms) {
+    final hay = _haystack(t);
+    var s = 0;
+    for (final term in terms) {
+      if (term.length < 3 || _genericTerms.contains(term)) continue;
+      if (hay.contains(term)) s += 2;
     }
-    final tag = t.tags.firstWhere(
-        (tag) => terms.any((term) => term.length > 2 && tag.contains(term)),
-        orElse: () => t.category.replaceAll('ai-', ''));
-    return 'Strong fit for $tag — ${t.tagline}';
+    return s;
+  }
+
+  String _reasonFor(Tool t, Set<String> terms) {
+    final hay = _haystack(t);
+    final matched = terms.firstWhere(
+      (term) =>
+          term.length > 2 && !_genericTerms.contains(term) && hay.contains(term),
+      orElse: () => '',
+    );
+    final free = terms.contains('free') && t.pricingType.name == 'free';
+    final prefix = free ? 'Free. ' : '';
+    return '${prefix}Matches "$matched" — ${t.tagline}';
   }
 
   @override
