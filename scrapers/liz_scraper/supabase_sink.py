@@ -59,6 +59,34 @@ class SupabaseSink:
 
         return found
 
+    def _post(self, rows: list[dict]) -> tuple[bool, str]:
+        try:
+            resp = requests.post(
+                f"{self.settings.rest_url}/tools",
+                params={"on_conflict": "content_hash"},
+                headers=self._headers,
+                json=rows,
+                timeout=REQUEST_TIMEOUT,
+            )
+            resp.raise_for_status()
+        except requests.RequestException as err:
+            return False, str(err)
+        return True, ""
+
+    @staticmethod
+    def _disambiguate(row: dict) -> dict:
+        """Give a row a slug nobody else holds.
+
+        `slug` is unique, but two unrelated products can share a name — a new
+        "Scriptly" is not the stored one. Suffixing with the identity hash is
+        deterministic, so re-running produces the same slug rather than a new
+        row each time.
+        """
+        retry = dict(row)
+        base = (retry.get("slug") or "tool")[:52].rstrip("-")
+        retry["slug"] = f"{base}-{retry.get('content_hash', '')[:6]}"
+        return retry
+
     def upsert_tools(self, rows: list[dict]) -> int:
         if not rows:
             return 0
@@ -66,18 +94,24 @@ class SupabaseSink:
         written = 0
         for start in range(0, len(rows), BATCH_SIZE):
             chunk = rows[start : start + BATCH_SIZE]
-            try:
-                resp = requests.post(
-                    f"{self.settings.rest_url}/tools",
-                    params={"on_conflict": "content_hash"},
-                    headers=self._headers,
-                    json=chunk,
-                    timeout=REQUEST_TIMEOUT,
-                )
-                resp.raise_for_status()
-            except requests.RequestException as err:
-                log.error("upsert failed for %d rows: %s", len(chunk), err)
+            ok, err = self._post(chunk)
+            if ok:
+                written += len(chunk)
                 continue
-            written += len(chunk)
+
+            # PostgREST rejects the whole batch when any single row violates a
+            # constraint, so one name collision would otherwise discard an
+            # entire run. Fall back to writing them individually.
+            log.warning("batch of %d rejected (%s) — retrying rows singly",
+                        len(chunk), err)
+            for row in chunk:
+                if self._post([row])[0]:
+                    written += 1
+                    continue
+                retry_ok, retry_err = self._post([self._disambiguate(row)])
+                if retry_ok:
+                    written += 1
+                else:
+                    log.error("could not write %r: %s", row.get("name"), retry_err)
 
         return written
