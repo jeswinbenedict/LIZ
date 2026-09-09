@@ -1,22 +1,57 @@
-// POST /ask-liz  — natural-language tool finder.
+// POST /ask-liz — natural-language tool finder.
 //
 // Body: { "query": "free AI tool to remove image backgrounds", "limit": 5 }
-// Returns: { data: [{ tool_id, name, reason }], error }
+// Returns: { data: [{ tool_id, name, reason, similarity }], error }
 //
-// Retrieves candidate tools from the DB (broad search), asks the LLM to rank
-// and explain the best fits, and returns tool cards with a "why this fits" line.
+// Embeds the question with the same open-source model used for the catalog and
+// returns the nearest tools by cosine similarity, so a request phrased in the
+// user's own words matches a tool that never uses those words.
+//
+// The previous version retrieved by ILIKE over name/tagline/description and let
+// an LLM rank the result. That needed an API key to work at all, and when the
+// key was absent the client silently fell back to on-device keyword ranking —
+// which answered "remove image backgrounds" with a Claude Code helper and a RAG
+// pipeline builder, because both happened to be free and trending.
+//
+// Deploy: supabase functions deploy ask-liz
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { completeText, extractJson } from '../_shared/ai.ts';
+import { embed } from '../_shared/embed.ts';
+
+// Below this, a "nearest" tool is not a real answer. Cosine similarity from
+// gte-small, so tune against real queries rather than assuming these transfer
+// from another model.
+const MIN_SIMILARITY = 0.55;
+const STRONG_MATCH = 0.75;
+
+type Match = {
+  id: string;
+  name: string;
+  tagline: string;
+  pricing_type: string;
+  similarity: number;
+};
+
+/// States what the match is based on, and how confident it is, without
+/// claiming more than the score supports.
+function reasonFor(match: Match, query: string): string {
+  const wantsFree = /\bfree\b/i.test(query);
+  const isFree = match.pricing_type === 'free' || match.pricing_type === 'freemium';
+  const prefix = wantsFree && isFree ? 'Free. ' : '';
+  const strength = match.similarity >= STRONG_MATCH ? 'Close match' : 'Related';
+  const tagline = match.tagline?.trim();
+  return tagline ? `${prefix}${strength} — ${tagline}` : `${prefix}${strength}`;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
   try {
     const { query, limit = 5 } = await req.json();
-    if (!query || typeof query !== 'string') {
+    if (!query || typeof query !== 'string' || !query.trim()) {
       return json({ data: null, error: 'Missing query' }, 400);
     }
 
@@ -26,64 +61,26 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    // Broad candidate retrieval — the LLM does the fine ranking.
-    const words = query.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-    const orFilter = words
-      .slice(0, 6)
-      .map((w: string) => `name.ilike.%${w}%,tagline.ilike.%${w}%,description.ilike.%${w}%`)
-      .join(',');
+    const queryEmbedding = await embed(query);
 
-    let { data: candidates } = await supabase
-      .from('tools')
-      .select('id,name,tagline,description,pricing_type,tags,category,trend_score')
-      .eq('status', 'published')
-      .or(orFilter || 'name.ilike.%%')
-      .limit(25);
-
-    if (!candidates || candidates.length < 3) {
-      const { data: top } = await supabase
-        .from('tools')
-        .select('id,name,tagline,description,pricing_type,tags,category,trend_score')
-        .eq('status', 'published')
-        .order('trend_score', { ascending: false })
-        .limit(40);
-      candidates = top ?? [];
-    }
-
-    if (candidates.length === 0) {
-      return json({ data: [], error: null });
-    }
-
-    const catalog = candidates
-      .map(
-        (t: Record<string, unknown>) =>
-          `- id:${t.id} | ${t.name} | ${t.pricing_type} | ${t.tagline} | tags:${(t.tags as string[]).join(',')}`,
-      )
-      .join('\n');
-
-    const system =
-      'You are Liz, an AI tool finder. Given a user need and a catalog of tools, ' +
-      'pick the best matches and give a one-line reason for each. ' +
-      'Only choose from the catalog. Respond ONLY with JSON: ' +
-      'an array of {"tool_id": string, "reason": string}, best first.';
-
-    const text = await completeText({
-      system,
-      maxTokens: 700,
-      user: `User need: "${query}"\n\nCatalog:\n${catalog}\n\nReturn up to ${limit} picks as JSON.`,
+    const { data: matches, error } = await supabase.rpc('match_tools', {
+      query_embedding: queryEmbedding,
+      match_count: Math.min(Number(limit) || 5, 20),
+      min_similarity: MIN_SIMILARITY,
     });
 
-    type Pick = { tool_id: string; reason: string };
-    const picks = extractJson<Pick[]>(text, []);
-    const byId = new Map(candidates.map((t: Record<string, unknown>) => [t.id, t]));
-    const results = picks
-      .filter((p) => byId.has(p.tool_id))
-      .slice(0, limit)
-      .map((p) => ({
-        tool_id: p.tool_id,
-        name: (byId.get(p.tool_id) as Record<string, unknown>).name,
-        reason: p.reason,
-      }));
+    if (error) {
+      return json({ data: null, error: error.message }, 500);
+    }
+
+    // No result above the floor is a legitimate answer: the client shows its
+    // "no great match" state rather than padding the list with near-misses.
+    const results = (matches ?? []).map((m: Match) => ({
+      tool_id: m.id,
+      name: m.name,
+      reason: reasonFor(m, query),
+      similarity: Number(m.similarity.toFixed(3)),
+    }));
 
     return json({ data: results, error: null });
   } catch (err) {

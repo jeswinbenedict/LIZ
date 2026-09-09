@@ -125,6 +125,38 @@
       "position": [320, 320],
       "notesInFlow": true,
       "notes": "Recomputes the Rising Early ranking after new rows land."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_FUNCTIONS_URL }}/embed-tools",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"limit\": 200}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Embed new tools",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 320],
+      "notesInFlow": true,
+      "notes": "A tool without an embedding cannot be found by Ask Liz."
     }
   ],
   "connections": {
@@ -154,6 +186,17 @@
         [
           {
             "node": "Refresh trend scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh trend scores": {
+      "main": [
+        [
+          {
+            "node": "Embed new tools",
             "type": "main",
             "index": 0
           }

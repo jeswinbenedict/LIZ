@@ -80,6 +80,22 @@ Two options, both already wired:
 - **n8n** — `n8n/workflows/liz-ingestion.json`, every 6 hours, alongside the
   Edge Function ingestion and the trend-score refresh.
 
+## After ingestion: embeddings
+
+Ask Liz matches on meaning, not keywords, so every tool needs an embedding
+before it can be found. Both schedulers call `embed-tools` after the scrape;
+if you run the scraper by hand, trigger it yourself:
+
+```bash
+curl -X POST "$SUPABASE_URL/functions/v1/embed-tools" \
+  -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"limit":200}'
+```
+
+It is idempotent — it only embeds rows that have no vector yet — and reports how
+many remain, so run it again if `remaining` is above zero.
+
 ## Adding a source
 
 1. Write `sources/<name>.py` exposing

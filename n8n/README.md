@@ -87,7 +87,9 @@ File). Every 6 hours it runs three branches in parallel:
 2. **GitHub tools** (HTTP) — the `fetch-tools` Edge Function.
 3. **Tech news** (HTTP) — the `fetch-news` Edge Function.
 
-then refreshes the trend ranking once new rows have landed.
+then refreshes the trend ranking and calls `embed-tools` so the new rows become
+searchable. A tool with no embedding is invisible to Ask Liz, so that last step
+is not optional.
 
 Set these in the n8n container's environment before activating it:
 

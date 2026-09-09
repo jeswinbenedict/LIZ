@@ -46,3 +46,22 @@ jobs:
           else
             python -m liz_scraper --limit 20 --status pending
           fi
+
+      # A tool without an embedding is invisible to Ask Liz, so backfill in the
+      # same run rather than leaving newly scraped rows unsearchable until the
+      # next scheduled pass.
+      - name: Embed newly ingested tools
+        if: ${{ inputs.dry_run != true }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets not set — skipping embedding."
+            exit 0
+          fi
+          curl -sS -X POST "$SUPABASE_URL/functions/v1/embed-tools" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"limit":200}' \
+            --fail-with-body

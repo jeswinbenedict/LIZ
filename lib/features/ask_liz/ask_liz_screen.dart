@@ -52,10 +52,11 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
       _answered = q;
     });
 
-    // Prefer the server-side AI (free provider via the ask-liz Edge Function);
-    // fall back to on-device ranking if the backend/AI isn't available.
+    // Semantic search on the server is authoritative — including when it finds
+    // nothing. "No tool is close enough" is a real answer, so only an
+    // unreachable backend (null) falls through to on-device keyword ranking.
     final server = await _askServer(q);
-    if (server != null && server.isNotEmpty) {
+    if (server != null) {
       if (mounted) {
         setState(() {
           _loading = false;
@@ -115,7 +116,9 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
           .map((e) => e.cast<String, dynamic>())
           .toList();
       final ids = picks.map((p) => p['tool_id'].toString()).toList();
-      if (ids.isEmpty) return null;
+      // Distinct from null: the backend answered, and the answer is "nothing
+      // matches well enough".
+      if (ids.isEmpty) return const <_Suggestion>[];
       final tools =
           await ref.read(contentRepositoryProvider).compareTools(ids);
       final byId = {for (final t in tools) t.id: t};
