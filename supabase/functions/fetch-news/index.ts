@@ -20,6 +20,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { parseFeed } from 'https://deno.land/x/rss@1.1.2/mod.ts';
 import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts';
 import { corsHeaders, json } from '../_shared/cors.ts';
+import { cleanTitle, stripHtml } from './logic.ts';
 
 interface Article {
   title: string;
@@ -41,46 +42,6 @@ const FEEDS: { source: string; url: string }[] = [
 ];
 
 const MAX_PER_SOURCE = 10;
-
-const NAMED_ENTITIES: Record<string, string> = {
-  nbsp: ' ', lt: '<', gt: '>', quot: '"', apos: "'",
-  ldquo: '“', rdquo: '”', lsquo: '‘', rsquo: '’',
-  mdash: '—', ndash: '–', hellip: '…', amp: '&',
-};
-
-function fromCodePoint(code: number): string | null {
-  if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return null;
-  try {
-    return String.fromCodePoint(code);
-  } catch (_) {
-    return null;
-  }
-}
-
-/// Feeds encode punctuation in whichever form they please — &quot;, &#34; and
-/// &#x22; all mean the same double quote — so decode numeric escapes generically
-/// rather than listing every spelling.
-function decodeEntities(text: string): string {
-  return text
-    .replace(/&#(\d+);/g, (m, d) => fromCodePoint(parseInt(d, 10)) ?? m)
-    .replace(/&#[xX]([0-9a-fA-F]+);/g, (m, h) => fromCodePoint(parseInt(h, 16)) ?? m)
-    .replace(/&([a-zA-Z]+);/g, (m, n) => NAMED_ENTITIES[n.toLowerCase()] ?? m);
-}
-
-/// Feed titles are plain text but still arrive entity-encoded — "Instagram&#8217;s
-/// new logo" — so they need decoding even though there are no tags to strip.
-export function cleanTitle(raw: string): string {
-  return decodeEntities(raw).replace(/\s+/g, ' ').trim();
-}
-
-function stripHtml(html: string): string {
-  // Tags first: decoding before stripping would let an encoded &lt;script&gt;
-  // turn back into markup that the tag pass has already run past.
-  const text = decodeEntities(html.replace(/<[^>]*>/g, ' '))
-    .replace(/\s+/g, ' ')
-    .trim();
-  return text.length > 300 ? `${text.slice(0, 297)}…` : text;
-}
 
 // deno-lint-ignore no-explicit-any
 function pickImage(entry: any): string | null {

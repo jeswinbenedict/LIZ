@@ -37,3 +37,19 @@ jobs:
           cache: pip
       - run: pip install -r scrapers/requirements.txt
       - run: python -m pytest scrapers/tests -q
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      # --allow-env because _shared/ai.ts reads its provider config at import.
+      - run: deno test --allow-env --no-check supabase/functions/tests/
+      # Type-checks the handlers the tests do not import, so a broken function
+      # is caught here rather than on deploy.
+      - run: |
+          for f in ask-liz embed-tools fetch-news fetch-tools; do
+            deno check "supabase/functions/$f/index.ts"
+          done
