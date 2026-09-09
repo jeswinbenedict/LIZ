@@ -11,10 +11,17 @@ import 'package:liz/features/tool_detail/tool_detail_screen.dart';
 /// small to hit, and text that does not meet contrast minimums. Running them in
 /// CI keeps a regression from shipping quietly.
 
-Future<void> _pump(WidgetTester tester, Widget screen) async {
+Future<void> _pump(
+  WidgetTester tester,
+  Widget screen, {
+  bool dark = false,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
-      child: MaterialApp(theme: LizTheme.light(), home: screen),
+      child: MaterialApp(
+        theme: dark ? LizTheme.dark() : LizTheme.light(),
+        home: screen,
+      ),
     ),
   );
   await tester.pumpAndSettle(const Duration(seconds: 2));
@@ -48,8 +55,27 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('controls are big enough to hit on a touch screen',
-      (tester) async {
+  testWidgets('dark mode keeps its text readable', (tester) async {
+    // The palette is redefined for dark, not merely inverted, so contrast has
+    // to be checked on its own rather than inferred from the light theme.
+    final handle = tester.ensureSemantics();
+    await _pump(tester, const DiscoverScreen(), dark: true);
+
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    handle.dispose();
+  });
+
+  testWidgets('a dark tool page keeps its text readable', (tester) async {
+    final handle = tester.ensureSemantics();
+    await _pump(tester, const ToolDetailScreen(toolId: 't-1'), dark: true);
+
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    handle.dispose();
+  });
+
+  testWidgets('controls are big enough to hit on a touch screen', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     await _pump(tester, const DiscoverScreen());
 
