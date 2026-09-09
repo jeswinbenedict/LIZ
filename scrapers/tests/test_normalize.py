@@ -168,3 +168,34 @@ def test_build_tool_row_requires_name_and_url():
         pass
     else:
         raise AssertionError("expected ValueError for empty name")
+
+
+# --- naming from the domain --------------------------------------------------
+# Three launches reached the catalog named after their own sentences: "Making an
+# app to organize all basic aspects…", "Check/strip AI watermarks (C2PA)…". Each
+# had a perfectly good name sitting in its URL.
+
+def test_name_from_domain_reads_as_a_product_name():
+    from liz_scraper.normalize import name_from_domain
+    assert name_from_domain("https://demo.ontoplano.com") == "Ontoplano"
+    assert name_from_domain("https://remove-ai-watermark.com") == "Remove Ai Watermark"
+    assert name_from_domain("https://www.tucky.io/x") == "Tucky"
+
+
+def test_name_from_domain_ignores_boilerplate_subdomains():
+    from liz_scraper.normalize import name_from_domain
+    assert name_from_domain("https://app.linear.app") == "Linear"
+    assert name_from_domain("https://get.slack.com") == "Slack"
+
+
+def test_choose_name_falls_back_to_the_domain_before_a_sentence():
+    name = choose_name(
+        "Check/strip AI watermarks (C2PA) and hidden metadata",
+        "",
+        url="https://remove-ai-watermark.com",
+    )
+    assert name == "Remove Ai Watermark"
+
+
+def test_choose_name_still_prefers_a_real_title_over_the_domain():
+    assert choose_name("Posterlet", "", url="https://some-host.com") == "Posterlet"

@@ -202,12 +202,30 @@ def looks_like_a_name(value: str) -> bool:
     return words[0].strip("'\"").lower() not in _DESCRIPTIVE_OPENERS
 
 
-def choose_name(source_title: str, site_title: str = "") -> str:
+def name_from_domain(url: str) -> str:
+    """A product name derived from its own domain.
+
+    Last resort, but usually a good one: a launch titled "Check/strip AI
+    watermarks (C2PA)" lives at remove-ai-watermark.com, and the domain reads
+    as a name where the sentence does not. Subdomains like www or demo are
+    dropped so demo.ontoplano.com becomes "Ontoplano".
+    """
+    host = urlsplit(url).netloc.lower().split(":")[0]
+    labels = [l for l in host.split(".") if l not in {"www", "demo", "app", "get", "try"}]
+    if len(labels) > 2:  # keep the registrable label, not the subdomain
+        labels = labels[-2:]
+    if not labels:
+        return ""
+    return labels[0].replace("-", " ").replace("_", " ").title()
+
+
+def choose_name(source_title: str, site_title: str = "", url: str = "") -> str:
     """Pick the best available product name.
 
     The listing title is used when it actually names the product. When it only
     describes one ("Free scanning app with ML crops"), the product's own site
-    is the authority on what it is called.
+    is the authority — first its title, then failing that its domain. A
+    truncated sentence is the worst of the options, so it is the last.
     """
     candidate = clean_title(source_title)
     if looks_like_a_name(candidate):
@@ -216,6 +234,11 @@ def choose_name(source_title: str, site_title: str = "") -> str:
     site = clean_text(site_title)
     if site and looks_like_a_name(site):
         return site
+
+    if url:
+        from_domain = name_from_domain(url)
+        if from_domain and looks_like_a_name(from_domain):
+            return from_domain
 
     return candidate
 

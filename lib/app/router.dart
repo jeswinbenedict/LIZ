@@ -20,7 +20,6 @@ import 'responsive/adaptive_shell.dart';
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _discoverKey = GlobalKey<NavigatorState>(debugLabel: 'discover');
 final _newsKey = GlobalKey<NavigatorState>(debugLabel: 'news');
-final _communityKey = GlobalKey<NavigatorState>(debugLabel: 'community');
 final _askKey = GlobalKey<NavigatorState>(debugLabel: 'ask');
 final _savedKey = GlobalKey<NavigatorState>(debugLabel: 'saved');
 final _profileKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
@@ -57,16 +56,6 @@ GoRouter buildRouter() {
               GoRoute(
                 path: '/news',
                 pageBuilder: (c, s) => const NoTransitionPage(child: NewsScreen()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _communityKey,
-            routes: [
-              GoRoute(
-                path: '/community',
-                pageBuilder: (c, s) =>
-                    const NoTransitionPage(child: CommunityScreen()),
               ),
             ],
           ),
@@ -111,6 +100,14 @@ GoRouter buildRouter() {
         path: '/tool/:id',
         parentNavigatorKey: _rootKey,
         builder: (c, s) => ToolDetailScreen(toolId: s.pathParameters['id']!),
+      ),
+      // Community has no nav entry: an empty forum reads worse than none at
+      // all until there are people in it. The screen stays reachable by link
+      // so existing URLs keep working and restoring the tab is one line.
+      GoRoute(
+        path: '/community',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const CommunityScreen(),
       ),
       GoRoute(
         path: '/post/:id',

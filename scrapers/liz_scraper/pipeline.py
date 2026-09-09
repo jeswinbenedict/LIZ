@@ -70,7 +70,11 @@ def run(
 
         rows.append(
             build_tool_row(
-                name=choose_name(candidate.name, facts.title if facts else ""),
+                name=choose_name(
+                    candidate.name,
+                    facts.title if facts else "",
+                    url=site_url,
+                ),
                 website_url=site_url,
                 tagline=candidate.tagline or (facts.description if facts else ""),
                 description=(facts.description if facts else candidate.tagline),

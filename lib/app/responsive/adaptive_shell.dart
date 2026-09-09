@@ -15,6 +15,10 @@ class NavDestinationSpec {
   final IconData selectedIcon;
 }
 
+// Community is deliberately absent. The forum needs a critical mass of people
+// to be worth opening, and an empty tab reads worse to a first-time visitor
+// than no tab at all. The screen and its /community route still exist, so
+// restoring it is a matter of putting this entry back.
 const kNavDestinations = <NavDestinationSpec>[
   NavDestinationSpec(
       label: 'Discover', icon: Icons.explore_outlined, selectedIcon: Icons.explore),
@@ -22,10 +26,6 @@ const kNavDestinations = <NavDestinationSpec>[
       label: 'News',
       icon: Icons.newspaper_outlined,
       selectedIcon: Icons.newspaper),
-  NavDestinationSpec(
-      label: 'Community',
-      icon: Icons.forum_outlined,
-      selectedIcon: Icons.forum),
   NavDestinationSpec(
       label: 'Ask Liz',
       icon: Icons.auto_awesome_outlined,
