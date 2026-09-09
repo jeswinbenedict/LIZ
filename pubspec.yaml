@@ -34,6 +34,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  # Reads Supabase's public auth settings so the sign-in sheet only offers
+  # providers the project actually has enabled.
+  http: ^1.2.0
   flutter_riverpod: ^2.6.1
   go_router: ^17.5.0
   supabase_flutter: ^2.17.1

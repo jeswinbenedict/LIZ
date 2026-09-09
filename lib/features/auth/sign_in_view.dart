@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/auth/enabled_providers.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
 import 'auth_controller.dart';
@@ -57,6 +58,10 @@ class _SignInViewState extends ConsumerState<SignInView> {
     final auth = ref.read(authControllerProvider.notifier);
     final isLive = ref.watch(isLiveBackendProvider);
     final scheme = Theme.of(context).colorScheme;
+    // While this resolves, and if it fails, no social buttons are shown: the
+    // email form below is a complete sign-in on its own.
+    final providers = ref.watch(enabledAuthProvidersProvider).valueOrNull ??
+        EnabledAuthProviders.none;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(LizSpacing.lg),
@@ -74,30 +79,37 @@ class _SignInViewState extends ConsumerState<SignInView> {
           ),
           const SizedBox(height: LizSpacing.lg),
 
-          // Social providers
-          _SocialButton(
-            icon: Icons.g_mobiledata,
-            label: 'Continue with Google',
-            onPressed: busy ? null : () => _guard(auth.signInWithGoogle),
-          ),
-          if (shouldOfferApple) ...[
-            const SizedBox(height: 10),
+          // Only the providers this project has enabled. Offering one that is
+          // switched off dead-ends on Supabase's raw error JSON.
+          if (providers.google) ...[
+            _SocialButton(
+              icon: Icons.g_mobiledata,
+              label: 'Continue with Google',
+              onPressed: busy ? null : () => _guard(auth.signInWithGoogle),
+            ),
+          ],
+          if (providers.apple && shouldOfferApple) ...[
+            if (providers.google) const SizedBox(height: 10),
             _SocialButton(
               icon: Icons.apple,
               label: 'Continue with Apple',
               onPressed: busy ? null : () => _guard(auth.signInWithApple),
             ),
           ],
-          const SizedBox(height: LizSpacing.md),
-          Row(children: [
-            const Expanded(child: Divider()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text('or', style: TextStyle(color: scheme.onSurfaceVariant)),
-            ),
-            const Expanded(child: Divider()),
-          ]),
-          const SizedBox(height: LizSpacing.md),
+          // A lone "or" above the email form reads as a missing button.
+          if (providers.hasSocial) ...[
+            const SizedBox(height: LizSpacing.md),
+            Row(children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child:
+                    Text('or', style: TextStyle(color: scheme.onSurfaceVariant)),
+              ),
+              const Expanded(child: Divider()),
+            ]),
+            const SizedBox(height: LizSpacing.md),
+          ],
 
           if (_isSignUp) ...[
             TextField(
