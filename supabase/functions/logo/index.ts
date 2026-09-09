@@ -9,6 +9,8 @@
 //
 // Deploy public (no JWT): supabase functions deploy logo --no-verify-jwt
 
+import { checkTargetUrl, isAllowedImageType, MAX_IMAGE_BYTES } from './logic.ts';
+
 const IMG_CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -42,7 +44,16 @@ Deno.serve(async (req) => {
 
   // Candidate raster sources, in order of preference.
   const candidates: string[] = [];
-  if (passthrough) candidates.push(passthrough);
+  if (passthrough) {
+    // The caller controls this URL, so it is checked before the server is made
+    // to fetch it — otherwise the proxy is an open relay onto anything the
+    // server can reach, returned with permissive CORS.
+    const check = checkTargetUrl(passthrough);
+    if (!check.ok) {
+      return new Response(`refused: ${check.reason}`, { status: 400, headers: IMG_CORS });
+    }
+    candidates.push(check.url.toString());
+  }
   if (domain) {
     candidates.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=256`);
     candidates.push(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`);
@@ -54,9 +65,17 @@ Deno.serve(async (req) => {
   for (const c of candidates) {
     const res = await tryFetch(c);
     if (res) {
+      const contentType = res.headers.get('content-type');
+      // Only images leave this endpoint. Anything else means the caller is
+      // reaching for something that is not a logo.
+      if (!isAllowedImageType(contentType)) continue;
+
+      const declared = Number(res.headers.get('content-length') ?? '0');
+      if (declared > MAX_IMAGE_BYTES) continue;
+
       const buf = await res.arrayBuffer();
-      if (buf.byteLength > 0) {
-        return new Response(buf, { headers: imgHeaders(res.headers.get('content-type')) });
+      if (buf.byteLength > 0 && buf.byteLength <= MAX_IMAGE_BYTES) {
+        return new Response(buf, { headers: imgHeaders(contentType) });
       }
     }
   }

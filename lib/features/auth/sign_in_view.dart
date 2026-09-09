@@ -37,6 +37,30 @@ class _SignInViewState extends ConsumerState<SignInView> {
     super.dispose();
   }
 
+  /// Supabase enforces all of this server-side, but a round trip to be told
+  /// "invalid credentials" for an empty box is a poor way to learn you left one
+  /// blank. Returns the first problem, or null when the form can be submitted.
+  ///
+  /// Deliberately permissive on the address: the only definitive test of an
+  /// email is sending to it, and an over-strict pattern rejects valid ones.
+  String? _validate() {
+    final email = _email.text.trim();
+    if (email.isEmpty) return 'Enter your email address.';
+    if (!RegExp(r'^[^@\s]+@[^@\s.]+\.[^@\s]+$').hasMatch(email)) {
+      return "That email address doesn't look right.";
+    }
+    if (_password.text.isEmpty) return 'Enter your password.';
+    if (_isSignUp) {
+      if (_password.text.length < 6) {
+        return 'Use a password of at least 6 characters.';
+      }
+      if (_name.text.trim().isEmpty) {
+        return 'Enter a display name so people know who you are.';
+      }
+    }
+    return null;
+  }
+
   Future<void> _guard(Future<void> Function() action) async {
     setState(() {
       _error = null;
@@ -149,7 +173,16 @@ class _SignInViewState extends ConsumerState<SignInView> {
           FilledButton(
             onPressed: busy
                 ? null
-                : () => _guard(() async {
+                : () {
+                    final problem = _validate();
+                    if (problem != null) {
+                      setState(() {
+                        _error = problem;
+                        _info = null;
+                      });
+                      return;
+                    }
+                    _guard(() async {
                       if (_isSignUp) {
                         await auth.signUp(
                             _email.text.trim(), _password.text, _name.text.trim());
@@ -157,7 +190,8 @@ class _SignInViewState extends ConsumerState<SignInView> {
                         await auth.signInWithEmail(
                             _email.text.trim(), _password.text);
                       }
-                    }),
+                    });
+                  },
             child: busy
                 ? const SizedBox(
                     height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
