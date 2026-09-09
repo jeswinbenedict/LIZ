@@ -23,6 +23,7 @@ class ToolQuery {
     this.limit = 20,
     this.cursor,
     this.includeProse = false,
+    this.pricing,
   });
 
   final ToolSort sort;
@@ -31,6 +32,9 @@ class ToolQuery {
   final String? search;
   final int limit;
   final String? cursor;
+
+  /// Show only tools at this price. Null means any.
+  final PricingType? pricing;
 
   /// Whether the long description and AI summary are needed.
   ///

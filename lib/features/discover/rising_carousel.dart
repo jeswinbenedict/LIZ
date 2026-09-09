@@ -17,7 +17,12 @@ class RisingCarousel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const key = FeedKey(sort: ToolSort.rising);
+    // The strip honours the price filter too. Showing a Paid tool at the top
+    // of a feed someone has narrowed to Free reads as the filter not working.
+    final key = FeedKey(
+      sort: ToolSort.rising,
+      pricing: ref.watch(discoverPricingProvider),
+    );
     final state = ref.watch(toolFeedProvider(key));
     if (state.loading || state.items.isEmpty) {
       return const SizedBox.shrink();

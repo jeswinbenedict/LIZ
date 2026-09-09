@@ -7,6 +7,7 @@ import '../../app/responsive/breakpoints.dart';
 import '../../core/providers.dart';
 import '../alerts/alerts_screen.dart';
 import '../../shared/models/category.dart';
+import '../../shared/models/tool.dart';
 import '../../shared/widgets/tool_grid_sliver.dart';
 import 'discover_controller.dart';
 import 'rising_carousel.dart';
@@ -58,7 +59,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
   Widget build(BuildContext context) {
     final sort = ref.watch(discoverSortProvider);
     final category = ref.watch(discoverCategoryProvider);
-    final key = FeedKey(sort: sort, category: category);
+    final pricing = ref.watch(discoverPricingProvider);
+    final key = FeedKey(sort: sort, category: category, pricing: pricing);
 
     return Scaffold(
       body: SafeArea(
@@ -199,8 +201,63 @@ class _SortBar extends ConsumerWidget {
                       ref.read(discoverSortProvider.notifier).state = entry.key,
                 ),
               ),
+            const _PricingFilter(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Price is the first thing most people filter on, but it is one question with
+/// four answers — a menu rather than a third row of chips, and it wears the
+/// current answer on its face so the filter is never silently on.
+class _PricingFilter extends ConsumerWidget {
+  const _PricingFilter();
+
+  static const _labels = <PricingType?, String>{
+    null: 'Any price',
+    PricingType.free: 'Free',
+    PricingType.freemium: 'Freemium',
+    PricingType.paid: 'Paid',
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(discoverPricingProvider);
+    final on = selected != null;
+    final scheme = Theme.of(context).colorScheme;
+
+    return PopupMenuButton<PricingType?>(
+      tooltip: 'Filter by price',
+      onSelected: (value) =>
+          ref.read(discoverPricingProvider.notifier).state = value,
+      itemBuilder: (context) => [
+        for (final entry in _labels.entries)
+          PopupMenuItem<PricingType?>(
+            value: entry.key,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 26,
+                  child: entry.key == selected
+                      ? Icon(Icons.check, size: 18, color: scheme.primary)
+                      : null,
+                ),
+                Text(entry.value),
+              ],
+            ),
+          ),
+      ],
+      child: Chip(
+        label: Text(_labels[selected]!),
+        avatar: Icon(
+          Icons.sell_outlined,
+          size: 17,
+          color: on ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+        ),
+        backgroundColor: on ? scheme.secondaryContainer : null,
+        side: on ? BorderSide.none : null,
       ),
     );
   }

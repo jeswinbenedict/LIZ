@@ -52,6 +52,9 @@ class SupabaseContentRepository implements ContentRepository {
     var query = _client.from('tools').select(cols).eq('status', 'published');
 
     if (q.categorySlug != null) query = query.eq('category', q.categorySlug!);
+    if (q.pricing != null) {
+      query = query.eq('pricing_type', q.pricing!.name);
+    }
     if (q.tag != null) query = query.contains('tags', [q.tag!]);
     if (q.search != null && q.search!.trim().isNotEmpty) {
       final s = q.search!.replaceAll(',', ' ');

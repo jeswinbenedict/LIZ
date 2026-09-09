@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/providers.dart';
 import '../../core/cache.dart';
+import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 
 /// Immutable key identifying a tool feed (used for the family provider).
@@ -13,11 +13,15 @@ class FeedKey {
     this.category,
     this.tag,
     this.search,
+    this.pricing,
   });
   final ToolSort sort;
   final String? category;
   final String? tag;
   final String? search;
+
+  /// Null means any price.
+  final PricingType? pricing;
 
   ToolQuery toQuery({String? cursor}) => ToolQuery(
     sort: sort,
@@ -25,6 +29,7 @@ class FeedKey {
     tag: tag,
     search: search,
     cursor: cursor,
+    pricing: pricing,
   );
 
   @override
@@ -33,10 +38,11 @@ class FeedKey {
       other.sort == sort &&
       other.category == category &&
       other.tag == tag &&
-      other.search == search;
+      other.search == search &&
+      other.pricing == pricing;
 
   @override
-  int get hashCode => Object.hash(sort, category, tag, search);
+  int get hashCode => Object.hash(sort, category, tag, search, pricing);
 }
 
 @immutable
@@ -140,6 +146,9 @@ final toolFeedProvider = StateNotifierProvider.autoDispose
       cacheFor(ref, const Duration(minutes: 5));
       return ToolFeedController(ref, key);
     });
+
+/// The price filter on the Discover screen. Null means any price.
+final discoverPricingProvider = StateProvider<PricingType?>((ref) => null);
 
 /// The currently selected sort on the Discover screen.
 final discoverSortProvider = StateProvider<ToolSort>(

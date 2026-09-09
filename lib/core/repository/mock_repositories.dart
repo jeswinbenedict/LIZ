@@ -116,6 +116,9 @@ class MockContentRepository implements ContentRepository {
     if (q.tag != null) {
       list = list.where((t) => t.tags.contains(q.tag));
     }
+    if (q.pricing != null) {
+      list = list.where((t) => t.pricingType == q.pricing);
+    }
     if (q.search != null && q.search!.trim().isNotEmpty) {
       final s = q.search!.toLowerCase();
       list = list.where(
