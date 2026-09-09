@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from .config import load_settings
 from .enrich import enrich_url
 from .http_client import PoliteSession
-from .normalize import build_tool_row, content_hash
+from .normalize import build_tool_row, choose_name, content_hash
 from .sources import ALL_SOURCES
 from .supabase_sink import SupabaseSink
 
@@ -55,13 +55,9 @@ def run(
 
     # Skip anything already stored before spending requests on enrichment.
     if sink is not None:
-        known = sink.existing_hashes(
-            [content_hash(c.name, c.url) for c in candidates]
-        )
+        known = sink.existing_hashes([content_hash(c.url) for c in candidates])
         before = len(candidates)
-        candidates = [
-            c for c in candidates if content_hash(c.name, c.url) not in known
-        ]
+        candidates = [c for c in candidates if content_hash(c.url) not in known]
         result.skipped_existing = before - len(candidates)
 
     rows: list[dict] = []
@@ -72,7 +68,7 @@ def run(
 
         rows.append(
             build_tool_row(
-                name=candidate.name or (facts.title if facts else ""),
+                name=choose_name(candidate.name, facts.title if facts else ""),
                 website_url=candidate.url,
                 tagline=candidate.tagline or (facts.description if facts else ""),
                 description=(facts.description if facts else candidate.tagline),

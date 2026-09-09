@@ -36,6 +36,12 @@ def main(argv: list[str] | None = None) -> int:
         choices=["pending", "published"],
         help="Row status on write. 'pending' queues for admin review.",
     )
+    parser.add_argument(
+        "--out",
+        metavar="PATH",
+        help="Write every normalized row to PATH as JSON. Useful with "
+             "--dry-run to inspect or post-process a full run.",
+    )
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -54,6 +60,10 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as err:
         print(f"error: {err}", file=sys.stderr)
         return 2
+
+    if args.out and result.rows is not None:
+        with open(args.out, "w", encoding="utf-8") as fh:
+            json.dump(result.rows, fh, indent=2, ensure_ascii=False)
 
     summary = {
         "discovered": result.discovered,

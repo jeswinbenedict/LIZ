@@ -133,8 +133,15 @@ def parse_page(html: str | bytes, base_url: str) -> PageFacts:
     if category == DEFAULT_CATEGORY:
         category = infer_category(body_text[:2000])
 
+    # A listing page's identity is the directory's, not the product's: its
+    # og:site_name is "Product Hunt" and its icon is Product Hunt's. Taking
+    # either would name every discovery after the site it was found on.
     host = urlsplit(base_url).netloc.lower().removeprefix("www.")
-    logo_url = None if host in AGGREGATOR_HOSTS else extract_logo(soup, base_url)
+    if host in AGGREGATOR_HOSTS:
+        title = ""
+        logo_url = None
+    else:
+        logo_url = extract_logo(soup, base_url)
 
     return PageFacts(
         title=title,

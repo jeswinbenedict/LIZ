@@ -63,10 +63,14 @@ def canonical_url(url: str) -> str:
     return urlunsplit((parts.scheme.lower(), netloc, path, "", ""))
 
 
-def content_hash(title: str, url: str) -> str:
-    """Stable dedupe key. Matches the n8n contract: sha256(title|url)."""
-    basis = f"{title.strip().lower()}|{canonical_url(url)}"
-    return hashlib.sha256(basis.encode("utf-8")).hexdigest()
+def content_hash(url: str) -> str:
+    """Stable dedupe key: a tool is identified by where it lives.
+
+    The title is deliberately excluded. Sources reword titles, and a hash that
+    included one would treat a corrected name as a different tool and insert a
+    duplicate rather than updating the existing row.
+    """
+    return hashlib.sha256(canonical_url(url).encode("utf-8")).hexdigest()
 
 
 def infer_category(*texts: str) -> str:
@@ -94,6 +98,57 @@ def infer_pricing(page_text: str) -> str:
     if has_free_signal:
         return "free"
     return "unknown"
+
+
+# A launch title is a sentence, not a name. Splitting on the first of these
+# recovers the product: "MacTap, use knocks on your MacBook" → "MacTap",
+# "Rokz: a browser port of a 1990 dungeon crawler" → "Rokz".
+_TITLE_SEPARATORS = re.compile(r"\s*[–—:,|]\s*|\s+-\s+")
+
+# Titles that open with one of these are describing a thing, not naming it,
+# so the product's own site is the better source for its name.
+_DESCRIPTIVE_OPENERS = {
+    "a", "an", "the", "my", "our", "free", "open", "how", "why", "what",
+    "introducing", "show", "using", "build", "building", "make", "making",
+    "i", "we", "this", "new", "simple", "easy", "fast", "best",
+}
+
+
+def clean_title(raw: str) -> str:
+    """First segment of a launch title, with the 'Show HN:' prefix removed."""
+    text = clean_text(raw)
+    for prefix in ("Show HN:", "Ask HN:", "Launch HN:"):
+        if text.lower().startswith(prefix.lower()):
+            text = text[len(prefix):].strip()
+            break
+    first = _TITLE_SEPARATORS.split(text, maxsplit=1)[0].strip()
+    return first or text
+
+
+def looks_like_a_name(value: str) -> bool:
+    """Whether a string reads as a product name rather than a description."""
+    words = value.split()
+    if not words or len(words) > 4:
+        return False
+    return words[0].strip("'\"").lower() not in _DESCRIPTIVE_OPENERS
+
+
+def choose_name(source_title: str, site_title: str = "") -> str:
+    """Pick the best available product name.
+
+    The listing title is used when it actually names the product. When it only
+    describes one ("Free scanning app with ML crops"), the product's own site
+    is the authority on what it is called.
+    """
+    candidate = clean_title(source_title)
+    if looks_like_a_name(candidate):
+        return candidate
+
+    site = clean_text(site_title)
+    if site and looks_like_a_name(site):
+        return site
+
+    return candidate
 
 
 def clean_text(value: str | None, *, limit: int | None = None) -> str:
@@ -148,7 +203,7 @@ def build_tool_row(
         "price_note": price_note,
         "source": source,
         "source_url": source_url or website_url,
-        "content_hash": content_hash(name, website_url),
+        "content_hash": content_hash(website_url),
         "launched_at": launched_at,
         "status": status,
     }

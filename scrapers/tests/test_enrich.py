@@ -84,6 +84,18 @@ def test_logo_is_none_when_only_data_uris_exist():
     assert facts.logo_url is None
 
 
+def test_aggregator_page_contributes_no_name():
+    html = """
+    <html><head>
+      <meta property="og:site_name" content="Product Hunt">
+      <meta property="og:description" content="Agentic video analysis.">
+    </head></html>
+    """
+    facts = parse_page(html, "https://www.producthunt.com/products/google")
+    # Otherwise a tool ends up literally named "Product Hunt".
+    assert facts.title == ""
+
+
 def test_aggregator_page_contributes_no_logo():
     html = """
     <html><head>

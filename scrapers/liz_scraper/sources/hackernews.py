@@ -62,17 +62,16 @@ def discover(session: PoliteSession, *, limit: int = 30) -> list[Candidate]:
         if host in _SKIP_HOSTS:
             continue
 
-        # "Show HN: Name – does a thing" → name + tagline
+        # A Show HN title is one sentence that both names and describes the
+        # product, so it serves as the tagline as-is. Extracting the name from
+        # it (or from the product's own site) is the pipeline's job.
         stripped = title.removeprefix("Show HN:").strip()
-        name, _, tagline = stripped.partition(" – ")
-        if not tagline:
-            name, _, tagline = stripped.partition(" - ")
 
         candidates.append(
             Candidate(
-                name=clean_text(name) or stripped,
+                name=stripped,
                 url=url,
-                tagline=clean_text(tagline),
+                tagline=clean_text(stripped),
                 published_at=hit.get("created_at"),
                 source="hackernews",
             )
