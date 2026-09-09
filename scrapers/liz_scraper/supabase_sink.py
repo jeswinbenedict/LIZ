@@ -24,6 +24,9 @@ class SupabaseSink:
                 "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set to write rows."
             )
         self.settings = settings
+        # One connection, reused. A rejected batch is retried row by row, so a
+        # bad run would otherwise open a TLS handshake per row.
+        self._session = requests.Session()
 
     @property
     def _headers(self) -> dict[str, str]:
@@ -45,7 +48,7 @@ class SupabaseSink:
             chunk = hashes[start : start + BATCH_SIZE]
             quoted = ",".join(f'"{h}"' for h in chunk)
             try:
-                resp = requests.get(
+                resp = self._session.get(
                     f"{self.settings.rest_url}/tools",
                     params={"select": "content_hash", "content_hash": f"in.({quoted})"},
                     headers=self._headers,
@@ -61,7 +64,7 @@ class SupabaseSink:
 
     def _post(self, rows: list[dict]) -> tuple[bool, str]:
         try:
-            resp = requests.post(
+            resp = self._session.post(
                 f"{self.settings.rest_url}/tools",
                 params={"on_conflict": "content_hash"},
                 headers=self._headers,
