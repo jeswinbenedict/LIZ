@@ -50,7 +50,10 @@ Deno.serve(async (req) => {
     // server can reach, returned with permissive CORS.
     const check = checkTargetUrl(passthrough);
     if (!check.ok) {
-      return new Response(`refused: ${check.reason}`, { status: 400, headers: IMG_CORS });
+      return new Response(`refused: ${check.reason}`, {
+        status: 400,
+        headers: { ...IMG_CORS, 'Cache-Control': 'public, max-age=3600' },
+      });
     }
     candidates.push(check.url.toString());
   }
@@ -79,5 +82,12 @@ Deno.serve(async (req) => {
       }
     }
   }
-  return new Response('logo not found', { status: 404, headers: IMG_CORS });
+  // A miss costs two upstream lookups before it gives up. Without a cache
+  // header every visitor pays that again on every view, forever, for a logo
+  // that is not coming back — but keep the window short, since the usual cause
+  // is a product moving an asset and a later scrape can fix it.
+  return new Response('logo not found', {
+    status: 404,
+    headers: { ...IMG_CORS, 'Cache-Control': 'public, max-age=3600' },
+  });
 });

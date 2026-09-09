@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 
 /// Compile-time environment configuration.
 ///
@@ -20,16 +20,22 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class Env {
   const Env._();
 
-  static const String supabaseUrl =
-      String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: '',
+  );
 
-  static const String supabaseAnonKey =
-      String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: '',
+  );
 
   /// Optional: base URL for calling Edge Functions ("Ask Liz", etc.). Falls back
   /// to the standard `<project>/functions/v1` path derived from [supabaseUrl].
-  static const String functionsUrl =
-      String.fromEnvironment('FUNCTIONS_URL', defaultValue: '');
+  static const String functionsUrl = String.fromEnvironment(
+    'FUNCTIONS_URL',
+    defaultValue: '',
+  );
 
   /// True when real Supabase credentials are present. Drives the repository
   /// layer's mock-vs-live selection.
@@ -48,13 +54,53 @@ class Env {
   /// Access-Control-Allow-Origin (media.wired.com, for one) leaves the widget
   /// stuck on its placeholder forever. Native builds have no such restriction
   /// and fetch the original directly.
-  static String proxiedImage(String url) {
+  /// [fallbackDomain] is a site the proxy can ask for a favicon when the
+  /// stored image URL is dead. Product sites move their assets, and a logo
+  /// scraped months ago is the thing that rots first — without a fallback the
+  /// card silently drops to its initial tile and the proxy pays for the failed
+  /// lookup on every view.
+  static String proxiedImage(String url, {String? fallbackDomain}) {
     if (!kIsWeb) return url;
     final base = resolvedFunctionsUrl;
     if (base.isEmpty) return url;
     // Some logo_url values are already proxy links (/logo?domain=…). Wrapping
     // one again works but spends two function invocations to fetch one image.
     if (url.contains('/logo?')) return url;
-    return '$base/logo?url=${Uri.encodeComponent(url)}';
+    return buildProxyUrl(base, url, fallbackDomain: fallbackDomain);
+  }
+
+  /// The proxy URL itself, split out from the platform check so it can be
+  /// exercised without a browser.
+  @visibleForTesting
+  static String buildProxyUrl(
+    String base,
+    String url, {
+    String? fallbackDomain,
+  }) {
+    final domain = logoDomainOf(fallbackDomain);
+    final suffix = domain == null
+        ? ''
+        : '&domain=${Uri.encodeComponent(domain)}';
+    return '$base/logo?url=${Uri.encodeComponent(url)}$suffix';
+  }
+
+  static final RegExp _domainLike = RegExp(
+    r'^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$',
+    caseSensitive: false,
+  );
+
+  /// The bare host of [raw], or null if it has none to give.
+  @visibleForTesting
+  static String? logoDomainOf(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    var value = raw.trim();
+    if (!value.contains('://')) value = 'https://$value';
+    final host = Uri.tryParse(value)?.host;
+    if (host == null || host.isEmpty) return null;
+    final bare = host.startsWith('www.') ? host.substring(4) : host;
+    // Uri accepts almost anything as a host — "not a url at all" parses with
+    // the spaces escaped — so require something domain-shaped before handing
+    // it to a favicon service.
+    return _domainLike.hasMatch(bare) ? bare : null;
   }
 }

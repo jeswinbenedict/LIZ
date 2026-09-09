@@ -40,7 +40,10 @@ class ToolLogo extends StatelessWidget {
         // fetches image bytes — so without the proxy every scraped tool falls
         // back to its initial tile. GitHub avatars happened to work, which is
         // why this only surfaced once the catalog went beyond them.
-        imageUrl: Env.proxiedImage(tool.logoUrl!),
+        imageUrl: Env.proxiedImage(
+          tool.logoUrl!,
+          fallbackDomain: tool.websiteUrl,
+        ),
         // Decode at the size actually drawn. A grid of tools would otherwise
         // hold full-resolution bitmaps in memory to paint 48-pixel tiles.
         memCacheWidth: (size * 3).round(),
