@@ -38,10 +38,18 @@ class CompareScreen extends ConsumerWidget {
         error: (_, __) => ErrorView(
             onRetry: () => ref.invalidate(_compareProvider(toolIds.join(',')))),
         data: (tools) => tools.length < 2
-            ? const EmptyView(
+            // A shared link can outlive the tools in it. Saying "pick some
+            // tools" to someone who did pick them, and had one withdrawn since,
+            // reads as though the link never worked.
+            ? EmptyView(
                 icon: Icons.compare_arrows,
-                title: 'Pick 2–3 tools to compare',
-                message: 'Select tools from your Saved list.',
+                title: tools.length < toolIds.length
+                    ? 'Some of these tools are no longer listed'
+                    : 'Pick 2–3 tools to compare',
+                message: tools.length < toolIds.length
+                    ? 'A comparison needs at least two. Pick another from your '
+                        'Saved list.'
+                    : 'Select tools from your Saved list.',
               )
             : _CompareTable(tools: tools),
       ),
