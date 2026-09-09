@@ -24,7 +24,10 @@ class LizPill extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final c = color ?? scheme.primary;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: icon != null ? 8 : 10, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: icon != null ? 8 : 10,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: filled ? c : c.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(LizRadius.sm),
@@ -36,13 +39,19 @@ class LizPill extends StatelessWidget {
             Icon(icon, size: 13, color: filled ? Colors.white : c),
             const SizedBox(width: 4),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              color: filled ? Colors.white : c,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.1,
+          // A long tag on a narrow phone would otherwise push the pill past
+          // the edge of whatever row it sits in.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: filled ? Colors.white : c,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.1,
+              ),
             ),
           ),
         ],

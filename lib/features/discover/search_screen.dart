@@ -108,7 +108,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           crossAxisCount: columns,
                           mainAxisSpacing: 14,
                           crossAxisSpacing: 14,
-                          mainAxisExtent: 222,
+                          mainAxisExtent: toolCardExtent(context),
                         ),
                         itemCount: tools.length,
                         itemBuilder: (context, i) => ToolCard(tool: tools[i]),

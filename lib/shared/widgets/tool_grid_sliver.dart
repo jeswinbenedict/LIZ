@@ -46,7 +46,7 @@ class ToolGridSliver extends ConsumerWidget {
           crossAxisCount: columns,
           mainAxisSpacing: 14,
           crossAxisSpacing: 14,
-          mainAxisExtent: 222,
+          mainAxisExtent: toolCardExtent(context),
         ),
         delegate: SliverChildBuilderDelegate((context, index) {
           // Trigger load-more as the user nears the end.

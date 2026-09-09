@@ -41,18 +41,17 @@ class ToolCard extends StatelessWidget {
                                 tool.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                             ),
                             if (tool.isNew) ...[
                               const SizedBox(width: 6),
                               const LizPill(
-                                  label: 'NEW',
-                                  color: LizColors.positive,
-                                  filled: true),
+                                label: 'NEW',
+                                color: LizColors.positive,
+                                filled: true,
+                              ),
                             ],
                           ],
                         ),
@@ -62,7 +61,9 @@ class ToolCard extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              color: scheme.onSurfaceVariant, height: 1.25),
+                            color: scheme.onSurfaceVariant,
+                            height: 1.25,
+                          ),
                         ),
                       ],
                     ),
@@ -87,7 +88,10 @@ class ToolCard extends StatelessWidget {
                         PricingBadge(tool.pricingType),
                         TrendBadge(tool),
                         for (final tag in tool.tags.take(2))
-                          LizPill(label: '#$tag', color: scheme.onSurfaceVariant),
+                          LizPill(
+                            label: '#$tag',
+                            color: scheme.onSurfaceVariant,
+                          ),
                       ],
                     ),
                   ),
@@ -98,24 +102,50 @@ class ToolCard extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  if (tool.ratingCount > 0) ...[
-                    RatingStars(tool.avgRating, size: 15),
-                    const SizedBox(width: 6),
-                    Text(
-                      tool.avgRating.toStringAsFixed(1),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                  // On a narrow card, or with the system font turned up, the
+                  // rating is the half that gives way — the save count is two
+                  // characters and reads fine truncated at neither end.
+                  Expanded(
+                    child: Row(
+                      children: [
+                        if (tool.ratingCount > 0) ...[
+                          RatingStars(tool.avgRating, size: 15),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              '${tool.avgRating.toStringAsFixed(1)} '
+                              '(${tool.ratingCount})',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ] else
+                          Flexible(
+                            child: Text(
+                              'No ratings yet',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: scheme.onSurfaceVariant),
+                            ),
+                          ),
+                      ],
                     ),
-                    Text(' (${tool.ratingCount})',
-                        style: TextStyle(color: scheme.onSurfaceVariant)),
-                  ] else
-                    Text('No ratings yet',
-                        style: TextStyle(color: scheme.onSurfaceVariant)),
-                  const Spacer(),
-                  Icon(Icons.bookmark_border,
-                      size: 16, color: scheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.bookmark_border,
+                    size: 16,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
-                  Text(compactCount(tool.saveCount),
-                      style: TextStyle(color: scheme.onSurfaceVariant)),
+                  Text(
+                    compactCount(tool.saveCount),
+                    maxLines: 1,
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
                 ],
               ),
             ],

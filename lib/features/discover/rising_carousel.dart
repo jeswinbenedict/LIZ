@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/models/tool.dart';
@@ -31,23 +32,37 @@ class RisingCarousel extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
           child: Row(
             children: [
-              const Icon(Icons.local_fire_department,
-                  color: LizColors.rising, size: 20),
+              const Icon(
+                Icons.local_fire_department,
+                color: LizColors.rising,
+                size: 20,
+              ),
               const SizedBox(width: 6),
-              Text('Rising Early',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
+              Text(
+                'Rising Early',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
               const SizedBox(width: 8),
-              Text('growing fast, still under the radar',
+              // The heading names the section; this only elaborates, so it is
+              // what gets trimmed on a narrow phone.
+              Flexible(
+                child: Text(
+                  'growing fast, still under the radar',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                      color: scheme.onSurfaceVariant, fontSize: 12.5)),
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 12.5,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         SizedBox(
-          height: 150,
+          height: risingCardExtent(context),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -86,13 +101,14 @@ class _RisingCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(tool.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  tool.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 2),
                 Expanded(
                   child: Text(
@@ -100,7 +116,10 @@ class _RisingCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.2),
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 12.5,
+                      height: 1.2,
+                    ),
                   ),
                 ),
                 PricingBadge(tool.pricingType),

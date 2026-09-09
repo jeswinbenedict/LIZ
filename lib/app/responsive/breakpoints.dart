@@ -38,6 +38,23 @@ int gridColumnsFor(double width) {
   return 1;
 }
 
+/// Height of one tool card in a feed grid.
+///
+/// The card holds a fixed amount of text, so when someone turns the system
+/// font up the same content needs more room; a constant height would clip the
+/// bottom row instead. Growth is capped because the tallest accessibility
+/// settings would otherwise leave a single card filling the screen.
+double toolCardExtent(BuildContext context) {
+  final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+  return 222 * scale.clamp(1.0, 1.6);
+}
+
+/// Height of the "Rising Early" carousel strip, which grows the same way.
+double risingCardExtent(BuildContext context) {
+  final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+  return 150 * scale.clamp(1.0, 1.6);
+}
+
 /// Centers and width-caps content on large screens so text stays readable.
 class MaxWidth extends StatelessWidget {
   const MaxWidth({

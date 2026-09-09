@@ -85,7 +85,7 @@ class SavedScreen extends ConsumerWidget {
                                   crossAxisCount: columns,
                                   mainAxisSpacing: 14,
                                   crossAxisSpacing: 14,
-                                  mainAxisExtent: 250,
+                                  mainAxisExtent: toolCardExtent(context) + 28,
                                 ),
                             delegate: SliverChildBuilderDelegate(
                               (context, i) => _SelectableToolCard(

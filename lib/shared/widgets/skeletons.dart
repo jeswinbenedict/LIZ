@@ -199,7 +199,7 @@ class ToolGridSkeletonSliver extends StatelessWidget {
               crossAxisCount: columns,
               mainAxisSpacing: 14,
               crossAxisSpacing: 14,
-              mainAxisExtent: 222,
+              mainAxisExtent: toolCardExtent(context),
             ),
             itemCount: count,
             itemBuilder: (_, __) => const ToolCardSkeleton(),
