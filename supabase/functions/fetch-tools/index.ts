@@ -59,6 +59,10 @@ const NON_PRODUCT_NAME = [
   /\b(roadmap|cheat[-_ ]?sheet|checklist|handbook|guide|guides|glossary)\b/i,
   /\b(leaks?|dumps?)\b/i,
   /\b(examples?|samples?|boilerplate|template|starter[-_ ]?kit)\b/i,
+  // "prompt" is deliberately absent: prompt-optimizer is a real tool, while a
+  // prompt *collection* is caught by the description rules instead.
+  /(^|[-_])(list|lists|gallery|collection)([-_]|$)/i,
+  /[-_]list$/i,
 ];
 
 // Matched against the description. Kept to phrases that only ever describe
@@ -73,7 +77,11 @@ const NON_PRODUCT_DESCRIPTION = [
   /\bstep[-\s]by[-\s]step\b/i,
   /\b(guides?|papers|notebooks|lessons|resources)\s+(and|,)\s+/i,
   /\bextracted\s+system\s+prompts\b/i,
-  /\bthis\s+repo(sitory)?\s+(showcases|contains|is\s+a\s+collection)\b/i,
+  // "This GitHub repo is a powerhouse collection …" — allow qualifiers between
+  // "this" and "repo", and adjectives before the noun.
+  /\bthis\s+(\w+\s+)?repo(sitory)?\s+(is\s+a\s+|showcases|contains|provides)/i,
+  /\b(powerhouse|hand[-\s]?curated|comprehensive)\s+(collection|list|resources)\b/i,
+  /\bprompt\s+(gallery|library|collection)\b/i,
   /\bimplementation\s+of\s+.*\bin\s+(pytorch|tensorflow|jax)\b/i,
 ];
 

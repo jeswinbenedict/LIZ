@@ -24,9 +24,15 @@ import { embed } from '../_shared/embed.ts';
 // tool whose headline feature *is* the request ~0.92 (Descript for "edit video
 // by transcript"). A textbook 0.5 floor therefore admits the entire catalog.
 //
-// Calibrated on a handful of queries against a 158-tool catalog — revisit as
+// The floor sits where measured noise stops and real answers start: asking to
+// "review my pull requests" — something no tool in the catalog actually does —
+// scored 0.823-0.828 against a statusline and a link list, while genuine
+// answers begin at Otter.ai's 0.843 for "transcribe audio privately". Returning
+// nothing is the correct response to a question the catalog cannot answer.
+//
+// Calibrated on a handful of queries against a ~160-tool catalog — revisit as
 // both grow, and prefer measuring over guessing if results drift.
-const MIN_SIMILARITY = 0.8;
+const MIN_SIMILARITY = 0.84;
 const STRONG_MATCH = 0.89;
 
 type Match = {
