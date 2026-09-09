@@ -18,16 +18,39 @@ class DiscoverScreen extends ConsumerStatefulWidget {
   ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
-class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
+class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    // People leave a tab open for hours. Coming back to a day-old catalog is
+    // the realistic way this feed goes stale, so re-read it on return rather
+    // than holding a socket open for changes that arrive once a day.
+    WidgetsBinding.instance.addObserver(this);
     if (widget.initialCategory != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(discoverCategoryProvider.notifier).state =
             widget.initialCategory;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    final key = FeedKey(
+      sort: ref.read(discoverSortProvider),
+      category: ref.read(discoverCategoryProvider),
+    );
+    // The controller decides whether enough time has passed to be worth a
+    // round trip, so flicking between tabs does not re-query on every switch.
+    ref.read(toolFeedProvider(key).notifier).refreshIfStale();
   }
 
   @override

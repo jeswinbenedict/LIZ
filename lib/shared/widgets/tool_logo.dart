@@ -34,6 +34,10 @@ class ToolLogo extends StatelessWidget {
         // back to its initial tile. GitHub avatars happened to work, which is
         // why this only surfaced once the catalog went beyond them.
         imageUrl: Env.proxiedImage(tool.logoUrl!),
+        // Decode at the size actually drawn. A grid of tools would otherwise
+        // hold full-resolution bitmaps in memory to paint 48-pixel tiles.
+        memCacheWidth: (size * 3).round(),
+        memCacheHeight: (size * 3).round(),
         imageBuilder: (context, imageProvider) => Container(
           width: size,
           height: size,
