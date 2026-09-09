@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/settings_controller.dart';
+import '../../core/errors.dart';
 import '../../core/providers.dart';
 import '../auth/auth_controller.dart';
 
@@ -119,7 +120,18 @@ class SettingsScreen extends ConsumerWidget {
     // service role; here we request it and sign out.
     try {
       await ref.read(authRepositoryProvider).deleteAccount();
-    } catch (_) {}
+    } catch (error) {
+      // Never leave on the happy path after a failed erasure: the user would
+      // believe their account and data were gone when nothing was removed.
+      if (!context.mounted) return;
+      final message = error is LizException
+          ? error.message
+          : "We couldn't delete your account. Please try again.";
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
     if (context.mounted) context.go('/');
   }
 }
