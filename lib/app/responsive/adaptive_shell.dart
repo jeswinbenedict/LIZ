@@ -235,13 +235,26 @@ class _Wordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    final mark = Image.asset(
-      'assets/branding/liz-logo-light.png',
-      width: 36,
-      height: 36,
-      cacheWidth: (36 * dpr).round(),
-      cacheHeight: (36 * dpr).round(),
-      filterQuality: FilterQuality.high,
+    // The artwork is a single near-black glyph on transparency, so on a dark
+    // surface it all but disappears. Tinting to the same colour the wordmark
+    // text uses keeps mark and word in step in either theme, instead of
+    // pinning the logo to one ink colour the background may not suit.
+    //
+    // ColorFiltered rather than Image's own `color`: the latter silently
+    // renders nothing under CanvasKit, so the mark vanished entirely in dark.
+    final mark = ColorFiltered(
+      colorFilter: ColorFilter.mode(
+        Theme.of(context).colorScheme.onSurface,
+        BlendMode.srcIn,
+      ),
+      child: Image.asset(
+        'assets/branding/liz-logo-light.png',
+        width: 36,
+        height: 36,
+        cacheWidth: (36 * dpr).round(),
+        cacheHeight: (36 * dpr).round(),
+        filterQuality: FilterQuality.high,
+      ),
     );
     if (compact) return Center(child: mark);
     return Row(
