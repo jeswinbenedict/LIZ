@@ -73,6 +73,30 @@ jobs:
             [ -z "$remaining" ] && sleep 5
           done
 
+      # A tool with no bullets shows an empty "AI summary" on its detail page.
+      - name: Summarize newly ingested tools
+        if: ${{ inputs.dry_run != true }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets not set — skipping summaries."
+            exit 0
+          fi
+          # Each row costs an LLM call, so cap the work rather than the backlog:
+          # the rest is picked up by the next run.
+          for i in $(seq 1 12); do
+            body=$(curl -sS -X POST "$SUPABASE_URL/functions/v1/summarize-tools" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"limit":6}') || true
+            echo "$body"
+            remaining=$(printf '%s' "$body" | sed -n 's/.*"remaining":\([0-9]*\).*/\1/p')
+            [ "$remaining" = "0" ] && break
+            [ -z "$remaining" ] && sleep 5
+          done
+
       # Scores and leaderboard positions are derived from the whole catalog, so
       # they are only correct once the new rows are in.
       - name: Refresh trend scores and ranks
