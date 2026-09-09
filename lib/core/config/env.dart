@@ -52,6 +52,9 @@ class Env {
     if (!kIsWeb) return url;
     final base = resolvedFunctionsUrl;
     if (base.isEmpty) return url;
+    // Some logo_url values are already proxy links (/logo?domain=…). Wrapping
+    // one again works but spends two function invocations to fetch one image.
+    if (url.contains('/logo?')) return url;
     return '$base/logo?url=${Uri.encodeComponent(url)}';
   }
 }

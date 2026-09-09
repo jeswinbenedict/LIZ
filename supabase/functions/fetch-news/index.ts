@@ -67,6 +67,12 @@ function decodeEntities(text: string): string {
     .replace(/&([a-zA-Z]+);/g, (m, n) => NAMED_ENTITIES[n.toLowerCase()] ?? m);
 }
 
+/// Feed titles are plain text but still arrive entity-encoded — "Instagram&#8217;s
+/// new logo" — so they need decoding even though there are no tags to strip.
+export function cleanTitle(raw: string): string {
+  return decodeEntities(raw).replace(/\s+/g, ' ').trim();
+}
+
 function stripHtml(html: string): string {
   // Tags first: decoding before stripping would let an encoded &lt;script&gt;
   // turn back into markup that the tag pass has already run past.
@@ -106,7 +112,7 @@ async function fromRss(feed: { source: string; url: string }): Promise<Article[]
         ? e.published.toISOString()
         : (e.publishedRaw ? new Date(e.publishedRaw) : new Date()).toISOString();
     out.push({
-      title: title.trim(),
+      title: cleanTitle(title),
       url,
       snippet,
       source: feed.source,
@@ -123,7 +129,7 @@ async function fromDevTo(): Promise<Article[]> {
   // deno-lint-ignore no-explicit-any
   const items: any[] = await res.json();
   return items.map((a) => ({
-    title: (a.title ?? '').trim(),
+    title: cleanTitle(a.title ?? ''),
     url: a.url,
     snippet: stripHtml(a.description ?? ''),
     source: 'dev.to',
@@ -153,7 +159,7 @@ async function scrapeHeadlines(
   for (const a of Array.from(doc.querySelectorAll(linkSelector)).slice(0, MAX_PER_SOURCE)) {
     // deno-lint-ignore no-explicit-any
     const el = a as any;
-    const title = (el.textContent ?? '').trim();
+    const title = cleanTitle(el.textContent ?? '');
     let href = el.getAttribute('href') ?? '';
     if (!title || !href) continue;
     if (href.startsWith('/')) href = origin + href;
