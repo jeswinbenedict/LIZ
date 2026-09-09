@@ -8,30 +8,36 @@ import 'app/settings_controller.dart';
 import 'app/theme.dart';
 import 'core/config/env.dart';
 import 'core/notifications/push_service.dart';
+import 'core/telemetry/crash_reporter.dart';
 import 'core/providers.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Everything runs inside the guard so a failure during startup is recorded
+  // too — those are the ones a user is most likely to hit and least likely to
+  // report.
+  await CrashReporter.guard(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize the live backend only when credentials are supplied via
-  // --dart-define. Otherwise the app runs fully on bundled mock data.
-  if (Env.useSupabase) {
-    await Supabase.initialize(
-      url: Env.supabaseUrl,
-      anonKey: Env.supabaseAnonKey,
+    // Initialize the live backend only when credentials are supplied via
+    // --dart-define. Otherwise the app runs fully on bundled mock data.
+    if (Env.useSupabase) {
+      await Supabase.initialize(
+        url: Env.supabaseUrl,
+        anonKey: Env.supabaseAnonKey,
+      );
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    runApp(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWith((ref) => prefs),
+        ],
+        child: const LizApp(),
+      ),
     );
-  }
-
-  final prefs = await SharedPreferences.getInstance();
-
-  runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWith((ref) => prefs),
-      ],
-      child: const LizApp(),
-    ),
-  );
+  });
 }
 
 class LizApp extends ConsumerStatefulWidget {
