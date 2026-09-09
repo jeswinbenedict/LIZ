@@ -50,7 +50,10 @@ class _LikeButtonState extends ConsumerState<LikeButton> {
           try {
             final serverLiked = await ref
                 .read(communityActionsProvider)
-                .toggleLike(targetType: widget.targetType, targetId: widget.targetId);
+                .toggleLike(
+                  targetType: widget.targetType,
+                  targetId: widget.targetId,
+                );
             if (mounted && serverLiked != _liked) {
               setState(() {
                 _liked = serverLiked;
@@ -67,13 +70,21 @@ class _LikeButtonState extends ConsumerState<LikeButton> {
           }
         },
       ),
-      icon: Icon(_liked ? Icons.favorite : Icons.favorite_border,
-          size: 18, color: _liked ? LizColors.rising : scheme.onSurfaceVariant),
-      label: Text(compactCount(_count),
-          style: TextStyle(
-              color: _liked ? LizColors.rising : scheme.onSurfaceVariant)),
+      icon: Icon(
+        _liked ? Icons.favorite : Icons.favorite_border,
+        size: 18,
+        color: _liked ? LizColors.rising : scheme.onSurfaceVariant,
+      ),
+      label: Text(
+        compactCount(_count),
+        style: TextStyle(
+          color: _liked ? LizColors.rising : scheme.onSurfaceVariant,
+        ),
+      ),
       style: TextButton.styleFrom(
-          foregroundColor: scheme.onSurfaceVariant, minimumSize: const Size(0, 36)),
+        foregroundColor: scheme.onSurfaceVariant,
+        minimumSize: const Size(0, 36),
+      ),
     );
   }
 }
@@ -102,14 +113,13 @@ Future<void> showReportSheet(
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
-            child: Text('Report content',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+            child: Text(
+              'Report content',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+            ),
           ),
           for (final r in reasons)
-            ListTile(
-              title: Text(r),
-              onTap: () => Navigator.of(ctx).pop(r),
-            ),
+            ListTile(title: Text(r), onTap: () => Navigator.of(ctx).pop(r)),
         ],
       ),
     ),
@@ -119,12 +129,14 @@ Future<void> showReportSheet(
   await runGuardedAction(
     context,
     prompt: 'Sign in to report content.',
-    action: () => ref.read(communityActionsProvider).report(
-        targetType: targetType, targetId: targetId, reason: reason),
+    action: () => ref
+        .read(communityActionsProvider)
+        .report(targetType: targetType, targetId: targetId, reason: reason),
     onDone: () {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Thanks — our team will review this.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thanks — our team will review this.')),
+        );
       }
     },
   );
@@ -161,20 +173,30 @@ class PostCard extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(author?.displayName ?? 'Someone',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w700)),
-                        Text('@${author?.username ?? 'user'} · ${timeAgo(post.createdAt)}',
-                            style: TextStyle(
-                                color: scheme.onSurfaceVariant, fontSize: 12.5)),
+                        Text(
+                          author?.displayName ?? 'Someone',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          '@${author?.username ?? 'user'} · ${timeAgo(post.createdAt)}',
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 12.5,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Report this post',
                   icon: const Icon(Icons.more_horiz),
-                  onPressed: () => showReportSheet(context, ref,
-                      targetType: 'post', targetId: post.id),
+                  onPressed: () => showReportSheet(
+                    context,
+                    ref,
+                    targetType: 'post',
+                    targetId: post.id,
+                  ),
                 ),
               ],
             ),
@@ -191,6 +213,11 @@ class PostCard extends ConsumerWidget {
                   imageUrl: post.imageUrl!,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  imageBuilder: (context, image) => Semantics(
+                    label: 'Image attached to this post',
+                    image: true,
+                    child: Image(image: image, fit: BoxFit.cover),
+                  ),
                   errorWidget: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
@@ -201,9 +228,14 @@ class PostCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(LizRadius.sm),
                 onTap: () => context.push('/tool/${post.toolId}'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(LizRadius.sm),
                   ),
                   child: Row(
@@ -211,8 +243,10 @@ class PostCard extends ConsumerWidget {
                     children: [
                       const Icon(Icons.link, size: 16),
                       const SizedBox(width: 6),
-                      Text(post.toolName!,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        post.toolName!,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ],
                   ),
                 ),
@@ -229,10 +263,15 @@ class PostCard extends ConsumerWidget {
                 ),
                 TextButton.icon(
                   onPressed: () => context.push('/post/${post.id}'),
-                  icon: Icon(Icons.mode_comment_outlined,
-                      size: 18, color: scheme.onSurfaceVariant),
-                  label: Text(compactCount(post.commentCount),
-                      style: TextStyle(color: scheme.onSurfaceVariant)),
+                  icon: Icon(
+                    Icons.mode_comment_outlined,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  label: Text(
+                    compactCount(post.commentCount),
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
                   style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
                 ),
               ],
@@ -274,25 +313,36 @@ class ReviewTile extends ConsumerWidget {
                       onTap: author == null
                           ? null
                           : () => context.push('/user/${author.id}'),
-                      child: Text(author?.displayName ?? 'Reviewer',
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      child: Text(
+                        author?.displayName ?? 'Reviewer',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                     Row(
                       children: [
                         RatingStars(review.rating.toDouble(), size: 14),
                         const SizedBox(width: 6),
-                        Text(timeAgo(review.createdAt),
-                            style: TextStyle(
-                                color: scheme.onSurfaceVariant, fontSize: 12)),
+                        Text(
+                          timeAgo(review.createdAt),
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
               IconButton(
+                tooltip: 'Report this review',
                 icon: const Icon(Icons.flag_outlined, size: 18),
-                onPressed: () => showReportSheet(context, ref,
-                    targetType: 'review', targetId: review.id),
+                onPressed: () => showReportSheet(
+                  context,
+                  ref,
+                  targetType: 'review',
+                  targetId: review.id,
+                ),
               ),
             ],
           ),

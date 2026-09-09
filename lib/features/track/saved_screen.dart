@@ -6,6 +6,7 @@ import '../../app/responsive/adaptive_shell.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_card.dart';
 import '../auth/sign_in_view.dart';
@@ -42,8 +43,10 @@ class SavedScreen extends ConsumerWidget {
                 titleSpacing: 20,
                 title: context.isPhone
                     ? const LizWordmark()
-                    : Text('Saved',
-                        style: Theme.of(context).textTheme.headlineSmall),
+                    : Text(
+                        'Saved',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
               ),
               if (!signedIn)
                 SliverToBoxAdapter(
@@ -59,18 +62,19 @@ class SavedScreen extends ConsumerWidget {
                 )
               else
                 saved.when(
-                  loading: () =>
-                      const SliverToBoxAdapter(child: LoadingView()),
+                  loading: () => const ToolGridSkeletonSliver(count: 4),
                   error: (_, __) => SliverToBoxAdapter(
-                      child: ErrorView(
-                          onRetry: () =>
-                              ref.invalidate(bookmarkedToolsProvider))),
+                    child: ErrorView(
+                      onRetry: () => ref.invalidate(bookmarkedToolsProvider),
+                    ),
+                  ),
                   data: (tools) => tools.isEmpty
                       ? const SliverToBoxAdapter(
                           child: EmptyView(
                             icon: Icons.bookmark_border,
                             title: 'Nothing saved yet',
-                            message: 'Tap the bookmark on any tool to save it here.',
+                            message:
+                                'Tap the bookmark on any tool to save it here.',
                           ),
                         )
                       : SliverPadding(
@@ -78,11 +82,11 @@ class SavedScreen extends ConsumerWidget {
                           sliver: SliverGrid(
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: columns,
-                              mainAxisSpacing: 14,
-                              crossAxisSpacing: 14,
-                              mainAxisExtent: 250,
-                            ),
+                                  crossAxisCount: columns,
+                                  mainAxisSpacing: 14,
+                                  crossAxisSpacing: 14,
+                                  mainAxisExtent: 250,
+                                ),
                             delegate: SliverChildBuilderDelegate(
                               (context, i) => _SelectableToolCard(
                                 tool: tools[i],

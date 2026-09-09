@@ -21,23 +21,30 @@ class NavDestinationSpec {
 // restoring it is a matter of putting this entry back.
 const kNavDestinations = <NavDestinationSpec>[
   NavDestinationSpec(
-      label: 'Discover', icon: Icons.explore_outlined, selectedIcon: Icons.explore),
+    label: 'Discover',
+    icon: Icons.explore_outlined,
+    selectedIcon: Icons.explore,
+  ),
   NavDestinationSpec(
-      label: 'News',
-      icon: Icons.newspaper_outlined,
-      selectedIcon: Icons.newspaper),
+    label: 'News',
+    icon: Icons.newspaper_outlined,
+    selectedIcon: Icons.newspaper,
+  ),
   NavDestinationSpec(
-      label: 'Ask Liz',
-      icon: Icons.auto_awesome_outlined,
-      selectedIcon: Icons.auto_awesome),
+    label: 'Ask Liz',
+    icon: Icons.auto_awesome_outlined,
+    selectedIcon: Icons.auto_awesome,
+  ),
   NavDestinationSpec(
-      label: 'Saved',
-      icon: Icons.bookmark_border,
-      selectedIcon: Icons.bookmark),
+    label: 'Saved',
+    icon: Icons.bookmark_border,
+    selectedIcon: Icons.bookmark,
+  ),
   NavDestinationSpec(
-      label: 'Profile',
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person),
+    label: 'Profile',
+    icon: Icons.person_outline,
+    selectedIcon: Icons.person,
+  ),
 ];
 
 /// Wraps a [StatefulNavigationShell] and renders the right navigation affordance
@@ -63,10 +70,16 @@ class AdaptiveShell extends StatelessWidget {
         return _PhoneScaffold(shell: navigationShell, onSelect: _go);
       case FormFactor.tablet:
         return _RailScaffold(
-            shell: navigationShell, onSelect: _go, extended: false);
+          shell: navigationShell,
+          onSelect: _go,
+          extended: false,
+        );
       case FormFactor.desktop:
         return _RailScaffold(
-            shell: navigationShell, onSelect: _go, extended: true);
+          shell: navigationShell,
+          onSelect: _go,
+          extended: true,
+        );
     }
   }
 }
@@ -112,12 +125,11 @@ class _RailScaffold extends StatelessWidget {
     return Scaffold(
       body: Row(
         children: [
-          _SideNav(
-            shell: shell,
-            onSelect: onSelect,
-            extended: extended,
+          _SideNav(shell: shell, onSelect: onSelect, extended: extended),
+          VerticalDivider(
+            width: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.6),
           ),
-          VerticalDivider(width: 1, color: scheme.outlineVariant.withValues(alpha: 0.6)),
           Expanded(child: shell),
         ],
       ),
@@ -148,7 +160,9 @@ class _SideNav extends StatelessWidget {
           children: [
             Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: extended ? 20 : 12, vertical: 20),
+                horizontal: extended ? 20 : 12,
+                vertical: 20,
+              ),
               child: _Wordmark(compact: !extended),
             ),
             const SizedBox(height: 8),
@@ -192,14 +206,17 @@ class _NavTile extends StatelessWidget {
     final content = Container(
       margin: const EdgeInsets.symmetric(vertical: 3),
       padding: EdgeInsets.symmetric(
-          horizontal: extended ? 14 : 0, vertical: 12),
+        horizontal: extended ? 14 : 0,
+        vertical: 12,
+      ),
       decoration: BoxDecoration(
         color: selected ? scheme.primary.withValues(alpha: 0.12) : null,
         borderRadius: BorderRadius.circular(LizRadius.md),
       ),
       child: Row(
-        mainAxisAlignment:
-            extended ? MainAxisAlignment.start : MainAxisAlignment.center,
+        mainAxisAlignment: extended
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.center,
         children: [
           Icon(selected ? spec.selectedIcon : spec.icon, color: fg, size: 24),
           if (extended) ...[
@@ -256,16 +273,21 @@ class _Wordmark extends StatelessWidget {
         filterQuality: FilterQuality.high,
       ),
     );
-    if (compact) return Center(child: mark);
+    if (compact) {
+      return Center(
+        child: Semantics(label: 'Liz', image: true, child: mark),
+      );
+    }
+    // Beside the word, the mark is decoration — a screen reader that
+    // announced both would say the name twice.
     return Row(
       children: [
-        mark,
+        ExcludeSemantics(child: mark),
         const SizedBox(width: 12),
-        Text('Liz',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontSize: 24)),
+        Text(
+          'Liz',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24),
+        ),
       ],
     );
   }

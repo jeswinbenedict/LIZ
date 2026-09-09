@@ -13,7 +13,10 @@ class SignInScreen extends StatelessWidget {
       appBar: AppBar(
         leading: context.canPop()
             ? IconButton(
-                icon: const Icon(Icons.close), onPressed: () => context.pop())
+                tooltip: 'Close',
+                icon: const Icon(Icons.close),
+                onPressed: () => context.pop(),
+              )
             : null,
       ),
       body: Center(

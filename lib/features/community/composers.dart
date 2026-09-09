@@ -67,8 +67,9 @@ class _ReviewComposer extends ConsumerStatefulWidget {
 
 class _ReviewComposerState extends ConsumerState<_ReviewComposer> {
   late int _rating = widget.initialRating;
-  late final TextEditingController _body =
-      TextEditingController(text: widget.initialBody);
+  late final TextEditingController _body = TextEditingController(
+    text: widget.initialBody,
+  );
   bool _busy = false;
 
   @override
@@ -85,8 +86,10 @@ class _ReviewComposerState extends ConsumerState<_ReviewComposer> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Rate ${widget.toolName}',
-              style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Rate ${widget.toolName}',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 12),
           Center(
             child: RatingInput(
@@ -115,7 +118,9 @@ class _ReviewComposerState extends ConsumerState<_ReviewComposer> {
                       await runGuardedAction(
                         context,
                         prompt: 'Sign in to leave a review.',
-                        action: () => ref.read(communityActionsProvider).upsertReview(
+                        action: () => ref
+                            .read(communityActionsProvider)
+                            .upsertReview(
                               toolId: widget.toolId,
                               rating: _rating,
                               body: _body.text.trim(),
@@ -128,7 +133,10 @@ class _ReviewComposerState extends ConsumerState<_ReviewComposer> {
                     },
               child: _busy
                   ? const SizedBox(
-                      height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text('Post review'),
             ),
           ),
@@ -179,12 +187,16 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
 
   Future<void> _pickImage() async {
     if (!ref.read(storageServiceProvider).available) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Image upload needs the live backend.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image upload needs the live backend.')),
+      );
       return;
     }
-    final picked = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 82);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 82,
+    );
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
     if (!mounted) return;
@@ -203,16 +215,20 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Share with the community',
-              style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Share with the community',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           if (widget.toolName != null) ...[
             const SizedBox(height: 8),
             Row(
               children: [
                 const Icon(Icons.link, size: 16),
                 const SizedBox(width: 6),
-                Text('Linked to ${widget.toolName}',
-                    style: TextStyle(color: scheme.onSurfaceVariant)),
+                Text(
+                  'Linked to ${widget.toolName}',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
               ],
             ),
           ],
@@ -234,13 +250,19 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(LizRadius.md),
-                  child: Image.memory(_imageBytes!,
-                      height: 150, width: double.infinity, fit: BoxFit.cover),
+                  child: Image.memory(
+                    _imageBytes!,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    semanticLabel: 'Selected image',
+                  ),
                 ),
                 Positioned(
                   top: 4,
                   right: 4,
                   child: IconButton.filledTonal(
+                    tooltip: 'Remove image',
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.close, size: 18),
                     onPressed: () => setState(() => _imageBytes = null),
@@ -255,7 +277,10 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
               IconButton(
                 tooltip: 'Add image',
                 onPressed: _busy ? null : _pickImage,
-                icon: Icon(Icons.image_outlined, color: scheme.onSurfaceVariant),
+                icon: Icon(
+                  Icons.image_outlined,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               const Spacer(),
               FilledButton(
@@ -279,7 +304,9 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                                     contentType: _mimeFor(_imageExt),
                                   );
                             }
-                            await ref.read(communityActionsProvider).createPost(
+                            await ref
+                                .read(communityActionsProvider)
+                                .createPost(
                                   content: _content.text.trim(),
                                   toolId: widget.toolId,
                                   imageUrl: imageUrl,
@@ -293,7 +320,10 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                       },
                 child: _busy
                     ? const SizedBox(
-                        height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Post'),
               ),
             ],

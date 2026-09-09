@@ -6,12 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_card.dart';
 
 /// Search across tool name, tagline, description, tags, and category.
-final searchResultsProvider =
-    FutureProvider.family<List<Tool>, String>((ref, query) async {
+final searchResultsProvider = FutureProvider.family<List<Tool>, String>((
+  ref,
+  query,
+) async {
   if (query.trim().length < 2) return [];
   return ref.watch(contentRepositoryProvider).searchTools(query);
 });
@@ -25,8 +28,9 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialQuery ?? '');
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialQuery ?? '',
+  );
   String _query = '';
   Timer? _debounce;
 
@@ -70,6 +74,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             suffixIcon: _controller.text.isEmpty
                 ? null
                 : IconButton(
+                    tooltip: 'Clear search',
                     icon: const Icon(Icons.clear),
                     onPressed: () {
                       _controller.clear();
@@ -87,10 +92,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 message: 'Find AI tools by name, tag, or what they do.',
               )
             : results.when(
-                loading: () => const LoadingView(),
+                loading: () => const ToolGridSkeleton(),
                 error: (_, __) => ErrorView(
-                    onRetry: () =>
-                        ref.invalidate(searchResultsProvider(_query))),
+                  onRetry: () => ref.invalidate(searchResultsProvider(_query)),
+                ),
                 data: (tools) => tools.isEmpty
                     ? EmptyView(
                         icon: Icons.search_off,
@@ -99,8 +104,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       )
                     : GridView.builder(
                         padding: const EdgeInsets.all(16),
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: columns,
                           mainAxisSpacing: 14,
                           crossAxisSpacing: 14,

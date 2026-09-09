@@ -46,6 +46,7 @@ class RatingInput extends StatelessWidget {
       children: List.generate(5, (i) {
         final filled = value >= i + 1;
         return IconButton(
+          tooltip: '${i + 1} star${i == 0 ? '' : 's'}',
           onPressed: () => onChanged(i + 1),
           iconSize: size,
           padding: const EdgeInsets.symmetric(horizontal: 2),

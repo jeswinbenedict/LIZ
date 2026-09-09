@@ -21,6 +21,13 @@ class ToolLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The card repeats the name in text beside this, so announcing the logo
+    // too would read it twice. Marking it decorative keeps a screen reader on
+    // the content rather than on the picture of it.
+    return ExcludeSemantics(child: _buildMark(context));
+  }
+
+  Widget _buildMark(BuildContext context) {
     final radius = size * 0.28;
     if (tool.logoUrl != null && tool.logoUrl!.isNotEmpty) {
       // Present every logo as a clean, padded "app-icon" tile on a light

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../shared/widgets/news_card.dart';
+import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/states.dart';
 import 'news_controller.dart';
 
@@ -30,18 +31,21 @@ class NewsScreen extends ConsumerWidget {
                   titleSpacing: 20,
                   title: Row(
                     children: [
-                      Text('Tech News',
-                          style: Theme.of(context).textTheme.headlineSmall),
+                      Text(
+                        'Tech News',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
                       const SizedBox(width: 10),
                       if (state.live) const _LiveBadge(),
                     ],
                   ),
                 ),
                 if (state.loading)
-                  const SliverToBoxAdapter(child: LoadingView())
+                  const NewsListSkeletonSliver()
                 else if (state.error != null && state.items.isEmpty)
                   SliverToBoxAdapter(
-                      child: ErrorView(onRetry: controller.refresh))
+                    child: ErrorView(onRetry: controller.refresh),
+                  )
                 else if (state.items.isEmpty)
                   const SliverToBoxAdapter(
                     child: EmptyView(
@@ -60,7 +64,8 @@ class NewsScreen extends ConsumerWidget {
                       itemBuilder: (context, i) {
                         if (i >= state.items.length - 3) {
                           WidgetsBinding.instance.addPostFrameCallback(
-                              (_) => controller.loadMore());
+                            (_) => controller.loadMore(),
+                          );
                         }
                         return NewsCard(item: state.items[i]);
                       },
@@ -99,15 +104,20 @@ class _LiveBadge extends StatelessWidget {
             width: 7,
             height: 7,
             decoration: const BoxDecoration(
-                color: LizColors.positive, shape: BoxShape.circle),
+              color: LizColors.positive,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 5),
-          const Text('LIVE',
-              style: TextStyle(
-                  color: LizColors.positive,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5)),
+          const Text(
+            'LIVE',
+            style: TextStyle(
+              color: LizColors.positive,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );

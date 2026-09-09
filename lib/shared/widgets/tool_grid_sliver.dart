@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../features/discover/discover_controller.dart';
+import 'skeletons.dart';
 import 'states.dart';
 import 'tool_card.dart';
 
@@ -19,13 +20,13 @@ class ToolGridSliver extends ConsumerWidget {
     final columns = gridColumnsFor(width);
 
     if (state.loading) {
-      return const SliverToBoxAdapter(child: LoadingView());
+      return const ToolGridSkeletonSliver();
     }
     if (state.error != null && state.items.isEmpty) {
       return SliverToBoxAdapter(
         child: ErrorView(
-            onRetry: () =>
-                ref.read(toolFeedProvider(feedKey).notifier).refresh()),
+          onRetry: () => ref.read(toolFeedProvider(feedKey).notifier).refresh(),
+        ),
       );
     }
     if (state.items.isEmpty) {
@@ -47,18 +48,15 @@ class ToolGridSliver extends ConsumerWidget {
           crossAxisSpacing: 14,
           mainAxisExtent: 222,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            // Trigger load-more as the user nears the end.
-            if (index >= state.items.length - columns) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ref.read(toolFeedProvider(feedKey).notifier).loadMore();
-              });
-            }
-            return ToolCard(tool: state.items[index]);
-          },
-          childCount: state.items.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          // Trigger load-more as the user nears the end.
+          if (index >= state.items.length - columns) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(toolFeedProvider(feedKey).notifier).loadMore();
+            });
+          }
+          return ToolCard(tool: state.items[index]);
+        }, childCount: state.items.length),
       ),
     );
   }
@@ -71,8 +69,9 @@ class LoadMoreFooter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final loadingMore =
-        ref.watch(toolFeedProvider(feedKey).select((s) => s.loadingMore));
+    final loadingMore = ref.watch(
+      toolFeedProvider(feedKey).select((s) => s.loadingMore),
+    );
     return SliverToBoxAdapter(
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),

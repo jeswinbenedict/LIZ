@@ -23,13 +23,15 @@ class PostDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/community');
-          }
-        }),
+        leading: BackButton(
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/community');
+            }
+          },
+        ),
         title: const Text('Post'),
       ),
       body: postAsync.when(
@@ -40,7 +42,8 @@ class PostDetailScreen extends ConsumerWidget {
             ? const EmptyView(
                 icon: Icons.forum_outlined,
                 title: 'Post not found',
-                message: 'It may have been removed.')
+                message: 'It may have been removed.',
+              )
             : _PostDetailBody(post: post),
       ),
     );
@@ -73,7 +76,9 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
       context,
       prompt: 'Sign in to comment.',
       action: () async {
-        await ref.read(communityActionsProvider).addComment(widget.post.id, text);
+        await ref
+            .read(communityActionsProvider)
+            .addComment(widget.post.id, text);
         _controller.clear();
         FocusScope.of(context).unfocus();
       },
@@ -114,14 +119,20 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(author?.displayName ?? 'Someone',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w700, fontSize: 15)),
                             Text(
-                                '@${author?.username ?? 'user'} · ${timeAgo(post.createdAt)}',
-                                style: TextStyle(
-                                    color: scheme.onSurfaceVariant,
-                                    fontSize: 12.5)),
+                              author?.displayName ?? 'Someone',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Text(
+                              '@${author?.username ?? 'user'} · ${timeAgo(post.createdAt)}',
+                              style: TextStyle(
+                                color: scheme.onSurfaceVariant,
+                                fontSize: 12.5,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -129,25 +140,34 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                     IconButton(
                       icon: const Icon(Icons.flag_outlined),
                       tooltip: 'Report',
-                      onPressed: () => showReportSheet(context, ref,
-                          targetType: 'post', targetId: post.id),
+                      onPressed: () => showReportSheet(
+                        context,
+                        ref,
+                        targetType: 'post',
+                        targetId: post.id,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(post.content,
-                    style: const TextStyle(fontSize: 16, height: 1.4)),
+                Text(
+                  post.content,
+                  style: const TextStyle(fontSize: 16, height: 1.4),
+                ),
                 if (post.toolId != null && post.toolName != null) ...[
                   const SizedBox(height: 12),
                   InkWell(
                     borderRadius: BorderRadius.circular(LizRadius.sm),
                     onTap: () => context.push('/tool/${post.toolId}'),
                     child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        color: scheme.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
                         borderRadius: BorderRadius.circular(LizRadius.sm),
                       ),
                       child: Row(
@@ -155,9 +175,10 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                         children: [
                           const Icon(Icons.link, size: 16),
                           const SizedBox(width: 6),
-                          Text(post.toolName!,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          Text(
+                            post.toolName!,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ],
                       ),
                     ),
@@ -171,24 +192,31 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                   initialCount: post.likeCount,
                 ),
                 const Divider(height: 24),
-                Text('Comments',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  'Comments',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 comments.when(
                   loading: () => const Padding(
-                      padding: EdgeInsets.all(20), child: LoadingView()),
+                    padding: EdgeInsets.all(20),
+                    child: LoadingView(),
+                  ),
                   error: (_, __) => const SizedBox.shrink(),
                   data: (list) => list.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Text('No comments yet — start the thread.',
-                              style: TextStyle(color: scheme.onSurfaceVariant)),
+                          child: Text(
+                            'No comments yet — start the thread.',
+                            style: TextStyle(color: scheme.onSurfaceVariant),
+                          ),
                         )
                       : Column(
-                          children: [for (final c in list) _CommentTile(comment: c)],
+                          children: [
+                            for (final c in list) _CommentTile(comment: c),
+                          ],
                         ),
                 ),
               ],
@@ -199,7 +227,11 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
             top: false,
             child: Padding(
               padding: EdgeInsets.fromLTRB(
-                  12, 8, 12, 8 + MediaQuery.viewInsetsOf(context).bottom),
+                12,
+                8,
+                12,
+                8 + MediaQuery.viewInsetsOf(context).bottom,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -210,17 +242,20 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       decoration: const InputDecoration(
-                          hintText: 'Add a comment…'),
+                        hintText: 'Add a comment…',
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
+                    tooltip: 'Post comment',
                     onPressed: _sending ? null : _send,
                     icon: _sending
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2))
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.send),
                   ),
                 ],
@@ -259,13 +294,21 @@ class _CommentTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(author?.displayName ?? 'User',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 13.5)),
+                    Text(
+                      author?.displayName ?? 'User',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13.5,
+                      ),
+                    ),
                     const SizedBox(width: 6),
-                    Text(timeAgo(comment.createdAt),
-                        style: TextStyle(
-                            color: scheme.onSurfaceVariant, fontSize: 12)),
+                    Text(
+                      timeAgo(comment.createdAt),
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),
