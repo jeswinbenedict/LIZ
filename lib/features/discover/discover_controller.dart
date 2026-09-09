@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../../core/cache.dart';
 import '../../shared/models/tool.dart';
 
 /// Immutable key identifying a tool feed (used for the family provider).
@@ -19,12 +20,12 @@ class FeedKey {
   final String? search;
 
   ToolQuery toQuery({String? cursor}) => ToolQuery(
-        sort: sort,
-        categorySlug: category,
-        tag: tag,
-        search: search,
-        cursor: cursor,
-      );
+    sort: sort,
+    categorySlug: category,
+    tag: tag,
+    search: search,
+    cursor: cursor,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -64,14 +65,13 @@ class FeedState {
     bool clearCursor = false,
     Object? error,
     bool clearError = false,
-  }) =>
-      FeedState(
-        items: items ?? this.items,
-        loading: loading ?? this.loading,
-        loadingMore: loadingMore ?? this.loadingMore,
-        cursor: clearCursor ? null : (cursor ?? this.cursor),
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => FeedState(
+    items: items ?? this.items,
+    loading: loading ?? this.loading,
+    loadingMore: loadingMore ?? this.loadingMore,
+    cursor: clearCursor ? null : (cursor ?? this.cursor),
+    error: clearError ? null : (error ?? this.error),
+  );
 }
 
 class ToolFeedController extends StateNotifier<FeedState> {
@@ -93,15 +93,17 @@ class ToolFeedController extends StateNotifier<FeedState> {
 
   Future<void> refreshIfStale() {
     if (state.loading || state.loadingMore) return Future.value();
-    if (DateTime.now().difference(_loadedAt) < _staleAfter) return Future.value();
+    if (DateTime.now().difference(_loadedAt) < _staleAfter)
+      return Future.value();
     return load();
   }
 
   Future<void> load() async {
     state = const FeedState(loading: true);
     try {
-      final page =
-          await _ref.read(contentRepositoryProvider).tools(_key.toQuery());
+      final page = await _ref
+          .read(contentRepositoryProvider)
+          .tools(_key.toQuery());
       _loadedAt = DateTime.now();
       state = FeedState(items: page.items, loading: false, cursor: page.cursor);
     } catch (e) {
@@ -130,13 +132,19 @@ class ToolFeedController extends StateNotifier<FeedState> {
   }
 }
 
-final toolFeedProvider =
-    StateNotifierProvider.family<ToolFeedController, FeedState, FeedKey>(
-  (ref, key) => ToolFeedController(ref, key),
-);
+final toolFeedProvider = StateNotifierProvider.autoDispose
+    .family<ToolFeedController, FeedState, FeedKey>((ref, key) {
+      // Flicking between sorts and categories is the normal way to browse, so
+      // each feed survives a few minutes after you leave it — but a session that
+      // visits thirty categories no longer holds thirty feeds forever.
+      cacheFor(ref, const Duration(minutes: 5));
+      return ToolFeedController(ref, key);
+    });
 
 /// The currently selected sort on the Discover screen.
-final discoverSortProvider = StateProvider<ToolSort>((ref) => ToolSort.trending);
+final discoverSortProvider = StateProvider<ToolSort>(
+  (ref) => ToolSort.trending,
+);
 
 /// The currently selected category slug (null = All).
 final discoverCategoryProvider = StateProvider<String?>((ref) => null);

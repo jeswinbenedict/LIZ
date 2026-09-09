@@ -21,6 +21,7 @@ class ToolQuery {
     this.search,
     this.limit = 20,
     this.cursor,
+    this.includeProse = false,
   });
 
   final ToolSort sort;
@@ -30,21 +31,28 @@ class ToolQuery {
   final int limit;
   final String? cursor;
 
+  /// Whether the long description and AI summary are needed.
+  ///
+  /// A feed card shows neither, and together they are roughly half the bytes
+  /// of a tool row — so a page of the grid ships twice what it draws unless
+  /// the caller says it actually reads them.
+  final bool includeProse;
+
   ToolQuery copyWith({
     ToolSort? sort,
     String? categorySlug,
     String? tag,
     String? search,
     String? cursor,
-  }) =>
-      ToolQuery(
-        sort: sort ?? this.sort,
-        categorySlug: categorySlug ?? this.categorySlug,
-        tag: tag ?? this.tag,
-        search: search ?? this.search,
-        limit: limit,
-        cursor: cursor,
-      );
+  }) => ToolQuery(
+    sort: sort ?? this.sort,
+    categorySlug: categorySlug ?? this.categorySlug,
+    tag: tag ?? this.tag,
+    search: search ?? this.search,
+    limit: limit,
+    cursor: cursor,
+    includeProse: includeProse,
+  );
 }
 
 /// Discovery content: tools, categories, news, search.
@@ -91,7 +99,10 @@ abstract interface class CommunityRepository {
   });
 
   /// Toggle a like on a post/review/comment. Returns the new liked state.
-  Future<bool> toggleLike({required String targetType, required String targetId});
+  Future<bool> toggleLike({
+    required String targetType,
+    required String targetId,
+  });
 
   Future<void> report({
     required String targetType,

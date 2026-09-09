@@ -9,8 +9,10 @@ import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_logo.dart';
 
-final _compareProvider =
-    FutureProvider.family<List<Tool>, String>((ref, idsCsv) async {
+final _compareProvider = FutureProvider.autoDispose.family<List<Tool>, String>((
+  ref,
+  idsCsv,
+) async {
   final ids = idsCsv.split(',').where((e) => e.isNotEmpty).toList();
   return ref.watch(contentRepositoryProvider).compareTools(ids);
 });
@@ -25,18 +27,21 @@ class CompareScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Compare'),
-        leading: BackButton(onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/saved');
-          }
-        }),
+        leading: BackButton(
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/saved');
+            }
+          },
+        ),
       ),
       body: async.when(
         loading: () => const LoadingView(),
         error: (_, __) => ErrorView(
-            onRetry: () => ref.invalidate(_compareProvider(toolIds.join(',')))),
+          onRetry: () => ref.invalidate(_compareProvider(toolIds.join(','))),
+        ),
         data: (tools) => tools.length < 2
             // A shared link can outlive the tools in it. Saying "pick some
             // tools" to someone who did pick them, and had one withdrawn since,
@@ -48,7 +53,7 @@ class CompareScreen extends ConsumerWidget {
                     : 'Pick 2–3 tools to compare',
                 message: tools.length < toolIds.length
                     ? 'A comparison needs at least two. Pick another from your '
-                        'Saved list.'
+                          'Saved list.'
                     : 'Select tools from your Saved list.',
               )
             : _CompareTable(tools: tools),
@@ -71,25 +76,31 @@ class _CompareTable extends StatelessWidget {
         const _String('Rating'),
         (t) => t.ratingCount == 0
             ? const Text('—')
-            : Row(mainAxisSize: MainAxisSize.min, children: [
-                RatingStars(t.avgRating, size: 14),
-                const SizedBox(width: 4),
-                Text(t.avgRating.toStringAsFixed(1)),
-              ])
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RatingStars(t.avgRating, size: 14),
+                  const SizedBox(width: 4),
+                  Text(t.avgRating.toStringAsFixed(1)),
+                ],
+              ),
       ),
-      (const _String('Category'), (t) => Text(t.category.replaceAll('ai-', ''))),
+      (
+        const _String('Category'),
+        (t) => Text(t.category.replaceAll('ai-', '')),
+      ),
       (
         const _String('Platforms'),
-        (t) => Text(t.platforms.isEmpty ? '—' : t.platforms.join(', '))
+        (t) => Text(t.platforms.isEmpty ? '—' : t.platforms.join(', ')),
       ),
       (const _String('Rank'), (t) => TrendBadge(t)),
       (
         const _String('Key features'),
         (t) => Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: [for (final tag in t.tags.take(4)) LizPill(label: tag)],
-            )
+          spacing: 4,
+          runSpacing: 4,
+          children: [for (final tag in t.tags.take(4)) LizPill(label: tag)],
+        ),
       ),
     ];
 
@@ -114,19 +125,24 @@ class _CompareTable extends StatelessWidget {
                         children: [
                           ToolLogo(tool: t, size: 48),
                           const SizedBox(height: 8),
-                          Text(t.name,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontWeight: FontWeight.w700)),
+                          Text(
+                            t.name,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
                           const SizedBox(height: 2),
-                          Text(t.tagline,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant)),
+                          Text(
+                            t.tagline,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -143,11 +159,13 @@ class _CompareTable extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 120,
-                      child: Text(row.$1.value,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant)),
+                      child: Text(
+                        row.$1.value,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                     for (final t in tools)
                       SizedBox(
@@ -155,8 +173,9 @@ class _CompareTable extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: row.$2(t)),
+                            alignment: Alignment.centerLeft,
+                            child: row.$2(t),
+                          ),
                         ),
                       ),
                   ],

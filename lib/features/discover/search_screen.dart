@@ -11,13 +11,13 @@ import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_card.dart';
 
 /// Search across tool name, tagline, description, tags, and category.
-final searchResultsProvider = FutureProvider.family<List<Tool>, String>((
-  ref,
-  query,
-) async {
-  if (query.trim().length < 2) return [];
-  return ref.watch(contentRepositoryProvider).searchTools(query);
-});
+final searchResultsProvider = FutureProvider.autoDispose
+    .family<List<Tool>, String>((ref, query) async {
+      // Typing "video editor" used to leave a cached result for every prefix the
+      // debounce happened to fire on, each holding up to thirty tools.
+      if (query.trim().length < 2) return [];
+      return ref.watch(contentRepositoryProvider).searchTools(query);
+    });
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key, this.initialQuery});

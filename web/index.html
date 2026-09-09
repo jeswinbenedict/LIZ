@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head>
+<!DOCTYPE html><html lang="en"><head>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -27,11 +27,35 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <title>liz</title>
+  <title>Liz — Discover the next big AI tool</title>
+
+  <!-- Theme colour follows the app's own surfaces, so the browser chrome on
+       mobile matches the page instead of flashing white against dark. -->
+  <meta name="theme-color" content="#FAF9FD" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#131318" media="(prefers-color-scheme: dark)">
+
+  <!-- Link previews when someone shares Liz. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Liz">
+  <meta property="og:title" content="Liz — Discover the next big AI tool">
+  <meta property="og:description" content="Find AI tools while they are still rising, not after everyone has them.">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Liz — Discover the next big AI tool">
+  <meta name="twitter:description" content="Find AI tools while they are still rising, not after everyone has them.">
+
+  <!-- The first screen cannot paint until the catalog arrives, and that
+       request cannot start until DNS, TCP and TLS to the API have finished.
+       Starting the handshake alongside the bundle download takes that off the
+       critical path. -->
+  <link rel="preconnect" href="https://yluabeijvbydxczfxclk.supabase.co" crossorigin>
+  <link rel="dns-prefetch" href="https://yluabeijvbydxczfxclk.supabase.co">
   <link rel="manifest" href="manifest.json">
   
   
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  <!-- No maximum-scale or user-scalable=no: blocking pinch-zoom takes the
+       one magnification tool a low-vision reader has on a phone. -->
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <style id="splash-screen-style">
     html {
       height: 100%

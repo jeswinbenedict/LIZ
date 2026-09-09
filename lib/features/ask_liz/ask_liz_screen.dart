@@ -76,7 +76,11 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     // If direct search is thin, widen by scoring all tools on term overlap.
     List<Tool> pool = candidates;
     if (pool.length < 3) {
-      final all = await repo.tools(const ToolQuery(limit: 100));
+      // This path scores tools on their prose, so it is one of the few
+      // callers that genuinely needs it.
+      final all = await repo.tools(
+        const ToolQuery(limit: 100, includeProse: true),
+      );
       pool = all.items;
     }
 
@@ -97,8 +101,10 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     final client = ref.read(supabaseClientProvider);
     if (client == null) return null;
     try {
-      final res = await client.functions
-          .invoke('ask-liz', body: {'query': q, 'limit': 5});
+      final res = await client.functions.invoke(
+        'ask-liz',
+        body: {'query': q, 'limit': 5},
+      );
       final payload = res.data;
       if (payload is! Map || payload['data'] is! List) return null;
       final picks = (payload['data'] as List)
@@ -109,8 +115,7 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
       // Distinct from null: the backend answered, and the answer is "nothing
       // matches well enough".
       if (ids.isEmpty) return const <_Suggestion>[];
-      final tools =
-          await ref.read(contentRepositoryProvider).compareTools(ids);
+      final tools = await ref.read(contentRepositoryProvider).compareTools(ids);
       final byId = {for (final t in tools) t.id: t};
       final out = <_Suggestion>[];
       for (final p in picks) {
@@ -135,10 +140,13 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
               _Header(),
               Expanded(
                 child: _answered == null
-                    ? _Intro(examples: _examples, onPick: (q) {
-                        _controller.text = q;
-                        _ask(q);
-                      })
+                    ? _Intro(
+                        examples: _examples,
+                        onPick: (q) {
+                          _controller.text = q;
+                          _ask(q);
+                        },
+                      )
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                         children: [
@@ -146,13 +154,19 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                             alignment: Alignment.centerRight,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
                               decoration: BoxDecoration(
                                 color: scheme.primary,
-                                borderRadius: BorderRadius.circular(LizRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  LizRadius.md,
+                                ),
                               ),
-                              child: Text(_answered!,
-                                  style: const TextStyle(color: Colors.white)),
+                              child: Text(
+                                _answered!,
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -169,28 +183,40 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                           else ...[
                             Row(
                               children: [
-                                Icon(Icons.auto_awesome,
-                                    size: 18, color: scheme.primary),
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 18,
+                                  color: scheme.primary,
+                                ),
                                 const SizedBox(width: 6),
-                                Text('Here\'s what fits best:',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: scheme.primary)),
+                                Text(
+                                  'Here\'s what fits best:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: scheme.primary,
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             for (final s in _results) ...[
                               Padding(
                                 padding: const EdgeInsets.only(
-                                    left: 4, bottom: 4, top: 4),
+                                  left: 4,
+                                  bottom: 4,
+                                  top: 4,
+                                ),
                                 child: Row(
                                   children: [
                                     const Text('✨ '),
                                     Expanded(
-                                      child: Text(s.reason,
-                                          style: TextStyle(
-                                              color: scheme.onSurfaceVariant,
-                                              fontStyle: FontStyle.italic)),
+                                      child: Text(
+                                        s.reason,
+                                        style: TextStyle(
+                                          color: scheme.onSurfaceVariant,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -202,10 +228,7 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                         ],
                       ),
               ),
-              _InputBar(
-                controller: _controller,
-                onSubmit: _ask,
-              ),
+              _InputBar(controller: _controller, onSubmit: _ask),
             ],
           ),
         ),
@@ -248,12 +271,16 @@ class _Intro extends StatelessWidget {
           children: [
             const Icon(Icons.auto_awesome, size: 48, color: LizColors.brand),
             const SizedBox(height: 16),
-            Text('Describe what you need',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Describe what you need',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 6),
-            Text('Liz finds the right tool and tells you why it fits.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.onSurfaceVariant)),
+            Text(
+              'Liz finds the right tool and tells you why it fits.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 20),
             Wrap(
               spacing: 8,
@@ -261,10 +288,7 @@ class _Intro extends StatelessWidget {
               alignment: WrapAlignment.center,
               children: [
                 for (final e in examples)
-                  ActionChip(
-                    label: Text(e),
-                    onPressed: () => onPick(e),
-                  ),
+                  ActionChip(label: Text(e), onPressed: () => onPick(e)),
               ],
             ),
           ],
@@ -288,7 +312,11 @@ class _InputBarState extends State<_InputBar> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          16, 8, 16, 12 + MediaQuery.viewInsetsOf(context).bottom),
+        16,
+        8,
+        16,
+        12 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -306,9 +334,10 @@ class _InputBarState extends State<_InputBar> {
           FilledButton(
             onPressed: () => widget.onSubmit(widget.controller.text),
             style: FilledButton.styleFrom(
-                minimumSize: const Size(52, 52),
-                padding: EdgeInsets.zero,
-                shape: const CircleBorder()),
+              minimumSize: const Size(52, 52),
+              padding: EdgeInsets.zero,
+              shape: const CircleBorder(),
+            ),
             child: const Icon(Icons.arrow_upward),
           ),
         ],

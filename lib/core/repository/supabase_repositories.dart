@@ -30,6 +30,14 @@ class SupabaseContentRepository implements ContentRepository {
       'launched_at,trend_score,view_count,save_count,avg_rating,rating_count,'
       'status,created_at,trend_rank';
 
+  /// Everything a feed card draws, and nothing more. Dropping the description
+  /// and the AI summary halves a page of the grid on the wire, and the model
+  /// tolerates their absence — the tool page fetches the full row anyway.
+  static const _toolCardCols =
+      'id,name,slug,tagline,website_url,logo_url,category,tags,platforms,'
+      'pricing_type,price_note,launched_at,trend_score,view_count,save_count,'
+      'avg_rating,rating_count,status,created_at,trend_rank';
+
   @override
   Future<List<Category>> categories() async {
     final rows = await _client.from('categories').select().order('name');
@@ -39,8 +47,8 @@ class SupabaseContentRepository implements ContentRepository {
   @override
   Future<Paginated<Tool>> tools(ToolQuery q) async {
     final offset = _decodeCursor(q.cursor);
-    var query =
-        _client.from('tools').select(_toolCols).eq('status', 'published');
+    final cols = q.includeProse ? _toolCols : _toolCardCols;
+    var query = _client.from('tools').select(cols).eq('status', 'published');
 
     if (q.categorySlug != null) query = query.eq('category', q.categorySlug!);
     if (q.tag != null) query = query.contains('tags', [q.tag!]);
@@ -54,23 +62,31 @@ class SupabaseContentRepository implements ContentRepository {
       ToolSort.newest => query.order('created_at', ascending: false),
       // "Rising early" is served by a computed view/RPC in production; the
       // client falls back to trend_score ordering here.
-      ToolSort.rising => query
-          .order('trend_score', ascending: false)
-          .order('save_count', ascending: true),
-      ToolSort.topRated => query
-          .order('avg_rating', ascending: false)
-          .order('rating_count', ascending: false),
+      ToolSort.rising =>
+        query
+            .order('trend_score', ascending: false)
+            .order('save_count', ascending: true),
+      ToolSort.topRated =>
+        query
+            .order('avg_rating', ascending: false)
+            .order('rating_count', ascending: false),
     };
 
     final rows = await ordered.range(offset, offset + q.limit - 1);
     final items = (rows as List).map((e) => Tool.fromJson(e)).toList();
-    return Paginated(items: items, cursor: _nextCursor(offset, q.limit, items.length));
+    return Paginated(
+      items: items,
+      cursor: _nextCursor(offset, q.limit, items.length),
+    );
   }
 
   @override
   Future<Tool?> toolById(String id) async {
-    final row =
-        await _client.from('tools').select(_toolCols).eq('id', id).maybeSingle();
+    final row = await _client
+        .from('tools')
+        .select(_toolCols)
+        .eq('id', id)
+        .maybeSingle();
     return row == null ? null : Tool.fromJson(row);
   }
 
@@ -87,8 +103,10 @@ class SupabaseContentRepository implements ContentRepository {
   @override
   Future<List<Tool>> compareTools(List<String> ids) async {
     if (ids.isEmpty) return [];
-    final rows =
-        await _client.from('tools').select(_toolCols).inFilter('id', ids);
+    final rows = await _client
+        .from('tools')
+        .select(_toolCols)
+        .inFilter('id', ids);
     return (rows as List).map((e) => Tool.fromJson(e)).toList();
   }
 
@@ -102,7 +120,10 @@ class SupabaseContentRepository implements ContentRepository {
         .order('published_at', ascending: false)
         .range(offset, offset + limit - 1);
     final items = (rows as List).map((e) => NewsItem.fromJson(e)).toList();
-    return Paginated(items: items, cursor: _nextCursor(offset, limit, items.length));
+    return Paginated(
+      items: items,
+      cursor: _nextCursor(offset, limit, items.length),
+    );
   }
 
   @override
@@ -154,7 +175,10 @@ class SupabaseCommunityRepository implements CommunityRepository {
     final items = (rows as List)
         .map((e) => Post.fromJson({...e, 'author': e['profiles']}))
         .toList();
-    return Paginated(items: items, cursor: _nextCursor(offset, limit, items.length));
+    return Paginated(
+      items: items,
+      cursor: _nextCursor(offset, limit, items.length),
+    );
   }
 
   @override
@@ -183,7 +207,8 @@ class SupabaseCommunityRepository implements CommunityRepository {
     final rows = await _client
         .from('comments')
         .select(
-            '*, profiles:user_id(id,username,display_name,avatar_url,role,created_at)')
+          '*, profiles:user_id(id,username,display_name,avatar_url,role,created_at)',
+        )
         .eq('post_id', postId)
         .eq('status', 'active')
         .order('created_at');
@@ -197,9 +222,15 @@ class SupabaseCommunityRepository implements CommunityRepository {
     final uid = _requireUser();
     final row = await _client
         .from('comments')
-        .insert({'post_id': postId, 'user_id': uid, 'body': body, 'status': 'active'})
+        .insert({
+          'post_id': postId,
+          'user_id': uid,
+          'body': body,
+          'status': 'active',
+        })
         .select(
-            '*, profiles:user_id(id,username,display_name,avatar_url,role,created_at)')
+          '*, profiles:user_id(id,username,display_name,avatar_url,role,created_at)',
+        )
         .single();
     return Comment.fromJson({...row, 'author': row['profiles']});
   }
@@ -232,8 +263,11 @@ class SupabaseCommunityRepository implements CommunityRepository {
 
   @override
   Future<Profile?> profileById(String userId) async {
-    final row =
-        await _client.from('profiles').select().eq('id', userId).maybeSingle();
+    final row = await _client
+        .from('profiles')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
     return row == null ? null : Profile.fromJson(row);
   }
 
@@ -259,8 +293,10 @@ class SupabaseCommunityRepository implements CommunityRepository {
   }
 
   @override
-  Future<bool> toggleLike(
-      {required String targetType, required String targetId}) async {
+  Future<bool> toggleLike({
+    required String targetType,
+    required String targetId,
+  }) async {
     final uid = _requireUser();
     final existing = await _client
         .from('likes')
@@ -316,7 +352,10 @@ class SupabaseAdminRepository implements AdminRepository {
 
   @override
   Future<void> setToolStatus(String toolId, PublishStatus status) async {
-    await _client.from('tools').update({'status': status.value}).eq('id', toolId);
+    await _client
+        .from('tools')
+        .update({'status': status.value})
+        .eq('id', toolId);
   }
 
   @override
@@ -353,16 +392,18 @@ class SupabaseAdminRepository implements AdminRepository {
         .eq('status', 'open')
         .order('created_at', ascending: false);
     return (rows as List)
-        .map((e) => ReportEntry(
-              id: e['id'].toString(),
-              targetType: e['target_type'].toString(),
-              targetId: e['target_id'].toString(),
-              reason: (e['reason'] ?? '').toString(),
-              preview: '',
-              createdAt:
-                  DateTime.tryParse(e['created_at']?.toString() ?? '') ??
-                      DateTime.now(),
-            ))
+        .map(
+          (e) => ReportEntry(
+            id: e['id'].toString(),
+            targetType: e['target_type'].toString(),
+            targetId: e['target_id'].toString(),
+            reason: (e['reason'] ?? '').toString(),
+            preview: '',
+            createdAt:
+                DateTime.tryParse(e['created_at']?.toString() ?? '') ??
+                DateTime.now(),
+          ),
+        )
         .toList();
   }
 
@@ -370,7 +411,8 @@ class SupabaseAdminRepository implements AdminRepository {
   Future<void> resolveReport(String reportId) async {
     await _client
         .from('reports')
-        .update({'status': 'resolved'}).eq('id', reportId);
+        .update({'status': 'resolved'})
+        .eq('id', reportId);
   }
 }
 
@@ -389,8 +431,10 @@ class SupabaseTrackRepository implements TrackRepository {
   Future<Set<String>> bookmarkedToolIds() async {
     final uid = _auth.currentUserId;
     if (uid == null) return {};
-    final rows =
-        await _client.from('bookmarks').select('tool_id').eq('user_id', uid);
+    final rows = await _client
+        .from('bookmarks')
+        .select('tool_id')
+        .eq('user_id', uid);
     return (rows as List).map((e) => e['tool_id'].toString()).toSet();
   }
 
@@ -400,7 +444,7 @@ class SupabaseTrackRepository implements TrackRepository {
     if (uid == null) return [];
     final rows = await _client
         .from('bookmarks')
-        .select('tools(${SupabaseContentRepository._toolCols})')
+        .select('tools(${SupabaseContentRepository._toolCardCols})')
         .eq('user_id', uid);
     return (rows as List)
         .where((e) => e['tools'] != null)
@@ -485,8 +529,11 @@ class SupabaseTrackRepository implements TrackRepository {
       await _client.from('follows').delete().eq('id', existing['id']);
       return false;
     }
-    await _client.from('follows').insert(
-        {'follower_id': uid, 'target_type': targetType, 'target_id': targetId});
+    await _client.from('follows').insert({
+      'follower_id': uid,
+      'target_type': targetType,
+      'target_id': targetId,
+    });
     return true;
   }
 }
