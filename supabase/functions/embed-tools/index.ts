@@ -7,13 +7,19 @@
 // missing or embedded by an older model, so it is safe to run on a schedule
 // after every ingestion pass.
 //
+// Batches are deliberately tiny. Running the model is expensive enough that an
+// edge worker dies with WORKER_RESOURCE_LIMIT part way through a larger batch —
+// measured against this project, 5 succeeds and 20 does not, and a failed
+// invocation embeds nothing. Callers repeat while `remaining` is above zero.
+//
 // Deploy: supabase functions deploy embed-tools
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { EMBEDDING_MODEL, embed, toolText } from '../_shared/embed.ts';
 
-const DEFAULT_LIMIT = 100;
+const DEFAULT_LIMIT = 5;
+const MAX_LIMIT = 10;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -22,7 +28,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const limit = Math.min(Number(body?.limit) || DEFAULT_LIMIT, 500);
+    const limit = Math.min(Number(body?.limit) || DEFAULT_LIMIT, MAX_LIMIT);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,

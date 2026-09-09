@@ -60,8 +60,15 @@ jobs:
             echo "::warning::Supabase secrets not set — skipping embedding."
             exit 0
           fi
-          curl -sS -X POST "$SUPABASE_URL/functions/v1/embed-tools" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"limit":200}' \
-            --fail-with-body
+          # One invocation embeds only a handful of tools before the edge worker
+          # runs out of compute, so repeat until the backlog is clear.
+          for i in $(seq 1 30); do
+            body=$(curl -sS -X POST "$SUPABASE_URL/functions/v1/embed-tools" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"limit":5}') || true
+            echo "$body"
+            remaining=$(printf '%s' "$body" | sed -n 's/.*"remaining":\([0-9]*\).*/\1/p')
+            [ "$remaining" = "0" ] && break
+            [ -z "$remaining" ] && sleep 5
+          done

@@ -145,7 +145,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"limit\": 200}",
+        "jsonBody": "={\"limit\": 5}",
         "options": {
           "timeout": 120000
         }
@@ -156,7 +156,7 @@
       "typeVersion": 4.2,
       "position": [560, 320],
       "notesInFlow": true,
-      "notes": "A tool without an embedding cannot be found by Ask Liz."
+      "notes": "Embeds 5 tools per call — larger batches exhaust the edge worker. The response's `remaining` count says whether another pass is needed; wire a loop here if you ingest in bulk."
     }
   ],
   "connections": {
