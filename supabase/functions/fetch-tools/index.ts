@@ -32,6 +32,62 @@ const TOPIC_CATEGORY: Record<string, string> = {
   'research': 'ai-research', 'paper': 'ai-research', 'llm': 'ai-research',
 };
 
+// ---------------------------------------------------------------------------
+// Not every popular repo is a product.
+//
+// GitHub's topic search returns courses, awesome-lists and prompt dumps
+// alongside real tools, and publishing those as "AI tools" is what answered
+// "review my pull requests" with a curated link list and a terminal statusline.
+// Someone browsing Liz wants something they can use, not something to read.
+// ---------------------------------------------------------------------------
+
+const NON_PRODUCT_TOPICS = new Set([
+  'awesome', 'awesome-list', 'awesome-lists', 'tutorial', 'tutorials', 'course',
+  'courses', 'learning', 'education', 'educational', 'book', 'books', 'ebook',
+  'cheatsheet', 'roadmap', 'interview', 'interview-questions', 'papers', 'paper',
+  'study', 'curriculum', 'workshop', 'examples', 'demo', 'boilerplate',
+  'template', 'starter', 'list', 'collection', 'resources',
+]);
+
+// Matched against the repo name, where these words are decisive.
+const NON_PRODUCT_NAME = [
+  /awesome/i,
+  /\b(course|courses|tutorial|tutorials|lesson|lessons)\b/i,
+  /(^|[-_])(beginners?|101|basics|bootcamp|workshop|curriculum)([-_]|$)/i,
+  /(^|[-_])learn([-_]|$)/i,
+  /from[-_ ]scratch/i,
+  /\b(roadmap|cheat[-_ ]?sheet|checklist|handbook|guide|guides|glossary)\b/i,
+  /\b(leaks?|dumps?)\b/i,
+  /\b(examples?|samples?|boilerplate|template|starter[-_ ]?kit)\b/i,
+];
+
+// Matched against the description. Kept to phrases that only ever describe
+// reading material, so a real tool mentioning "examples" is not caught.
+const NON_PRODUCT_DESCRIPTION = [
+  /\b\d+\s+lessons?\b/i,
+  /\b(a\s+)?(curated|comprehensive)\s+(list|collection|repository)\b/i,
+  /\bone[-\s]stop\s+(repository|shop|resource)\b/i,
+  /\b(list|collection)\s+of\s+(awesome|free|useful|the\s+best)\b/i,
+  /\bcourse\s+to\s+(get|learn)\b/i,
+  /\b(learn|teaches?|teaching)\s+(you\s+)?how\s+to\b/i,
+  /\bstep[-\s]by[-\s]step\b/i,
+  /\b(guides?|papers|notebooks|lessons|resources)\s+(and|,)\s+/i,
+  /\bextracted\s+system\s+prompts\b/i,
+  /\bthis\s+repo(sitory)?\s+(showcases|contains|is\s+a\s+collection)\b/i,
+  /\bimplementation\s+of\s+.*\bin\s+(pytorch|tensorflow|jax)\b/i,
+];
+
+export function isNonProduct(
+  name: string,
+  description: string,
+  topics: string[],
+): boolean {
+  if (topics.some((t) => NON_PRODUCT_TOPICS.has(t.toLowerCase()))) return true;
+  if (NON_PRODUCT_NAME.some((re) => re.test(name))) return true;
+  if (NON_PRODUCT_DESCRIPTION.some((re) => re.test(description))) return true;
+  return false;
+}
+
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 }
@@ -65,6 +121,7 @@ Deno.serve(async (req) => {
 
     const seen = new Set<string>();
     const rows: Record<string, unknown>[] = [];
+    let skipped = 0;
 
     for (const { q, category } of QUERIES) {
       const url =
@@ -93,6 +150,10 @@ Deno.serve(async (req) => {
         if (!r.description) continue;
 
         const topics = r.topics ?? [];
+        if (isNonProduct(r.name, r.description, topics)) {
+          skipped++;
+          continue;
+        }
         rows.push({
           name: r.name,
           slug: slugify(r.full_name.replace('/', '-')),
@@ -119,7 +180,7 @@ Deno.serve(async (req) => {
     }
 
     if (rows.length === 0) {
-      return json({ data: { ingested: 0, reason: 'no-results' }, error: null });
+      return json({ data: { ingested: 0, skipped, reason: 'no-results' }, error: null });
     }
 
     // Upsert by content_hash so re-runs refresh instead of duplicating.
@@ -128,7 +189,7 @@ Deno.serve(async (req) => {
       .upsert(rows, { onConflict: 'content_hash', ignoreDuplicates: false });
     if (error) return json({ data: null, error: error.message }, 400);
 
-    return json({ data: { ingested: rows.length }, error: null });
+    return json({ data: { ingested: rows.length, skipped }, error: null });
   } catch (err) {
     return json({ data: null, error: String(err) }, 500);
   }

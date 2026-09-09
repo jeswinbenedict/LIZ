@@ -7,6 +7,7 @@ HTML, and it already carries the launch date we want.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 
 from bs4 import BeautifulSoup
@@ -17,6 +18,10 @@ from ..normalize import clean_text
 log = logging.getLogger(__name__)
 
 FEED_URL = "https://www.producthunt.com/feed?category=artificial-intelligence"
+
+# Feed content ends with navigation links back to the thread ("Discussion",
+# "Link"), which are not part of the product's tagline.
+_FEED_NAV_SUFFIX = re.compile(r"\s*(?:(?:Discussion|Link)\s*\|?\s*)+$", re.IGNORECASE)
 
 
 @dataclass
@@ -37,23 +42,31 @@ def discover(session: PoliteSession, *, limit: int = 30) -> list[Candidate]:
     soup = BeautifulSoup(response.text, "xml")
     candidates: list[Candidate] = []
 
-    for item in soup.find_all("item")[:limit]:
-        title = clean_text(item.title.get_text() if item.title else "")
-        link = clean_text(item.link.get_text() if item.link else "")
-        if not title or not link:
+    # The feed is Atom, not RSS: <entry> rather than <item>, <link href="..">
+    # rather than link text, and <published> rather than <pubDate>.
+    for entry in soup.find_all("entry")[:limit]:
+        name = clean_text(entry.title.get_text() if entry.title else "")
+        link_tag = entry.find("link")
+        url = clean_text(link_tag.get("href", "")) if link_tag else ""
+        if not name or not url:
             continue
 
-        # PH titles read "Name — tagline"; split so each field lands correctly.
-        name, _, tagline = title.partition(" — ")
-        if not tagline:
-            name, _, tagline = title.partition(" - ")
+        # <content> is HTML holding the tagline plus a "Discussion" link back
+        # to the thread, which is navigation rather than description.
+        content = entry.find("content")
+        tagline = ""
+        if content is not None:
+            tagline = clean_text(
+                BeautifulSoup(content.get_text(), "lxml").get_text(" ")
+            )
+            tagline = _FEED_NAV_SUFFIX.sub("", tagline).strip()
 
-        published = item.find("pubDate")
+        published = entry.find("published") or entry.find("updated")
         candidates.append(
             Candidate(
-                name=clean_text(name) or title,
-                url=link,
-                tagline=clean_text(tagline),
+                name=name,
+                url=url,
+                tagline=tagline,
                 published_at=clean_text(published.get_text()) if published else None,
             )
         )

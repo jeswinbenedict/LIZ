@@ -84,6 +84,26 @@ def test_logo_is_none_when_only_data_uris_exist():
     assert facts.logo_url is None
 
 
+def test_aggregator_page_contributes_no_logo():
+    html = """
+    <html><head>
+      <link rel="apple-touch-icon" href="/ph-favicon.png">
+      <meta property="og:image" content="https://ph-static.imgix.net/brand.png">
+      <meta property="og:description" content="Multi-agent marketplace.">
+    </head></html>
+    """
+    facts = parse_page(html, "https://www.producthunt.com/products/openmarket")
+    # Otherwise every Product Hunt find would wear Product Hunt's logo.
+    assert facts.logo_url is None
+    assert "marketplace" in facts.description
+
+
+def test_product_site_still_contributes_a_logo():
+    html = '<html><head><link rel="icon" href="/icon.png"></head></html>'
+    facts = parse_page(html, "https://acme.ai")
+    assert facts.logo_url == "https://acme.ai/icon.png"
+
+
 def test_poster_tool_classified_as_design_not_agents():
     html = """
     <html><head>

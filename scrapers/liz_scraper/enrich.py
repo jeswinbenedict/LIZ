@@ -16,6 +16,17 @@ from bs4 import BeautifulSoup
 from .http_client import PoliteSession
 from .normalize import DEFAULT_CATEGORY, clean_text, infer_category, infer_pricing
 
+# Listing sites describe a product but are not the product. Their favicon and
+# og:image belong to the directory, so taking either would stamp the same logo
+# on every tool discovered there.
+AGGREGATOR_HOSTS = {
+    "producthunt.com",
+    "news.ycombinator.com",
+    "github.com",
+    "apps.apple.com",
+    "play.google.com",
+}
+
 _STORE_PLATFORMS = {
     "apps.apple.com": "ios",
     "itunes.apple.com": "ios",
@@ -122,10 +133,13 @@ def parse_page(html: str | bytes, base_url: str) -> PageFacts:
     if category == DEFAULT_CATEGORY:
         category = infer_category(body_text[:2000])
 
+    host = urlsplit(base_url).netloc.lower().removeprefix("www.")
+    logo_url = None if host in AGGREGATOR_HOSTS else extract_logo(soup, base_url)
+
     return PageFacts(
         title=title,
         description=description,
-        logo_url=extract_logo(soup, base_url),
+        logo_url=logo_url,
         image_url=_meta(soup, prop="og:image") or None,
         pricing_type=infer_pricing(body_text),
         platforms=extract_platforms(soup),
