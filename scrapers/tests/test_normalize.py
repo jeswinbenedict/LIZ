@@ -9,6 +9,7 @@ from liz_scraper.normalize import (
     infer_pricing,
     looks_like_a_name,
     slugify,
+    strip_tracking,
 )
 
 
@@ -55,6 +56,18 @@ def test_canonical_url_ignores_tracking_and_www():
     assert a == b
 
 
+def test_strip_tracking_removes_referral_params_only():
+    assert strip_tracking("https://acme.ai/?ref=producthunt") == "https://acme.ai"
+    assert strip_tracking("https://acme.ai/x?utm_source=ph&utm_medium=web") == "https://acme.ai/x"
+    # A parameter the page actually needs must survive.
+    assert strip_tracking("https://acme.ai/p?id=7&ref=ph") == "https://acme.ai/p?id=7"
+
+
+def test_build_tool_row_stores_a_clean_website_url():
+    row = build_tool_row(name="Acme", website_url="https://acme.ai/?ref=producthunt")
+    assert row["website_url"] == "https://acme.ai"
+
+
 def test_content_hash_is_stable_across_url_noise():
     a = content_hash("https://www.runwayml.com/?ref=producthunt")
     b = content_hash("https://runwayml.com")
@@ -86,6 +99,41 @@ def test_infer_pricing_reads_plan_signals():
     assert infer_pricing("Pricing starts at $49/mo") == "paid"
     assert infer_pricing("This project is open source") == "free"
     assert infer_pricing("A page that says nothing useful") == "unknown"
+
+
+def test_infer_pricing_ignores_dollar_signs_without_a_figure():
+    # These were all read as "paid" when any "$" counted.
+    assert infer_pricing("Save $ on your workflow") == "unknown"
+    assert infer_pricing("Our pricing page explains the plans") == "unknown"
+
+
+def test_infer_pricing_ignores_funding_amounts():
+    # A raise is not a price list.
+    assert infer_pricing("We raised $2M to build this") == "unknown"
+    assert infer_pricing("Backed by a $500K seed round") == "unknown"
+    assert infer_pricing("Plans start at $12 a month") == "paid"
+
+
+def test_infer_pricing_treats_a_trial_as_paid_not_free():
+    assert infer_pricing("Start your free trial today") == "paid"
+    assert infer_pricing("Try it free for 14 days") == "paid"
+    assert infer_pricing("14-day free trial, no credit card") == "freemium"
+
+
+def test_infer_pricing_recognises_more_free_tier_phrasings():
+    assert infer_pricing("Get started for free") == "free"
+    assert infer_pricing("No credit card required") == "free"
+    assert infer_pricing("Free for personal use") == "free"
+
+
+def test_open_source_with_paid_hosting_is_not_free():
+    text = "Open source and self-hostable. Cloud plans from $29 per month."
+    assert infer_pricing(text) == "paid"
+
+
+def test_open_source_with_a_free_tier_is_freemium():
+    text = "Open source. Free plan available, or $10/mo for teams."
+    assert infer_pricing(text) == "freemium"
 
 
 def test_build_tool_row_matches_schema_constraints():

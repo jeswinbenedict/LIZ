@@ -27,6 +27,15 @@ AGGREGATOR_HOSTS = {
     "play.google.com",
 }
 
+# Links every listing page carries regardless of the product: the maker's
+# socials, the launch event, the app stores. None of them is the product's home.
+_OUTBOUND_NOISE = {
+    "x.com", "twitter.com", "linkedin.com", "instagram.com", "facebook.com",
+    "youtube.com", "tiktok.com", "discord.gg", "discord.com", "t.me",
+    "lu.ma", "reddit.com", "medium.com", "substack.com", "apps.apple.com",
+    "play.google.com", "itunes.apple.com", "calendly.com",
+}
+
 _STORE_PLATFORMS = {
     "apps.apple.com": "ios",
     "itunes.apple.com": "ios",
@@ -152,6 +161,67 @@ def parse_page(html: str | bytes, base_url: str) -> PageFacts:
         platforms=extract_platforms(soup),
         category=category,
     )
+
+
+def is_aggregator(url: str) -> bool:
+    return urlsplit(url).netloc.lower().removeprefix("www.") in AGGREGATOR_HOSTS
+
+
+def find_product_url(html: str | bytes, listing_url: str) -> str | None:
+    """The product's own home page, as linked from a listing page.
+
+    A directory entry links out to the thing it describes, usually several
+    times (header, hero button, footer). The most-linked host that is not the
+    directory itself or a social profile is that product.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    listing_host = urlsplit(listing_url).netloc.lower().removeprefix("www.")
+
+    counts: dict[str, int] = {}
+    first_seen: dict[str, str] = {}
+    for anchor in soup.find_all("a", href=True):
+        href = anchor["href"].strip()
+        if not href.startswith("http"):
+            continue
+        host = urlsplit(href).netloc.lower().removeprefix("www.")
+        if not host or host == listing_host:
+            continue
+        if host in _OUTBOUND_NOISE or host in AGGREGATOR_HOSTS:
+            continue
+        counts[host] = counts.get(host, 0) + 1
+        first_seen.setdefault(host, href)
+
+    if not counts:
+        return None
+    best_host = max(counts, key=lambda h: counts[h])
+    return first_seen[best_host]
+
+
+def resolve_and_enrich(
+    session: PoliteSession, url: str
+) -> tuple[str, PageFacts | None]:
+    """Enrich a candidate, following listing pages through to the real product.
+
+    Returns the URL the facts describe, which becomes the tool's website_url —
+    a directory page is where a tool was *found*, not where it lives.
+    """
+    if not is_aggregator(url):
+        return url, enrich_url(session, url)
+
+    response = session.get(url)
+    if response is None:
+        return url, None
+
+    product_url = find_product_url(response.content, url)
+    if product_url is None:
+        # Fall back to the listing itself; parse_page suppresses the
+        # directory's own name, logo and pricing.
+        return url, parse_page(response.content, url)
+
+    facts = enrich_url(session, product_url)
+    if facts is None:
+        return url, parse_page(response.content, url)
+    return product_url, facts
 
 
 def enrich_url(session: PoliteSession, url: str) -> PageFacts | None:

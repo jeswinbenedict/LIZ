@@ -1,4 +1,37 @@
-from liz_scraper.enrich import parse_page
+from liz_scraper.enrich import find_product_url, is_aggregator, parse_page
+
+
+LISTING = """
+<html><body>
+  <a href="https://openmarket.m11.ai">Visit</a>
+  <a href="https://openmarket.m11.ai/pricing">Pricing</a>
+  <a href="https://openmarket.m11.ai">Get it</a>
+  <a href="https://x.com/openmarket">Twitter</a>
+  <a href="https://www.linkedin.com/company/x">LinkedIn</a>
+  <a href="https://lu.ma/event">Launch event</a>
+  <a href="https://www.producthunt.com/posts/other">Another post</a>
+</body></html>
+"""
+
+
+def test_find_product_url_picks_the_most_linked_real_site():
+    url = find_product_url(LISTING, "https://www.producthunt.com/products/openmarket")
+    assert url.startswith("https://openmarket.m11.ai")
+
+
+def test_find_product_url_ignores_socials_and_the_directory_itself():
+    html = """
+    <html><body>
+      <a href="https://x.com/maker">X</a>
+      <a href="https://www.producthunt.com/posts/x">PH</a>
+    </body></html>
+    """
+    assert find_product_url(html, "https://www.producthunt.com/products/x") is None
+
+
+def test_is_aggregator_identifies_listing_hosts():
+    assert is_aggregator("https://www.producthunt.com/products/x")
+    assert not is_aggregator("https://acme.ai")
 
 PAGE = """
 <html>

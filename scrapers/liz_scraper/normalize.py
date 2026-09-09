@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 CATEGORIES = {
     "ai-writing",
@@ -45,14 +45,74 @@ _CATEGORY_KEYWORDS: list[tuple[str, tuple[str, ...]]] = [
     ("ai-productivity", ("productivity", "notes", "meeting", "calendar", "task", "crm")),
 ]
 
-_PAID_HINTS = ("pricing", "subscribe", "buy now", "start trial", "per month", "/mo", "$")
-_FREE_TIER_HINTS = ("free plan", "free tier", "free forever", "start free", "try for free")
-_FULLY_FREE_HINTS = ("open source", "100% free", "completely free", "mit license")
+# An actual price, not any stray "$". The trailing guard rejects funding
+# amounts — "$2M raised", "$500K seed" — which say nothing about what the
+# product costs.
+_PRICE_FIGURE = re.compile(
+    r"[$€£]\s?\d[\d,]*(?:\.\d+)?(?![\d,.]*\s?[mkb]\b)"
+    r"|\b\d+(?:\.\d+)?\s?(?:usd|eur|gbp)\b",
+    re.I,
+)
+
+_SUBSCRIPTION = re.compile(
+    r"\bper\s+(?:month|year|seat|user)\b|/\s?(?:mo|month|yr|year)\b"
+    r"|\bbilled\s+(?:annually|monthly|yearly)\b|\bsubscribe\b"
+    r"|\bupgrade\s+to\s+(?:pro|premium|plus|paid)\b",
+    re.I,
+)
+
+# A time-limited trial is how paid products are sold, not a free tier.
+_TRIAL = re.compile(
+    r"\bfree\s+trial\b|\b\d+[-\s]day\s+(?:free\s+)?trial\b|\btry\s+(?:it\s+)?free\s+for\b",
+    re.I,
+)
+
+# Language that only appears when there is a genuinely free way to use it.
+# "start free" is excluded when a trial immediately follows.
+_FREE_TIER = re.compile(
+    r"\bfree\s+(?:plan|tier|version|forever)\b"
+    r"|\b(?:get\s+started|start|sign\s+up)\s+(?:for\s+)?free\b(?!\s+trial)"
+    r"|\bno\s+credit\s+card\b"
+    r"|\bfree\s+to\s+use\b"
+    r"|\bfree\s+for\s+(?:personal|individual|non[-\s]?commercial)\b",
+    re.I,
+)
+
+_FULLY_FREE = re.compile(
+    r"\b(?:100%\s+free|completely\s+free|always\s+free|free\s+and\s+open[-\s]source)\b",
+    re.I,
+)
+
+_OPEN_SOURCE = re.compile(
+    r"\bopen[-\s]source\b|\b(?:mit|apache|gpl|bsd)\s+licen[cs]e\b", re.I
+)
 
 
 def slugify(value: str, *, max_length: int = 60) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return slug[:max_length].strip("-")
+
+
+_TRACKING_PARAMS = re.compile(
+    r"^(utm_\w+|ref|ref_src|source|via|fbclid|gclid|mc_cid|mc_eid)$", re.I
+)
+
+
+def strip_tracking(url: str) -> str:
+    """Remove referral noise while keeping parameters the page needs.
+
+    Links arrive from directories tagged "?ref=producthunt"; that belongs in
+    our analytics, not in the link a reader clicks.
+    """
+    parts = urlsplit(url.strip())
+    kept = [
+        (k, v)
+        for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        if not _TRACKING_PARAMS.match(k)
+    ]
+    query = urlencode(kept)
+    path = parts.path.rstrip("/") if parts.path != "/" else ""
+    return urlunsplit((parts.scheme, parts.netloc, path, query, ""))
 
 
 def canonical_url(url: str) -> str:
@@ -82,20 +142,29 @@ def infer_category(*texts: str) -> str:
 
 
 def infer_pricing(page_text: str) -> str:
-    """Best-effort read of a product page's pricing model."""
-    text = page_text.lower()
+    """Best-effort read of a product page's pricing model.
 
-    if any(hint in text for hint in _FULLY_FREE_HINTS):
+    Reports "unknown" rather than guessing: a wrong badge is worse than an
+    absent one, because a reader has no way to tell it is wrong.
+    """
+    paid = bool(
+        _PRICE_FIGURE.search(page_text)
+        or _SUBSCRIPTION.search(page_text)
+        or _TRIAL.search(page_text)
+    )
+    free_tier = bool(_FREE_TIER.search(page_text))
+
+    if _FULLY_FREE.search(page_text) and not paid:
         return "free"
-
-    has_paid_signal = any(hint in text for hint in _PAID_HINTS)
-    has_free_signal = any(hint in text for hint in _FREE_TIER_HINTS)
-
-    if has_paid_signal and has_free_signal:
+    if paid and free_tier:
         return "freemium"
-    if has_paid_signal:
+    if paid:
         return "paid"
-    if has_free_signal:
+    if free_tier:
+        return "free"
+    # Open source alone is not free-of-charge: open-core products sell hosting.
+    # It only decides the answer when nothing suggests money changes hands.
+    if _OPEN_SOURCE.search(page_text):
         return "free"
     return "unknown"
 
@@ -183,6 +252,7 @@ def build_tool_row(
         raise ValueError("name is required")
     if not website_url:
         raise ValueError("website_url is required")
+    website_url = strip_tracking(website_url)
 
     resolved_category = category if category in CATEGORIES else infer_category(
         name, tagline, description, " ".join(tags or [])

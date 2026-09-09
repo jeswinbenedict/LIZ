@@ -10,7 +10,7 @@ import logging
 from dataclasses import dataclass
 
 from .config import load_settings
-from .enrich import enrich_url
+from .enrich import resolve_and_enrich
 from .http_client import PoliteSession
 from .normalize import build_tool_row, choose_name, content_hash
 from .sources import ALL_SOURCES
@@ -62,14 +62,16 @@ def run(
 
     rows: list[dict] = []
     for candidate in candidates:
-        facts = enrich_url(session, candidate.url)
+        # A listing URL is where the tool was found; follow it to where the
+        # tool actually lives, so the facts describe the product.
+        site_url, facts = resolve_and_enrich(session, candidate.url)
         if facts is not None:
             result.enriched += 1
 
         rows.append(
             build_tool_row(
                 name=choose_name(candidate.name, facts.title if facts else ""),
-                website_url=candidate.url,
+                website_url=site_url,
                 tagline=candidate.tagline or (facts.description if facts else ""),
                 description=(facts.description if facts else candidate.tagline),
                 logo_url=facts.logo_url if facts else None,

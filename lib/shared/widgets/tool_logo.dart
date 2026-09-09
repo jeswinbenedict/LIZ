@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/config/env.dart';
 import '../models/tool.dart';
 
 /// Square tool logo with a branded gradient + initial fallback when no image.
@@ -28,7 +29,11 @@ class ToolLogo extends StatelessWidget {
       // only appears once the image actually loads; otherwise we show the
       // branded initial fallback full-bleed.
       return CachedNetworkImage(
-        imageUrl: tool.logoUrl!,
+        // A product's own favicon usually sends no CORS header, and Flutter web
+        // fetches image bytes — so without the proxy every scraped tool falls
+        // back to its initial tile. GitHub avatars happened to work, which is
+        // why this only surfaced once the catalog went beyond them.
+        imageUrl: Env.proxiedImage(tool.logoUrl!),
         imageBuilder: (context, imageProvider) => Container(
           width: size,
           height: size,
