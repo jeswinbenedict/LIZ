@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/models/app_notification.dart';
 import '../../shared/models/category.dart';
 import '../../shared/models/collection.dart';
 import '../../shared/models/comment.dart';
@@ -535,5 +536,42 @@ class SupabaseTrackRepository implements TrackRepository {
       'target_id': targetId,
     });
     return true;
+  }
+
+  @override
+  Future<List<AppNotification>> notifications({int limit = 50}) async {
+    final uid = _auth.currentUserId;
+    if (uid == null) return const [];
+    final rows = await _client
+        .from('notifications')
+        .select()
+        .eq('user_id', uid)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return (rows as List)
+        .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<void> markNotificationRead(String id) async {
+    final uid = _auth.currentUserId;
+    if (uid == null) return;
+    await _client
+        .from('notifications')
+        .update({'read': true})
+        .eq('id', id)
+        .eq('user_id', uid);
+  }
+
+  @override
+  Future<void> markAllNotificationsRead() async {
+    final uid = _auth.currentUserId;
+    if (uid == null) return;
+    await _client
+        .from('notifications')
+        .update({'read': true})
+        .eq('user_id', uid)
+        .eq('read', false);
   }
 }

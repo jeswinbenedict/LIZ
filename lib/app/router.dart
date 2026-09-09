@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/admin/admin_screen.dart';
+import '../features/alerts/alerts_screen.dart';
 import '../features/ask_liz/ask_liz_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/community/community_screen.dart';
@@ -32,19 +33,22 @@ GoRouter buildRouter() {
     initialLocation: '/',
     routes: [
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => AdaptiveShell(navigationShell: shell),
+        builder: (context, state, shell) =>
+            AdaptiveShell(navigationShell: shell),
         branches: [
           StatefulShellBranch(
             navigatorKey: _discoverKey,
             routes: [
               GoRoute(
                 path: '/',
-                pageBuilder: (c, s) => const NoTransitionPage(child: DiscoverScreen()),
+                pageBuilder: (c, s) =>
+                    const NoTransitionPage(child: DiscoverScreen()),
                 routes: [
                   GoRoute(
                     path: 'category/:slug',
-                    builder: (c, s) =>
-                        DiscoverScreen(initialCategory: s.pathParameters['slug']),
+                    builder: (c, s) => DiscoverScreen(
+                      initialCategory: s.pathParameters['slug'],
+                    ),
                   ),
                 ],
               ),
@@ -55,7 +59,8 @@ GoRouter buildRouter() {
             routes: [
               GoRoute(
                 path: '/news',
-                pageBuilder: (c, s) => const NoTransitionPage(child: NewsScreen()),
+                pageBuilder: (c, s) =>
+                    const NoTransitionPage(child: NewsScreen()),
               ),
             ],
           ),
@@ -64,7 +69,8 @@ GoRouter buildRouter() {
             routes: [
               GoRoute(
                 path: '/ask',
-                pageBuilder: (c, s) => const NoTransitionPage(child: AskLizScreen()),
+                pageBuilder: (c, s) =>
+                    const NoTransitionPage(child: AskLizScreen()),
               ),
             ],
           ),
@@ -73,7 +79,8 @@ GoRouter buildRouter() {
             routes: [
               GoRoute(
                 path: '/saved',
-                pageBuilder: (c, s) => const NoTransitionPage(child: SavedScreen()),
+                pageBuilder: (c, s) =>
+                    const NoTransitionPage(child: SavedScreen()),
               ),
             ],
           ),
@@ -122,7 +129,8 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/search',
         parentNavigatorKey: _rootKey,
-        builder: (c, s) => SearchScreen(initialQuery: s.uri.queryParameters['q']),
+        builder: (c, s) =>
+            SearchScreen(initialQuery: s.uri.queryParameters['q']),
       ),
       GoRoute(
         path: '/compare',
@@ -134,6 +142,11 @@ GoRouter buildRouter() {
               .toList();
           return CompareScreen(toolIds: ids);
         },
+      ),
+      GoRoute(
+        path: '/alerts',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const AlertsScreen(),
       ),
       GoRoute(
         path: '/signin',

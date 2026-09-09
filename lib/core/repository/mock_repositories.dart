@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../../shared/models/app_notification.dart';
 import '../../shared/models/category.dart';
 import '../../shared/models/collection.dart';
 import '../../shared/models/comment.dart';
@@ -18,10 +19,10 @@ import 'repositories.dart';
 /// within a session (a post you create shows up in feeds immediately).
 class MockStore {
   MockStore()
-      : tools = [...MockData.tools],
-        posts = [...MockData.posts],
-        reviews = [...MockData.reviews],
-        news = [...MockData.news];
+    : tools = [...MockData.tools],
+      posts = [...MockData.posts],
+      reviews = [...MockData.reviews],
+      news = [...MockData.news];
 
   final List<Tool> tools;
   final List<Post> posts;
@@ -34,6 +35,29 @@ class MockStore {
   final Set<String> userFollows = {}; // followed user ids
   final Set<String> likes = {}; // "$type:$id"
   final List<Collection> collections = [];
+
+  /// Seeded so the alerts screen shows what a real one looks like without a
+  /// backend — one unread, one already seen.
+  final List<AppNotification> notifications = [
+    AppNotification(
+      id: 'n-1',
+      type: 'pricing',
+      title: 'Descript changed its pricing',
+      body: 'Free is now Freemium.',
+      route: '/tool/t-1',
+      read: false,
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+    ),
+    AppNotification(
+      id: 'n-2',
+      type: 'trending',
+      title: 'Otter.ai is climbing',
+      body: 'It just entered the top 10 on Liz.',
+      route: '/tool/t-2',
+      read: true,
+      createdAt: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+  ];
 
   /// Seeded so the admin moderation queue isn't empty in demo mode.
   final List<ReportEntry> reports = [
@@ -49,7 +73,8 @@ class MockStore {
 
   int _seq = 0;
 
-  String nextId(String prefix) => '$prefix-mock-${_seq++}-'
+  String nextId(String prefix) =>
+      '$prefix-mock-${_seq++}-'
       '${DateTime.now().microsecondsSinceEpoch}';
 }
 
@@ -72,14 +97,18 @@ class MockContentRepository implements ContentRepository {
   double _risingScore(Tool t) {
     // High momentum, still low absolute popularity → surface it early.
     final popularityPenalty = math.log(t.saveCount + 10) * 6;
-    final recency = math.max(0, 20 - DateTime.now().difference(t.createdAt).inDays);
+    final recency = math.max(
+      0,
+      20 - DateTime.now().difference(t.createdAt).inDays,
+    );
     return t.trendScore + recency - popularityPenalty;
   }
 
   @override
   Future<Paginated<Tool>> tools(ToolQuery q) async {
-    Iterable<Tool> list =
-        _store.tools.where((t) => t.status == PublishStatus.published);
+    Iterable<Tool> list = _store.tools.where(
+      (t) => t.status == PublishStatus.published,
+    );
 
     if (q.categorySlug != null) {
       list = list.where((t) => t.category == q.categorySlug);
@@ -89,10 +118,12 @@ class MockContentRepository implements ContentRepository {
     }
     if (q.search != null && q.search!.trim().isNotEmpty) {
       final s = q.search!.toLowerCase();
-      list = list.where((t) =>
-          t.name.toLowerCase().contains(s) ||
-          t.tagline.toLowerCase().contains(s) ||
-          t.tags.any((tag) => tag.contains(s)));
+      list = list.where(
+        (t) =>
+            t.name.toLowerCase().contains(s) ||
+            t.tagline.toLowerCase().contains(s) ||
+            t.tags.any((tag) => tag.contains(s)),
+      );
     }
 
     final sorted = list.toList();
@@ -181,10 +212,15 @@ class MockCommunityRepository implements CommunityRepository {
     Iterable<Post> list = _store.posts.where((p) => p.status == 'active');
     if (toolId != null) list = list.where((p) => p.toolId == toolId);
     if (userId != null) list = list.where((p) => p.userId == userId);
-    final sorted = list.map((p) => p.copyWith(likedByMe: _liked('post', p.id))).toList();
+    final sorted = list
+        .map((p) => p.copyWith(likedByMe: _liked('post', p.id)))
+        .toList();
     if (trending) {
-      sorted.sort((a, b) => (b.likeCount + b.commentCount)
-          .compareTo(a.likeCount + a.commentCount));
+      sorted.sort(
+        (a, b) => (b.likeCount + b.commentCount).compareTo(
+          a.likeCount + a.commentCount,
+        ),
+      );
     } else {
       sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
@@ -242,19 +278,21 @@ class MockCommunityRepository implements CommunityRepository {
     (_store.commentsByPost[postId] ??= []).add(comment);
     final idx = _store.posts.indexWhere((p) => p.id == postId);
     if (idx >= 0) {
-      _store.posts[idx] = _store.posts[idx]
-          .copyWith(commentCount: _store.posts[idx].commentCount + 1);
+      _store.posts[idx] = _store.posts[idx].copyWith(
+        commentCount: _store.posts[idx].commentCount + 1,
+      );
     }
     return comment;
   }
 
   @override
   Future<List<Review>> reviewsForTool(String toolId) async {
-    final list = _store.reviews
-        .where((r) => r.toolId == toolId && r.status == 'active')
-        .map((r) => r.copyWith(likedByMe: _liked('review', r.id)))
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final list =
+        _store.reviews
+            .where((r) => r.toolId == toolId && r.status == 'active')
+            .map((r) => r.copyWith(likedByMe: _liked('review', r.id)))
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return list;
   }
 
@@ -281,8 +319,9 @@ class MockCommunityRepository implements CommunityRepository {
     required String body,
   }) async {
     final user = _requireUser();
-    final existing =
-        _store.reviews.indexWhere((r) => r.toolId == toolId && r.userId == user.id);
+    final existing = _store.reviews.indexWhere(
+      (r) => r.toolId == toolId && r.userId == user.id,
+    );
     final review = Review(
       id: existing >= 0 ? _store.reviews[existing].id : _store.nextId('r'),
       userId: user.id,
@@ -303,19 +342,25 @@ class MockCommunityRepository implements CommunityRepository {
   }
 
   void _recomputeRating(String toolId) {
-    final rs = _store.reviews.where((r) => r.toolId == toolId && r.status == 'active');
+    final rs = _store.reviews.where(
+      (r) => r.toolId == toolId && r.status == 'active',
+    );
     if (rs.isEmpty) return;
     final avg = rs.map((r) => r.rating).reduce((a, b) => a + b) / rs.length;
     final idx = _store.tools.indexWhere((t) => t.id == toolId);
     if (idx >= 0) {
-      _store.tools[idx] = _store.tools[idx]
-          .copyWith(avgRating: double.parse(avg.toStringAsFixed(2)), ratingCount: rs.length);
+      _store.tools[idx] = _store.tools[idx].copyWith(
+        avgRating: double.parse(avg.toStringAsFixed(2)),
+        ratingCount: rs.length,
+      );
     }
   }
 
   @override
-  Future<bool> toggleLike(
-      {required String targetType, required String targetId}) async {
+  Future<bool> toggleLike({
+    required String targetType,
+    required String targetId,
+  }) async {
     _requireUser();
     final key = '$targetType:$targetId';
     final nowLiked = !_store.likes.contains(key);
@@ -327,14 +372,16 @@ class MockCommunityRepository implements CommunityRepository {
     if (targetType == 'post') {
       final idx = _store.posts.indexWhere((p) => p.id == targetId);
       if (idx >= 0) {
-        _store.posts[idx] = _store.posts[idx]
-            .copyWith(likeCount: _store.posts[idx].likeCount + (nowLiked ? 1 : -1));
+        _store.posts[idx] = _store.posts[idx].copyWith(
+          likeCount: _store.posts[idx].likeCount + (nowLiked ? 1 : -1),
+        );
       }
     } else if (targetType == 'review') {
       final idx = _store.reviews.indexWhere((r) => r.id == targetId);
       if (idx >= 0) {
-        _store.reviews[idx] = _store.reviews[idx]
-            .copyWith(likeCount: _store.reviews[idx].likeCount + (nowLiked ? 1 : -1));
+        _store.reviews[idx] = _store.reviews[idx].copyWith(
+          likeCount: _store.reviews[idx].likeCount + (nowLiked ? 1 : -1),
+        );
       }
     }
     return nowLiked;
@@ -363,7 +410,8 @@ class MockAdminRepository implements AdminRepository {
   @override
   Future<void> setToolStatus(String toolId, PublishStatus status) async {
     final idx = _store.tools.indexWhere((t) => t.id == toolId);
-    if (idx >= 0) _store.tools[idx] = _store.tools[idx].copyWith(status: status);
+    if (idx >= 0)
+      _store.tools[idx] = _store.tools[idx].copyWith(status: status);
   }
 
   @override
@@ -381,7 +429,8 @@ class MockAdminRepository implements AdminRepository {
   @override
   Future<void> setPostStatus(String postId, String status) async {
     final idx = _store.posts.indexWhere((p) => p.id == postId);
-    if (idx >= 0) _store.posts[idx] = _store.posts[idx].copyWith(status: status);
+    if (idx >= 0)
+      _store.posts[idx] = _store.posts[idx].copyWith(status: status);
   }
 
   @override
@@ -420,8 +469,9 @@ class MockTrackRepository implements TrackRepository {
     }
     final idx = _store.tools.indexWhere((t) => t.id == toolId);
     if (idx >= 0) {
-      _store.tools[idx] = _store.tools[idx]
-          .copyWith(saveCount: _store.tools[idx].saveCount + (added ? 1 : -1));
+      _store.tools[idx] = _store.tools[idx].copyWith(
+        saveCount: _store.tools[idx].saveCount + (added ? 1 : -1),
+      );
     }
     return added;
   }
@@ -470,5 +520,26 @@ class MockTrackRepository implements TrackRepository {
       _store.userFollows.remove(userId);
     }
     return added;
+  }
+
+  @override
+  Future<List<AppNotification>> notifications({int limit = 50}) async {
+    if (_auth.currentProfile == null) return const [];
+    return _store.notifications.take(limit).toList();
+  }
+
+  @override
+  Future<void> markNotificationRead(String id) async {
+    final i = _store.notifications.indexWhere((n) => n.id == id);
+    if (i >= 0) {
+      _store.notifications[i] = _store.notifications[i].copyWith(read: true);
+    }
+  }
+
+  @override
+  Future<void> markAllNotificationsRead() async {
+    for (var i = 0; i < _store.notifications.length; i++) {
+      _store.notifications[i] = _store.notifications[i].copyWith(read: true);
+    }
   }
 }

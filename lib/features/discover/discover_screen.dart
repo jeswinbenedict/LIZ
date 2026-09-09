@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/responsive/adaptive_shell.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../core/providers.dart';
+import '../alerts/alerts_screen.dart';
 import '../../shared/models/category.dart';
 import '../../shared/widgets/tool_grid_sliver.dart';
 import 'discover_controller.dart';
@@ -74,9 +75,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   titleSpacing: 20,
                   title: context.isPhone
                       ? const LizWordmark()
-                      : Text('Discover',
-                          style: Theme.of(context).textTheme.headlineSmall),
+                      : Text(
+                          'Discover',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
                   actions: [
+                    const AlertsBell(),
                     IconButton(
                       tooltip: 'Search',
                       icon: const Icon(Icons.search),
@@ -121,18 +125,34 @@ class _CategoryChips extends ConsumerWidget {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
-            _chip(context, ref, label: 'All', slug: null, selected: selected == null),
+            _chip(
+              context,
+              ref,
+              label: 'All',
+              slug: null,
+              selected: selected == null,
+            ),
             for (final Category c in categories)
-              _chip(context, ref,
-                  label: c.name, slug: c.slug, selected: selected == c.slug),
+              _chip(
+                context,
+                ref,
+                label: c.name,
+                slug: c.slug,
+                selected: selected == c.slug,
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _chip(BuildContext context, WidgetRef ref,
-      {required String label, required String? slug, required bool selected}) {
+  Widget _chip(
+    BuildContext context,
+    WidgetRef ref, {
+    required String label,
+    required String? slug,
+    required bool selected,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: FilterChip(
@@ -175,9 +195,8 @@ class _SortBar extends ConsumerWidget {
                   // the selected chip after its width had been measured, which
                   // pushed labels past the border — "Trending" lost its 'g'.
                   showCheckmark: false,
-                  onSelected: (_) => ref
-                      .read(discoverSortProvider.notifier)
-                      .state = entry.key,
+                  onSelected: (_) =>
+                      ref.read(discoverSortProvider.notifier).state = entry.key,
                 ),
               ),
           ],

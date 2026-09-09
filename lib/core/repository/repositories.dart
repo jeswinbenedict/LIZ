@@ -1,3 +1,4 @@
+import '../../shared/models/app_notification.dart';
 import '../../shared/models/category.dart';
 import '../../shared/models/collection.dart';
 import '../../shared/models/comment.dart';
@@ -154,4 +155,10 @@ abstract interface class TrackRepository {
 
   Future<Set<String>> followedUserIds();
   Future<bool> toggleFollowUser(String userId);
+
+  /// Alerts for the signed-in user, newest first. Empty for a guest — there is
+  /// nobody to have alerts about.
+  Future<List<AppNotification>> notifications({int limit = 50});
+  Future<void> markNotificationRead(String id);
+  Future<void> markAllNotificationsRead();
 }
