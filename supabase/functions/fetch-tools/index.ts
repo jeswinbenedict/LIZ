@@ -179,7 +179,12 @@ Deno.serve(async (req) => {
           source_url: r.html_url,
           content_hash: hash,
           launched_at: (r.pushed_at ?? new Date().toISOString()).slice(0, 10),
-          trend_score: Math.round(Math.log10(r.stargazers_count + 10) * 20),
+          // trend_score is deliberately not set here. refresh_trend_scores()
+          // owns it, normalising every tool onto one 0-100 scale from the
+          // engagement signals below. Writing a raw log10(stars) figure here
+          // overwrote that with a different scale that ran past 100, which put
+          // trending repos above ChatGPT on Discover while their rank badges
+          // still read #41.
           view_count: r.stargazers_count,
           status: 'published',
           updated_at: new Date().toISOString(),
