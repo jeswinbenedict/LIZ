@@ -171,6 +171,10 @@ class _SortBar extends ConsumerWidget {
                 child: ChoiceChip(
                   label: Text(entry.value),
                   selected: sort == entry.key,
+                  // Matches the category row above. The checkmark also widened
+                  // the selected chip after its width had been measured, which
+                  // pushed labels past the border — "Trending" lost its 'g'.
+                  showCheckmark: false,
                   onSelected: (_) => ref
                       .read(discoverSortProvider.notifier)
                       .state = entry.key,

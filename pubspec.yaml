@@ -42,7 +42,6 @@ dependencies:
   cached_network_image: ^3.4.1
   intl: ^0.20.3
   share_plus: ^13.3.0
-  google_fonts: ^8.2.1
   shared_preferences: ^2.5.5
   url_launcher: ^6.3.2
   image_picker: ^1.2.3
@@ -103,6 +102,15 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/branding/
+
+  # Inter is bundled rather than fetched from fonts.gstatic.com at runtime.
+  # Fetching it cost 1.6 MB per load, sent every visitor's IP to Google, and
+  # laid the UI out with fallback metrics first — which is why chip labels
+  # rendered clipped ("Trendin", "Top rate") until the real font arrived.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Latin.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

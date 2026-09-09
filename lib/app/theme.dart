@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Liz design tokens + Material 3 light/dark themes.
 ///
@@ -39,6 +38,8 @@ class LizSpacing {
   static const double xl = 40;
 }
 
+const String _fontFamily = 'Inter';
+
 class LizTheme {
   const LizTheme._();
 
@@ -54,7 +55,7 @@ class LizTheme {
     final baseText = brightness == Brightness.dark
         ? ThemeData.dark().textTheme
         : ThemeData.light().textTheme;
-    final textTheme = GoogleFonts.interTextTheme(baseText);
+    final textTheme = baseText.apply(fontFamily: _fontFamily);
 
     return ThemeData(
       useMaterial3: true,
@@ -79,7 +80,7 @@ class LizTheme {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: const TextStyle(fontFamily: _fontFamily).copyWith(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.5,
@@ -124,7 +125,7 @@ class LizTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(LizRadius.md),
           ),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontFamily: _fontFamily).copyWith(fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -133,7 +134,7 @@ class LizTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(LizRadius.md),
           ),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontFamily: _fontFamily).copyWith(fontWeight: FontWeight.w600),
         ),
       ),
       dividerTheme: DividerThemeData(
