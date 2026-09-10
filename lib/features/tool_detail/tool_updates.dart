@@ -23,16 +23,16 @@ class ToolUpdate {
   final DateTime? publishedAt;
 
   factory ToolUpdate.fromJson(Map<String, dynamic> j) => ToolUpdate(
-        title: (j['title'] ?? '').toString(),
-        note: (j['note'] == null || j['note'].toString().isEmpty)
-            ? null
-            : j['note'].toString(),
-        url: (j['url'] ?? '').toString(),
-        source: (j['source'] ?? '').toString(),
-        publishedAt: j['published_at'] == null
-            ? null
-            : DateTime.tryParse(j['published_at'].toString()),
-      );
+    title: (j['title'] ?? '').toString(),
+    note: (j['note'] == null || j['note'].toString().isEmpty)
+        ? null
+        : j['note'].toString(),
+    url: (j['url'] ?? '').toString(),
+    source: (j['source'] ?? '').toString(),
+    publishedAt: j['published_at'] == null
+        ? null
+        : DateTime.tryParse(j['published_at'].toString()),
+  );
 }
 
 /// Identifies which tool to fetch updates for (name + repo hints).
@@ -42,21 +42,20 @@ typedef ToolUpdateKey = (String name, String? sourceUrl, String slug);
 /// else feature-announcement fallback. autoDispose = fresh on each visit.
 final toolUpdatesProvider = FutureProvider.autoDispose
     .family<List<ToolUpdate>, ToolUpdateKey>((ref, key) async {
-  final client = ref.watch(supabaseClientProvider);
-  if (client == null || key.$1.trim().isEmpty) return const [];
-  final res = await client.functions.invoke('tool-updates', body: {
-    'name': key.$1,
-    'source_url': key.$2,
-    'slug': key.$3,
-  });
-  final payload = res.data;
-  if (payload is! Map || payload['data'] is! List) return const [];
-  return (payload['data'] as List)
-      .whereType<Map>()
-      .map((e) => ToolUpdate.fromJson(e.cast<String, dynamic>()))
-      .where((u) => u.title.isNotEmpty && u.url.isNotEmpty)
-      .toList();
-});
+      final client = ref.watch(supabaseClientProvider);
+      if (client == null || key.$1.trim().isEmpty) return const [];
+      final res = await client.functions.invoke(
+        'tool-updates',
+        body: {'name': key.$1, 'source_url': key.$2, 'slug': key.$3},
+      );
+      final payload = res.data;
+      if (payload is! Map || payload['data'] is! List) return const [];
+      return (payload['data'] as List)
+          .whereType<Map>()
+          .map((e) => ToolUpdate.fromJson(e.cast<String, dynamic>()))
+          .where((u) => u.title.isNotEmpty && u.url.isNotEmpty)
+          .toList();
+    });
 
 /// "What's new" section shown on every tool detail page — live per visit.
 class ToolUpdatesSection extends ConsumerWidget {
@@ -74,7 +73,8 @@ class ToolUpdatesSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // No backend in demo/mock mode → hide the section entirely.
-    if (ref.watch(supabaseClientProvider) == null) return const SizedBox.shrink();
+    if (ref.watch(supabaseClientProvider) == null)
+      return const SizedBox.shrink();
 
     final scheme = Theme.of(context).colorScheme;
     final key = (name, sourceUrl, slug);
@@ -103,7 +103,10 @@ class ToolUpdatesSection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Center(
               child: SizedBox(
-                  width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
           ),
           error: (_, __) => _Hint(
@@ -150,30 +153,49 @@ class _UpdateRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(isRelease ? Icons.rocket_launch_outlined : Icons.campaign_outlined,
-                size: 18, color: scheme.primary),
+            Icon(
+              isRelease
+                  ? Icons.rocket_launch_outlined
+                  : Icons.campaign_outlined,
+              size: 18,
+              color: scheme.primary,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3)),
+                  Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                    ),
+                  ),
                   if (item.note != null) ...[
                     const SizedBox(height: 2),
-                    Text(item.note!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant, height: 1.3)),
+                    Text(
+                      item.note!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: scheme.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 4),
                   Text(
                     item.publishedAt != null
                         ? '${item.source} · ${timeAgo(item.publishedAt!)}'
                         : item.source,
-                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -199,8 +221,11 @@ class _Hint extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Expanded(child: Text(text, style: TextStyle(color: scheme.onSurfaceVariant))),
-          if (onRetry != null) TextButton(onPressed: onRetry, child: const Text('Retry')),
+          Expanded(
+            child: Text(text, style: TextStyle(color: scheme.onSurfaceVariant)),
+          ),
+          if (onRetry != null)
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

@@ -189,6 +189,28 @@ class MockContentRepository implements ContentRepository {
           t.category.contains(s);
     }).toList();
   }
+
+  @override
+  Future<List<Tool>> similarTools(String toolId) async {
+    // No embeddings offline, so category and shared tags stand in — close
+    // enough to lay out the section without pretending to be the real thing.
+    final source = _store.tools.where((t) => t.id == toolId).firstOrNull;
+    if (source == null) return const [];
+    final scored =
+        _store.tools
+            .where((t) => t.id != toolId && t.status == PublishStatus.published)
+            .map(
+              (t) => (
+                t,
+                (t.category == source.category ? 2 : 0) +
+                    t.tags.where(source.tags.contains).length,
+              ),
+            )
+            .where((e) => e.$2 > 0)
+            .toList()
+          ..sort((a, b) => b.$2.compareTo(a.$2));
+    return scored.take(6).map((e) => e.$1).toList();
+  }
 }
 
 class MockCommunityRepository implements CommunityRepository {

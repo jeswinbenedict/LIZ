@@ -71,6 +71,10 @@ abstract interface class ContentRepository {
 
   /// Full-text-ish search across tools (name, tagline, tags).
   Future<List<Tool>> searchTools(String query);
+
+  /// Tools close to this one by meaning, nearest first. May be empty when
+  /// nothing in the catalog is genuinely close — see migration 0023.
+  Future<List<Tool>> similarTools(String toolId);
 }
 
 /// Community: posts, reviews, comments, likes, reports.

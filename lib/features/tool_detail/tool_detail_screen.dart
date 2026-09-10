@@ -17,6 +17,7 @@ import '../community/community_widgets.dart';
 import '../community/composers.dart';
 import '../track/bookmark_button.dart';
 import '../track/follow_button.dart';
+import 'similar_tools.dart';
 import 'tool_updates.dart';
 
 class ToolDetailScreen extends ConsumerWidget {
@@ -29,13 +30,15 @@ class ToolDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/');
-          }
-        }),
+        leading: BackButton(
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
         actions: [
           toolAsync.maybeWhen(
             data: (tool) => tool == null
@@ -58,7 +61,8 @@ class ToolDetailScreen extends ConsumerWidget {
             ? const EmptyView(
                 icon: Icons.help_outline,
                 title: 'Tool not found',
-                message: 'It may have been removed.')
+                message: 'It may have been removed.',
+              )
             : _ToolBody(tool: tool),
       ),
     );
@@ -67,7 +71,9 @@ class ToolDetailScreen extends ConsumerWidget {
   void _share(Tool tool) {
     final link = tool.websiteUrl ?? 'https://liz.app/tool/${tool.slug}';
     SharePlus.instance.share(
-      ShareParams(text: 'Check out ${tool.name} on Liz — ${tool.tagline}\n$link'),
+      ShareParams(
+        text: 'Check out ${tool.name} on Liz — ${tool.tagline}\n$link',
+      ),
     );
   }
 }
@@ -80,8 +86,9 @@ class _ToolBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final reviewsAsync = ref.watch(reviewsForToolProvider(tool.id));
-    final postsAsync =
-        ref.watch(postFeedProvider(PostFeedKey(toolId: tool.id)));
+    final postsAsync = ref.watch(
+      postFeedProvider(PostFeedKey(toolId: tool.id)),
+    );
 
     return MaxWidth(
       maxWidth: 860,
@@ -98,12 +105,19 @@ class _ToolBody extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(tool.name,
-                        style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      tool.name,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     const SizedBox(height: 4),
-                    Text(tool.tagline,
-                        style: TextStyle(
-                            color: scheme.onSurfaceVariant, fontSize: 15, height: 1.3)),
+                    Text(
+                      tool.tagline,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 15,
+                        height: 1.3,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -120,7 +134,11 @@ class _ToolBody extends ConsumerWidget {
                 LizPill(label: tool.priceNote!, color: scheme.onSurfaceVariant),
               TrendBadge(tool),
               if (tool.isNew)
-                const LizPill(label: 'NEW', color: LizColors.positive, filled: true),
+                const LizPill(
+                  label: 'NEW',
+                  color: LizColors.positive,
+                  filled: true,
+                ),
               for (final p in tool.platforms)
                 LizPill(label: p, color: scheme.onSurfaceVariant),
             ],
@@ -151,7 +169,9 @@ class _ToolBody extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: scheme.primary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(LizRadius.md),
-                border: Border.all(color: scheme.primary.withValues(alpha: 0.15)),
+                border: Border.all(
+                  color: scheme.primary.withValues(alpha: 0.15),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,9 +180,13 @@ class _ToolBody extends ConsumerWidget {
                     children: [
                       Icon(Icons.auto_awesome, size: 16, color: scheme.primary),
                       const SizedBox(width: 6),
-                      Text('AI summary',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700, color: scheme.primary)),
+                      Text(
+                        'AI summary',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: scheme.primary,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -173,7 +197,12 @@ class _ToolBody extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('•  '),
-                          Expanded(child: Text(bullet, style: const TextStyle(height: 1.35))),
+                          Expanded(
+                            child: Text(
+                              bullet,
+                              style: const TextStyle(height: 1.35),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -189,16 +218,26 @@ class _ToolBody extends ConsumerWidget {
           Text(tool.description, style: const TextStyle(height: 1.5)),
           const SizedBox(height: 28),
 
+          // Related products, matched on the embeddings already in the table.
+          SimilarToolsSection(toolId: tool.id),
+
           // Live "what's new" for this tool — real releases / feature updates.
           ToolUpdatesSection(
-              name: tool.name, slug: tool.slug, sourceUrl: tool.sourceUrl),
+            name: tool.name,
+            slug: tool.slug,
+            sourceUrl: tool.sourceUrl,
+          ),
 
           // Ratings
           _SectionHeader(
             title: 'Ratings & reviews',
             trailing: TextButton.icon(
-              onPressed: () => showReviewComposer(context, ref,
-                  toolId: tool.id, toolName: tool.name),
+              onPressed: () => showReviewComposer(
+                context,
+                ref,
+                toolId: tool.id,
+                toolName: tool.name,
+              ),
               icon: const Icon(Icons.rate_review_outlined, size: 18),
               label: const Text('Write'),
             ),
@@ -207,13 +246,17 @@ class _ToolBody extends ConsumerWidget {
           _RatingSummary(tool: tool),
           reviewsAsync.when(
             loading: () => const Padding(
-                padding: EdgeInsets.all(20), child: LoadingView()),
+              padding: EdgeInsets.all(20),
+              child: LoadingView(),
+            ),
             error: (_, __) => const SizedBox.shrink(),
             data: (List<Review> reviews) => reviews.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No reviews yet — be the first.',
-                        style: TextStyle(color: scheme.onSurfaceVariant)),
+                    child: Text(
+                      'No reviews yet — be the first.',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                   )
                 : Column(
                     children: [
@@ -230,8 +273,12 @@ class _ToolBody extends ConsumerWidget {
           _SectionHeader(
             title: 'From the community',
             trailing: TextButton.icon(
-              onPressed: () => showPostComposer(context, ref,
-                  toolId: tool.id, toolName: tool.name),
+              onPressed: () => showPostComposer(
+                context,
+                ref,
+                toolId: tool.id,
+                toolName: tool.name,
+              ),
               icon: const Icon(Icons.edit_outlined, size: 18),
               label: const Text('Post'),
             ),
@@ -239,13 +286,17 @@ class _ToolBody extends ConsumerWidget {
           const SizedBox(height: 8),
           postsAsync.when(
             loading: () => const Padding(
-                padding: EdgeInsets.all(20), child: LoadingView()),
+              padding: EdgeInsets.all(20),
+              child: LoadingView(),
+            ),
             error: (_, __) => const SizedBox.shrink(),
             data: (posts) => posts.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No posts about this tool yet.',
-                        style: TextStyle(color: scheme.onSurfaceVariant)),
+                    child: Text(
+                      'No posts about this tool yet.',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                   )
                 : Column(
                     children: [
@@ -281,19 +332,22 @@ class _RatingSummary extends StatelessWidget {
     }
     return Row(
       children: [
-        Text(tool.avgRating.toStringAsFixed(1),
-            style: Theme.of(context)
-                .textTheme
-                .headlineMedium
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          tool.avgRating.toStringAsFixed(1),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             RatingStars(tool.avgRating, size: 18),
             const SizedBox(height: 2),
-            Text('${tool.ratingCount} rating${tool.ratingCount == 1 ? '' : 's'}',
-                style: TextStyle(color: scheme.onSurfaceVariant)),
+            Text(
+              '${tool.ratingCount} rating${tool.ratingCount == 1 ? '' : 's'}',
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
           ],
         ),
       ],

@@ -142,6 +142,21 @@ class SupabaseContentRepository implements ContentRepository {
         .limit(30);
     return (rows as List).map((e) => Tool.fromJson(e)).toList();
   }
+
+  @override
+  Future<List<Tool>> similarTools(String toolId) async {
+    // The comparison runs in Postgres against the vectors already stored for
+    // Ask Liz: no model call, no embedding sent over the wire, one index hit.
+    final rows = await _client.rpc<dynamic>(
+      'similar_tools',
+      params: {'source_id': toolId},
+    );
+    if (rows is! List) return const [];
+    return rows
+        .whereType<Map>()
+        .map((e) => Tool.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
 }
 
 class SupabaseCommunityRepository implements CommunityRepository {
