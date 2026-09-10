@@ -6,10 +6,16 @@ import 'package:liz/core/config/env.dart';
 /// no website it fell back to liz.app, a domain nobody owns.
 
 void main() {
+  test('a permalink routes the way the app actually routes', () {
+    // The app reads the URL fragment, so a path-form link loads the home
+    // screen and silently drops the tool.
+    expect(Env.permalinkFrom('https://liz.example', 'x'), contains('/#/tool/'));
+  });
+
   test('a permalink points at Liz, not at the product', () {
     expect(
       Env.permalinkFrom('https://liz.example', 'abc-123'),
-      'https://liz.example/tool/abc-123',
+      'https://liz.example/#/tool/abc-123',
     );
   });
 
@@ -22,7 +28,7 @@ void main() {
     ]) {
       expect(
         Env.permalinkFrom(base, 'abc'),
-        'https://liz.example/tool/abc',
+        'https://liz.example/#/tool/abc',
         reason: 'from "$base"',
       );
     }

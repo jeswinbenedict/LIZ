@@ -60,11 +60,17 @@ class Env {
   /// Split out from the platform lookup so the rules can be checked without a
   /// browser: no origin means no link, and a trailing slash never survives
   /// into one (two slashes look broken even when they resolve).
+  ///
+  /// The `#` is not decoration. The app routes on the URL fragment, so
+  /// `<origin>/tool/<id>` loads the home screen and quietly drops the tool —
+  /// a shared link that goes to the wrong place is worse than none. Moving to
+  /// clean paths means teaching whatever serves the build to fall back to
+  /// index.html, which is a deployment change, not a client one.
   @visibleForTesting
   static String? permalinkFrom(String base, String toolId) {
     final clean = _normalizeBase(base);
     if (clean.isEmpty || toolId.trim().isEmpty) return null;
-    return '$clean/tool/$toolId';
+    return '$clean/#/tool/$toolId';
   }
 
   static String _normalizeBase(String raw) =>
