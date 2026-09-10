@@ -37,6 +37,39 @@ class Env {
     defaultValue: '',
   );
 
+  /// Where Liz is served from, used to build shareable links to its own pages.
+  ///
+  /// Set it at build time for production. On the web the running origin is the
+  /// right answer anyway, so this only matters for native builds, which have no
+  /// address of their own to fall back on.
+  static const String siteUrl = String.fromEnvironment(
+    'SITE_URL',
+    defaultValue: '',
+  );
+
+  /// The origin to hang a shared link off, or empty when there is none to give.
+  static String get resolvedSiteUrl => siteUrl.isNotEmpty
+      ? _normalizeBase(siteUrl)
+      : (kIsWeb ? Uri.base.origin : '');
+
+  /// A link to a tool's page on Liz, or null when Liz has no public address —
+  /// better to share nothing than a link that goes nowhere.
+  static String? toolPermalink(String toolId) =>
+      permalinkFrom(resolvedSiteUrl, toolId);
+
+  /// Split out from the platform lookup so the rules can be checked without a
+  /// browser: no origin means no link, and a trailing slash never survives
+  /// into one (two slashes look broken even when they resolve).
+  @visibleForTesting
+  static String? permalinkFrom(String base, String toolId) {
+    final clean = _normalizeBase(base);
+    if (clean.isEmpty || toolId.trim().isEmpty) return null;
+    return '$clean/tool/$toolId';
+  }
+
+  static String _normalizeBase(String raw) =>
+      raw.trim().replaceAll(RegExp(r'/+$'), '');
+
   /// True when real Supabase credentials are present. Drives the repository
   /// layer's mock-vs-live selection.
   static bool get useSupabase =>

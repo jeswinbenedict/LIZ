@@ -51,7 +51,7 @@ class SimilarToolsSection extends ConsumerWidget {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 116,
+          height: 128,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: tools.length,
@@ -102,7 +102,7 @@ class _SimilarCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           tool.tagline,
-                          maxLines: 3,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12.5,

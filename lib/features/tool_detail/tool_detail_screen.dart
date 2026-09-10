@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
+import '../../core/config/env.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
@@ -69,11 +70,15 @@ class ToolDetailScreen extends ConsumerWidget {
   }
 
   void _share(Tool tool) {
-    final link = tool.websiteUrl ?? 'https://liz.app/tool/${tool.slug}';
+    // "Check out X on Liz" used to link to the product's own website, so
+    // sharing sent people away from Liz — and when a tool had no website it
+    // fell back to liz.app, a domain nobody owns. Share Liz's own page for the
+    // tool, and only fall back to the product's site if Liz has no address to
+    // give (a native build with no SITE_URL).
+    final link = Env.toolPermalink(tool.id) ?? tool.websiteUrl;
+    final text = 'Check out ${tool.name} on Liz — ${tool.tagline}';
     SharePlus.instance.share(
-      ShareParams(
-        text: 'Check out ${tool.name} on Liz — ${tool.tagline}\n$link',
-      ),
+      ShareParams(text: link == null ? text : '$text\n$link'),
     );
   }
 }
