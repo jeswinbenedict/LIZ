@@ -54,10 +54,17 @@ Deno.serve(async (req) => {
           description: `${tool.tagline ?? ''} ${tool.description ?? ''}`.trim(),
         });
 
-        // Writing an empty array would leave the row in the view forever,
-        // retried on every run; leave it for a later attempt instead.
+        // A row that yields nothing usable will usually yield nothing usable
+        // again — a README that is a badge table, a description that is one
+        // line of shell. Skipping alone leaves it in the backlog forever, so
+        // once this has happened three times the row drops out of the view and
+        // stops spending a batch slot every quarter of an hour.
+        //
+        // Only this branch counts. A thrown error is a rate limit or a network
+        // failure, which is not the row's fault.
         if (bullets.length === 0) {
           failures.push(`${tool.name}: no usable bullets`);
+          await supabase.rpc('note_summary_attempt', { tool_id: tool.id });
           continue;
         }
 

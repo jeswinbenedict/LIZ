@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/models/app_notification.dart';
+import '../../shared/models/json.dart';
 import '../../shared/models/category.dart';
 import '../../shared/models/collection.dart';
 import '../../shared/models/comment.dart';
@@ -432,6 +433,58 @@ class SupabaseAdminRepository implements AdminRepository {
         .from('reports')
         .update({'status': 'resolved'})
         .eq('id', reportId);
+  }
+
+  @override
+  Future<List<HealthSignal>> health() async {
+    final rows = await _client.rpc<dynamic>('system_health');
+    if (rows is! List) return const [];
+    return rows.whereType<Map>().map((e) {
+      return HealthSignal(
+        signal: asString(e['signal']),
+        status: asString(e['status'], 'ok'),
+        value: asDouble(e['value']),
+        detail: asString(e['detail']),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<List<JobRun>> recentJobRuns({int limit = 20}) async {
+    final rows = await _client.rpc<dynamic>(
+      'recent_job_runs',
+      params: {'limit_count': limit},
+    );
+    if (rows is! List) return const [];
+    return rows.whereType<Map>().map((e) {
+      return JobRun(
+        jobName: asString(e['job_name']),
+        status: asString(e['status']),
+        startedAt: asDate(e['started_at']),
+        durationSeconds: asDouble(e['duration_s']),
+        message: asString(e['message']),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<List<ErrorGroup>> recentErrors({int limit = 20}) async {
+    final rows = await _client
+        .from('error_summary')
+        .select()
+        .order('last_seen', ascending: false)
+        .limit(limit);
+    return (rows as List).whereType<Map>().map((e) {
+      final route = asStringOrNull(e['latest_route']);
+      return ErrorGroup(
+        fingerprint: asString(e['fingerprint']),
+        occurrences: asInt(e['occurrences']),
+        affectedUsers: asInt(e['affected_users']),
+        lastSeen: asDate(e['last_seen']),
+        message: asString(e['latest_message']),
+        route: route == null || route.isEmpty ? null : route,
+      );
+    }).toList();
   }
 }
 

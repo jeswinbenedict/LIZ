@@ -465,6 +465,55 @@ class MockAdminRepository implements AdminRepository {
   Future<void> resolveReport(String reportId) async {
     _store.reports.removeWhere((r) => r.id == reportId);
   }
+
+  @override
+  Future<List<HealthSignal>> health() async => [
+    const HealthSignal(
+      signal: 'catalog_freshness_hours',
+      status: 'ok',
+      value: 6.2,
+      detail: 'Hours since the newest published tool. The fetch runs daily.',
+    ),
+    const HealthSignal(
+      signal: 'news_freshness_hours',
+      status: 'ok',
+      value: 1.1,
+      detail: 'Hours since the newest published article.',
+    ),
+    const HealthSignal(
+      signal: 'ai_summary_coverage_pct',
+      status: 'warn',
+      value: 71,
+      detail: 'Summarised, of the published tools that can be summarised.',
+    ),
+    const HealthSignal(
+      signal: 'client_errors_24h',
+      status: 'ok',
+      value: 0,
+      detail: 'Crash reports filed by clients in the last day.',
+    ),
+  ];
+
+  @override
+  Future<List<JobRun>> recentJobRuns({int limit = 20}) async => [
+    JobRun(
+      jobName: 'fetch-news-hourly',
+      status: 'succeeded',
+      startedAt: DateTime.now().subtract(const Duration(minutes: 12)),
+      durationSeconds: 0.41,
+      message: '',
+    ),
+    JobRun(
+      jobName: 'fetch-tools-daily',
+      status: 'succeeded',
+      startedAt: DateTime.now().subtract(const Duration(hours: 6)),
+      durationSeconds: 0.38,
+      message: '',
+    ),
+  ];
+
+  @override
+  Future<List<ErrorGroup>> recentErrors({int limit = 20}) async => const [];
 }
 
 class MockTrackRepository implements TrackRepository {

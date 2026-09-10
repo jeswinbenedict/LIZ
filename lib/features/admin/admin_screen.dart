@@ -9,11 +9,14 @@ import '../../shared/models/tool.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/tool_logo.dart';
+import 'health_tab.dart';
 
 final _allToolsProvider = FutureProvider<List<Tool>>(
-    (ref) => ref.watch(adminRepositoryProvider).allTools());
+  (ref) => ref.watch(adminRepositoryProvider).allTools(),
+);
 final _reportsProvider = FutureProvider<List<ReportEntry>>(
-    (ref) => ref.watch(adminRepositoryProvider).openReports());
+  (ref) => ref.watch(adminRepositoryProvider).openReports(),
+);
 
 /// Web-focused moderation console. Role-gated: non-admins are turned away
 /// (defense-in-depth on top of RLS, which is the real enforcement).
@@ -31,19 +34,22 @@ class AdminScreen extends ConsumerWidget {
           title: 'Admins only',
           message: 'You don\'t have permission to view this page.',
           action: FilledButton(
-              onPressed: () => context.go('/'), child: const Text('Go home')),
+            onPressed: () => context.go('/'),
+            child: const Text('Go home'),
+          ),
         ),
       );
     }
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Admin console'),
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
+              Tab(text: 'Health', icon: Icon(Icons.monitor_heart_outlined)),
               Tab(text: 'Content', icon: Icon(Icons.inventory_2_outlined)),
               Tab(text: 'Moderation', icon: Icon(Icons.flag_outlined)),
             ],
@@ -52,7 +58,7 @@ class AdminScreen extends ConsumerWidget {
         body: MaxWidth(
           maxWidth: 1000,
           child: const TabBarView(
-            children: [_ContentTab(), _ModerationTab()],
+            children: [HealthTab(), _ContentTab(), _ModerationTab()],
           ),
         ),
       ),
@@ -81,8 +87,10 @@ class _ContentTab extends ConsumerWidget {
             contentPadding: const EdgeInsets.symmetric(vertical: 6),
             leading: ToolLogo(tool: t, size: 44),
             title: Text(t.name),
-            subtitle: Text('${t.source ?? 'manual'} · ${t.category}',
-                style: TextStyle(color: scheme.onSurfaceVariant)),
+            subtitle: Text(
+              '${t.source ?? 'manual'} · ${t.category}',
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
             trailing: Wrap(
               spacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -97,11 +105,17 @@ class _ContentTab extends ConsumerWidget {
                   },
                   itemBuilder: (_) => const [
                     PopupMenuItem(
-                        value: PublishStatus.published, child: Text('Publish')),
+                      value: PublishStatus.published,
+                      child: Text('Publish'),
+                    ),
                     PopupMenuItem(
-                        value: PublishStatus.pending, child: Text('Mark pending')),
+                      value: PublishStatus.pending,
+                      child: Text('Mark pending'),
+                    ),
                     PopupMenuItem(
-                        value: PublishStatus.hidden, child: Text('Hide')),
+                      value: PublishStatus.hidden,
+                      child: Text('Hide'),
+                    ),
                   ],
                 ),
               ],
@@ -127,7 +141,8 @@ class _ModerationTab extends ConsumerWidget {
           ? const EmptyView(
               icon: Icons.verified_outlined,
               title: 'Nothing to review',
-              message: 'The moderation queue is clear.')
+              message: 'The moderation queue is clear.',
+            )
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: list.length,
@@ -138,7 +153,8 @@ class _ModerationTab extends ConsumerWidget {
                   leading: const Icon(Icons.flag, color: Colors.redAccent),
                   title: Text('${r.targetType} · ${r.reason}'),
                   subtitle: Text(
-                      '${r.preview.isEmpty ? r.targetId : r.preview}\n${timeAgo(r.createdAt)} ago'),
+                    '${r.preview.isEmpty ? r.targetId : r.preview}\n${timeAgo(r.createdAt)} ago',
+                  ),
                   isThreeLine: true,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

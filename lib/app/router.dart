@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/telemetry/crash_reporter.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/alerts/alerts_screen.dart';
 import '../features/ask_liz/ask_liz_screen.dart';
@@ -31,6 +32,13 @@ GoRouter buildRouter() {
   return GoRouter(
     navigatorKey: _rootKey,
     initialLocation: '/',
+    // Not a redirect in the usual sense — it never returns a destination. It
+    // is the one place every navigation passes through, which makes it where
+    // the crash reporter learns which screen a later error came from.
+    redirect: (context, state) {
+      CrashReporter.currentRoute = state.uri.toString();
+      return null;
+    },
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) =>

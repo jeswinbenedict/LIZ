@@ -21,6 +21,15 @@ class CrashReporter {
 
   static int _sent = 0;
   static final Set<String> _seen = <String>{};
+  static String? _route;
+
+  /// The screen the reader is on, recorded so a crash says where it happened.
+  ///
+  /// The three handlers below catch errors from anywhere in the app and have
+  /// no idea which screen raised them, so every report went up with a null
+  /// route — the first field anyone would look at. The router keeps this
+  /// current instead.
+  static set currentRoute(String? value) => _route = value;
 
   /// Installs the handlers and runs [body] inside a guarded zone.
   ///
@@ -40,11 +49,14 @@ class CrashReporter {
       return true;
     };
 
-    await runZonedGuarded(() async {
-      await body();
-    }, (error, stack) {
-      report(error, stack, context: {'source': 'zone'});
-    });
+    await runZonedGuarded(
+      () async {
+        await body();
+      },
+      (error, stack) {
+        report(error, stack, context: {'source': 'zone'});
+      },
+    );
   }
 
   /// Groups repeats of the same fault. Line numbers move between builds, so the
@@ -57,7 +69,10 @@ class CrashReporter {
         .take(3)
         .map((l) => l.replaceAll(RegExp(r'[:\d]+'), '').trim())
         .join('|');
-    return sha256.convert(utf8.encode('$type::$frames')).toString().substring(0, 16);
+    return sha256
+        .convert(utf8.encode('$type::$frames'))
+        .toString()
+        .substring(0, 16);
   }
 
   static Future<void> report(
@@ -66,6 +81,7 @@ class CrashReporter {
     Map<String, dynamic> context = const {},
     String? route,
   }) async {
+    route ??= _route;
     // Always visible to a developer, whatever happens to the upload.
     if (kDebugMode) {
       debugPrint('CrashReporter: $error');
@@ -102,7 +118,11 @@ class CrashReporter {
   static void resetForTest() {
     _sent = 0;
     _seen.clear();
+    _route = null;
   }
+
+  @visibleForTesting
+  static String? get routeForTest => _route;
 
   @visibleForTesting
   static int get sentCount => _sent;

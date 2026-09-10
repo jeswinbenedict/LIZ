@@ -138,6 +138,66 @@ class ReportEntry {
   final DateTime createdAt;
 }
 
+/// One measured signal about whether Liz is working.
+class HealthSignal {
+  const HealthSignal({
+    required this.signal,
+    required this.status,
+    required this.value,
+    required this.detail,
+  });
+
+  final String signal;
+
+  /// 'ok', 'warn' or 'fail'. Only 'fail' wakes anyone.
+  final String status;
+  final double value;
+  final String detail;
+
+  /// The signal name as a person would read it.
+  String get label => signal
+      .replaceAll('_pct', ' %')
+      .replaceAll('_hours', ' (hours)')
+      .replaceAll('_24h', ' (24h)')
+      .replaceAll('_', ' ');
+}
+
+/// One run of a scheduled job, as pg_cron recorded it.
+class JobRun {
+  const JobRun({
+    required this.jobName,
+    required this.status,
+    required this.startedAt,
+    required this.durationSeconds,
+    required this.message,
+  });
+
+  final String jobName;
+  final String status;
+  final DateTime startedAt;
+  final double durationSeconds;
+  final String message;
+}
+
+/// A distinct client fault, with how often it has happened.
+class ErrorGroup {
+  const ErrorGroup({
+    required this.fingerprint,
+    required this.occurrences,
+    required this.affectedUsers,
+    required this.lastSeen,
+    required this.message,
+    this.route,
+  });
+
+  final String fingerprint;
+  final int occurrences;
+  final int affectedUsers;
+  final DateTime lastSeen;
+  final String message;
+  final String? route;
+}
+
 /// Admin / moderation surface (role-gated by RLS in production).
 abstract interface class AdminRepository {
   Future<List<Tool>> allTools();
@@ -147,6 +207,17 @@ abstract interface class AdminRepository {
   Future<void> setPostStatus(String postId, String status);
   Future<List<ReportEntry>> openReports();
   Future<void> resolveReport(String reportId);
+
+  /// Whether the parts of Liz that run unattended are still working.
+  Future<List<HealthSignal>> health();
+
+  /// Whether the scheduled jobs ran at all. Freshness says the work landed;
+  /// this says the attempt was made, which is how "broken" is told apart from
+  /// "nothing new to fetch".
+  Future<List<JobRun>> recentJobRuns({int limit = 20});
+
+  /// Distinct client faults, most recent first.
+  Future<List<ErrorGroup>> recentErrors({int limit = 20});
 }
 
 /// Track / follow: bookmarks, collections, follows.
