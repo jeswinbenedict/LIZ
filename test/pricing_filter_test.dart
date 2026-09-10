@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liz/app/theme.dart';
 import 'package:liz/core/providers.dart';
-import 'package:liz/core/repository/repositories.dart';
 import 'package:liz/features/discover/discover_controller.dart';
 import 'package:liz/features/discover/discover_screen.dart';
 import 'package:liz/shared/models/tool.dart';
