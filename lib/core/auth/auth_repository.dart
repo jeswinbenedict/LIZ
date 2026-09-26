@@ -13,7 +13,10 @@ abstract interface class AuthRepository {
 
   Future<Profile> signInWithEmail(String email, String password);
   Future<Profile> signUpWithEmail(
-      String email, String password, String displayName);
+    String email,
+    String password,
+    String displayName,
+  );
   Future<void> sendMagicLink(String email);
   Future<Profile> signInWithGoogle();
   Future<Profile> signInWithApple();
@@ -22,9 +25,23 @@ abstract interface class AuthRepository {
   /// real providers. No-op on the live backend.
   Future<Profile> signInAsDemo();
 
+  /// Send a password-reset link to [email].
+  ///
+  /// Always completes without error, even for an address with no account.
+  /// Saying "no such user" here turns the form into a way to discover who has
+  /// one — and a reset form is exactly where someone would go looking.
+  Future<void> sendPasswordReset(String email);
+
+  /// Set a new password for the session opened by a reset link.
+  Future<void> updatePassword(String newPassword);
+
   Future<void> signOut();
 
-  Future<Profile> updateProfile({String? displayName, String? bio, String? avatarUrl});
+  Future<Profile> updateProfile({
+    String? displayName,
+    String? bio,
+    String? avatarUrl,
+  });
 
   /// Store an FCM token for push (idempotent).
   Future<void> registerDevice(String token, String platform);

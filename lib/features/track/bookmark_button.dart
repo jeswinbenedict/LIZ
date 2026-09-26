@@ -23,21 +23,24 @@ class BookmarkButton extends ConsumerWidget {
     final controller = ref.read(bookmarkControllerProvider.notifier);
 
     Future<void> toggle() => runGuardedAction(
-          context,
-          prompt: 'Sign in to save tools to your list.',
-          action: () async {
-            final added = await controller.toggle(toolId);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context)
-                ..clearSnackBars()
-                ..showSnackBar(SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 1),
-                  content: Text(added ? 'Saved' : 'Removed from saved'),
-                ));
-            }
-          },
-        );
+      context,
+      ref: ref,
+      prompt: 'Sign in to save tools to your list.',
+      action: () async {
+        final added = await controller.toggle(toolId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 1),
+                content: Text(added ? 'Saved' : 'Removed from saved'),
+              ),
+            );
+        }
+      },
+    );
 
     if (filledStyle) {
       return saved

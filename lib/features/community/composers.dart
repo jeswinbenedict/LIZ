@@ -117,6 +117,7 @@ class _ReviewComposerState extends ConsumerState<_ReviewComposer> {
                       setState(() => _busy = true);
                       await runGuardedAction(
                         context,
+                        ref: ref,
                         prompt: 'Sign in to leave a review.',
                         action: () => ref
                             .read(communityActionsProvider)
@@ -290,6 +291,7 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
                         setState(() => _busy = true);
                         await runGuardedAction(
                           context,
+                          ref: ref,
                           prompt: 'Sign in to post.',
                           action: () async {
                             String? imageUrl;

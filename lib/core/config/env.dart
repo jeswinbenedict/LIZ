@@ -87,6 +87,42 @@ class Env {
     return '$supabaseUrl/functions/v1';
   }
 
+  /// The origin the app is being served from, on web. Empty elsewhere.
+  ///
+  /// Uri.base is the page URL in a browser and the working directory on the
+  /// VM, so the platform check is what keeps a test from producing a file://
+  /// redirect.
+  static String get currentOrigin {
+    if (!kIsWeb) return '';
+    try {
+      return Uri.base.origin;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Where a password-reset link should send the reader back to.
+  ///
+  /// Supabase appends the recovery token to this, and the SDK turns it into a
+  /// session on arrival. It has to be an address Supabase is configured to
+  /// allow (Authentication -> URL Configuration), or the link silently lands
+  /// on the project's default site instead.
+  ///
+  /// Built from the running origin rather than hard-coded, so the same build
+  /// works on localhost and on the deployed domain without a rebuild.
+  static String get passwordResetRedirect {
+    if (resetRedirectOverride.isNotEmpty) return resetRedirectOverride;
+    final origin = currentOrigin;
+    if (origin.isEmpty) return '';
+    // Hash routing: the app reads /#/reset-password, and the token Supabase
+    // appends survives in the query string ahead of it.
+    return '$origin/#/reset-password';
+  }
+
+  static const resetRedirectOverride = String.fromEnvironment(
+    'PASSWORD_RESET_REDIRECT',
+  );
+
   /// Routes a third-party image through the CORS-friendly proxy.
   ///
   /// Flutter web fetches image *bytes*, so a host that sends no

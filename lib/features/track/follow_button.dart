@@ -20,6 +20,7 @@ class FollowButton extends ConsumerWidget {
 
     Future<void> toggle() => runGuardedAction(
       context,
+      ref: ref,
       prompt: 'Sign in to follow tools and get updates.',
       action: () async {
         final added = await controller.toggle(toolId);

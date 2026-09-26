@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../core/auth/enabled_providers.dart';
@@ -84,7 +85,8 @@ class _SignInViewState extends ConsumerState<SignInView> {
     final scheme = Theme.of(context).colorScheme;
     // While this resolves, and if it fails, no social buttons are shown: the
     // email form below is a complete sign-in on its own.
-    final providers = ref.watch(enabledAuthProvidersProvider).valueOrNull ??
+    final providers =
+        ref.watch(enabledAuthProvidersProvider).valueOrNull ??
         EnabledAuthProviders.none;
 
     return SingleChildScrollView(
@@ -93,8 +95,10 @@ class _SignInViewState extends ConsumerState<SignInView> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(_isSignUp ? 'Create your account' : 'Welcome to Liz',
-              style: Theme.of(context).textTheme.headlineSmall),
+          Text(
+            _isSignUp ? 'Create your account' : 'Welcome to Liz',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
           const SizedBox(height: 6),
           Text(
             widget.prompt ??
@@ -123,15 +127,19 @@ class _SignInViewState extends ConsumerState<SignInView> {
           // A lone "or" above the email form reads as a missing button.
           if (providers.hasSocial) ...[
             const SizedBox(height: LizSpacing.md),
-            Row(children: [
-              const Expanded(child: Divider()),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child:
-                    Text('or', style: TextStyle(color: scheme.onSurfaceVariant)),
-              ),
-              const Expanded(child: Divider()),
-            ]),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'or',
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
             const SizedBox(height: LizSpacing.md),
           ],
 
@@ -140,7 +148,9 @@ class _SignInViewState extends ConsumerState<SignInView> {
               controller: _name,
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
-                  labelText: 'Display name', prefixIcon: Icon(Icons.person_outline)),
+                labelText: 'Display name',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
             ),
             const SizedBox(height: 12),
           ],
@@ -149,7 +159,9 @@ class _SignInViewState extends ConsumerState<SignInView> {
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             decoration: const InputDecoration(
-                labelText: 'Email', prefixIcon: Icon(Icons.mail_outline)),
+              labelText: 'Email',
+              prefixIcon: Icon(Icons.mail_outline),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -157,7 +169,9 @@ class _SignInViewState extends ConsumerState<SignInView> {
             obscureText: true,
             textInputAction: TextInputAction.done,
             decoration: const InputDecoration(
-                labelText: 'Password', prefixIcon: Icon(Icons.lock_outline)),
+              labelText: 'Password',
+              prefixIcon: Icon(Icons.lock_outline),
+            ),
           ),
 
           if (_error != null) ...[
@@ -185,16 +199,24 @@ class _SignInViewState extends ConsumerState<SignInView> {
                     _guard(() async {
                       if (_isSignUp) {
                         await auth.signUp(
-                            _email.text.trim(), _password.text, _name.text.trim());
+                          _email.text.trim(),
+                          _password.text,
+                          _name.text.trim(),
+                        );
                       } else {
                         await auth.signInWithEmail(
-                            _email.text.trim(), _password.text);
+                          _email.text.trim(),
+                          _password.text,
+                        );
                       }
                     });
                   },
             child: busy
                 ? const SizedBox(
-                    height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : Text(_isSignUp ? 'Create account' : 'Sign in'),
           ),
           const SizedBox(height: 8),
@@ -203,21 +225,51 @@ class _SignInViewState extends ConsumerState<SignInView> {
               onPressed: busy || _email.text.trim().isEmpty
                   ? null
                   : () => _guard(() async {
-                        await auth.sendMagicLink(_email.text.trim());
-                        if (mounted) {
-                          setState(() =>
-                              _info = 'Magic link sent — check your email.');
-                        }
-                      }),
+                      await auth.sendMagicLink(_email.text.trim());
+                      if (mounted) {
+                        setState(
+                          () => _info = 'Magic link sent — check your email.',
+                        );
+                      }
+                    }),
               child: const Text('Email me a magic link'),
+            ),
+          // The moment someone needs this is the moment a password fails, so
+          // it belongs here rather than behind a help page.
+          if (!_isSignUp)
+            TextButton(
+              onPressed: busy
+                  ? null
+                  : () {
+                      final email = _email.text.trim();
+                      // This view is shown both as a bottom sheet and as a
+                      // full page. A sheet has to be dismissed first or it
+                      // covers the screen we are about to push. A page must
+                      // not be — it is where Back from the reset screen should
+                      // return to. onSignedIn cannot tell the two apart: on
+                      // the page it means "signed in, leave", which is how
+                      // this first sent people to Discover.
+                      if (ModalRoute.of(context) is PopupRoute) {
+                        Navigator.of(context).pop();
+                      }
+                      context.push(
+                        email.isEmpty
+                            ? '/forgot-password'
+                            : '/forgot-password?email='
+                                  '${Uri.encodeQueryComponent(email)}',
+                      );
+                    },
+              child: const Text('Forgot your password?'),
             ),
           TextButton(
             onPressed: busy
                 ? null
                 : () => setState(() => _isSignUp = !_isSignUp),
-            child: Text(_isSignUp
-                ? 'Already have an account? Sign in'
-                : "New here? Create an account"),
+            child: Text(
+              _isSignUp
+                  ? 'Already have an account? Sign in'
+                  : "New here? Create an account",
+            ),
           ),
 
           if (!isLive) ...[
@@ -241,7 +293,11 @@ class _SignInViewState extends ConsumerState<SignInView> {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton({required this.icon, required this.label, this.onPressed});
+  const _SocialButton({
+    required this.icon,
+    required this.label,
+    this.onPressed,
+  });
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;

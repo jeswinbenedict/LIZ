@@ -5,6 +5,8 @@ import '../core/telemetry/crash_reporter.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/alerts/alerts_screen.dart';
 import '../features/ask_liz/ask_liz_screen.dart';
+import '../features/auth/forgot_password_screen.dart';
+import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/community/community_screen.dart';
 import '../features/community/post_detail_screen.dart';
@@ -160,6 +162,19 @@ GoRouter buildRouter() {
         path: '/signin',
         parentNavigatorKey: _rootKey,
         builder: (c, s) => const SignInScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) =>
+            ForgotPasswordScreen(initialEmail: s.uri.queryParameters['email']),
+      ),
+      // Where a reset link lands. Supabase turns the token into a session
+      // before this builds, so the screen only has to set the new password.
+      GoRoute(
+        path: '/reset-password',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const ResetPasswordScreen(),
       ),
       GoRoute(
         path: '/admin',

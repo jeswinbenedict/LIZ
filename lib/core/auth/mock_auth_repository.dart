@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../shared/models/profile.dart';
 import '../data/mock_data.dart';
+import '../errors.dart';
 import 'auth_repository.dart';
 
 /// In-memory auth for mock mode. Any credentials "work" and drop you into a
@@ -20,13 +21,13 @@ class MockAuthRepository implements AuthRepository {
   Stream<Profile?> authStateChanges() => _controller.stream;
 
   Profile _demoProfile({String? displayName}) => Profile(
-        id: 'u-me',
-        username: 'you',
-        displayName: displayName ?? 'You',
-        bio: 'Exploring the frontier on Liz.',
-        role: UserRole.admin, // demo user can see the admin panel
-        createdAt: DateTime.now(),
-      );
+    id: 'u-me',
+    username: 'you',
+    displayName: displayName ?? 'You',
+    bio: 'Exploring the frontier on Liz.',
+    role: UserRole.admin, // demo user can see the admin panel
+    createdAt: DateTime.now(),
+  );
 
   Future<Profile> _become(Profile p) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -41,8 +42,10 @@ class MockAuthRepository implements AuthRepository {
 
   @override
   Future<Profile> signUpWithEmail(
-          String email, String password, String displayName) =>
-      _become(_demoProfile(displayName: displayName));
+    String email,
+    String password,
+    String displayName,
+  ) => _become(_demoProfile(displayName: displayName));
 
   @override
   Future<void> sendMagicLink(String email) async {
@@ -58,6 +61,23 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<Profile> signInAsDemo() => _become(_demoProfile());
 
+  /// Recorded so a test can assert a link was requested without a backend.
+  String? lastPasswordResetEmail;
+
+  @override
+  Future<void> sendPasswordReset(String email) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    lastPasswordResetEmail = email;
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    if (newPassword.length < 8) {
+      throw const LizException('Password must be at least 8 characters.');
+    }
+  }
+
   @override
   Future<void> signOut() async {
     _current = null;
@@ -65,8 +85,11 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Profile> updateProfile(
-      {String? displayName, String? bio, String? avatarUrl}) async {
+  Future<Profile> updateProfile({
+    String? displayName,
+    String? bio,
+    String? avatarUrl,
+  }) async {
     final c = _current;
     if (c == null) throw StateError('Not signed in');
     _current = Profile(

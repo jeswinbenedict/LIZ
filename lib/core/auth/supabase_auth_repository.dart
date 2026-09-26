@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/models/profile.dart';
+import '../config/env.dart';
 import '../errors.dart';
 import 'auth_repository.dart';
 
@@ -36,19 +37,23 @@ class SupabaseAuthRepository implements AuthRepository {
   Stream<Profile?> authStateChanges() => _out.stream;
 
   Profile _fallbackProfile(User user) => Profile(
-        id: user.id,
-        username: user.email?.split('@').first ?? 'user',
-        displayName: (user.userMetadata?['display_name'] as String?) ??
-            user.email?.split('@').first ??
-            'User',
-        avatarUrl: user.userMetadata?['avatar_url'] as String?,
-        role: UserRole.user,
-        createdAt: DateTime.tryParse(user.createdAt) ?? DateTime.now(),
-      );
+    id: user.id,
+    username: user.email?.split('@').first ?? 'user',
+    displayName:
+        (user.userMetadata?['display_name'] as String?) ??
+        user.email?.split('@').first ??
+        'User',
+    avatarUrl: user.userMetadata?['avatar_url'] as String?,
+    role: UserRole.user,
+    createdAt: DateTime.tryParse(user.createdAt) ?? DateTime.now(),
+  );
 
   Future<Profile?> _loadProfile(String id) async {
-    final row =
-        await _client.from('profiles').select().eq('id', id).maybeSingle();
+    final row = await _client
+        .from('profiles')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
     return row == null ? null : Profile.fromJson(row);
   }
 
@@ -63,8 +68,10 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<Profile> signInWithEmail(String email, String password) async {
     try {
-      final res = await _client.auth
-          .signInWithPassword(email: email, password: password);
+      final res = await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
       return await _afterAuth(res);
     } on AuthException catch (e) {
       throw LizException(e.message);
@@ -73,7 +80,10 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<Profile> signUpWithEmail(
-      String email, String password, String displayName) async {
+    String email,
+    String password,
+    String displayName,
+  ) async {
     try {
       final res = await _client.auth.signUp(
         email: email,
@@ -108,11 +118,40 @@ class SupabaseAuthRepository implements AuthRepository {
       throw const LizException('Demo sign-in is only available in mock mode.');
 
   @override
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(
+        email,
+        // Where the link lands. Supabase appends the recovery token, and the
+        // app reads it from the session the SDK opens on arrival.
+        redirectTo: Env.passwordResetRedirect,
+      );
+    } on AuthException catch (e) {
+      // Rate limiting is the one refusal worth passing on: it is actionable,
+      // and it is not a statement about whether the address exists.
+      if (e.statusCode == '429') throw LizException(e.message);
+      // Anything else is swallowed on purpose. See the interface note.
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
+    } on AuthException catch (e) {
+      throw LizException(e.message);
+    }
+  }
+
+  @override
   Future<void> signOut() => _client.auth.signOut();
 
   @override
-  Future<Profile> updateProfile(
-      {String? displayName, String? bio, String? avatarUrl}) async {
+  Future<Profile> updateProfile({
+    String? displayName,
+    String? bio,
+    String? avatarUrl,
+  }) async {
     final id = currentUserId;
     if (id == null) throw const AuthRequiredException();
     final row = await _client

@@ -40,6 +40,7 @@ class _LikeButtonState extends ConsumerState<LikeButton> {
     return TextButton.icon(
       onPressed: () => runGuardedAction(
         context,
+        ref: ref,
         prompt: 'Sign in to like posts.',
         action: () async {
           // Optimistic
@@ -128,6 +129,7 @@ Future<void> showReportSheet(
   if (!context.mounted) return;
   await runGuardedAction(
     context,
+    ref: ref,
     prompt: 'Sign in to report content.',
     action: () => ref
         .read(communityActionsProvider)

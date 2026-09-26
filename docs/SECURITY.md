@@ -109,10 +109,53 @@ write anything.
 - **Service-role key handling.** It exists in three places: the Supabase runtime,
   a GitHub Actions secret, and Vault for pg_cron. It never reaches the client.
 
+## Accounts
+
+### Deletion
+
+`delete-account` identifies the caller from their own JWT and removes the auth
+user with the service role; every table cascades from `profiles`.
+
+It had never been run until 26 September, and it failed for anyone who had used
+the product. A new account deleted fine; one that had bookmarked a single tool
+returned `Database error deleting user`. Every foreign key already cascaded —
+the cascade itself was failing. Deleting an auth user runs as
+`supabase_auth_admin`, the cascade reaches `bookmarks`, `likes`, `reviews` or
+`comments`, and each fires a counter trigger that updates `tools` or `posts`.
+Those four trigger functions had no `security definer`, so they ran as the role
+doing the delete, which has no rights in the public schema, and the whole
+transaction rolled back.
+
+Migration 0033 gives them definer rights with a pinned `search_path`. They only
+adjust a counter on the row the trigger names and run no caller-supplied SQL.
+Verified: an account with a bookmark and a follow deletes cleanly, both rows go
+with it, and the tool's `save_count` goes back down rather than staying inflated.
+
+### Password reset
+
+`/forgot-password` asks for an address and always answers the same way — "if
+this address has an account, a link is on its way" — whether or not it does. A
+reset form that says "no account found" is a way to find out who has one. Only a
+rate-limit refusal is passed back, because it says nothing about the address.
+
+The link returns to `/#/reset-password`, built from the running origin so one
+build works locally and deployed. That address has to be on the allowlist under
+Authentication → URL Configuration, or Supabase silently sends the reader to the
+project's default site instead.
+
+### Expired sessions
+
+A token that expires or is revoked while the tab sits open now opens the sign-in
+sheet with "Your session expired", signs the dead session out first so the retry
+does not fail the same way, and retries the action. Row-level-security refusals
+(`42501`) are deliberately *not* treated as expiry — signing in again cannot fix
+them, and treating them as expiry would send someone round a loop.
+
 ## Still open
 
-- No password reset flow exists, so a forgotten password has no recovery path
-  except a magic link, and SMTP is not configured.
-- Google and Apple sign-in are disabled; only email works.
-- `site_url` still points at `localhost:3000`, which will misdirect every auth
+- **No SMTP provider.** Reset links, magic links and confirmation emails are all
+  built and tested but cannot actually be delivered. Email confirmation stays off
+  until a provider is configured.
+- **Google and Apple sign-in are disabled** on the live project; only email works.
+- **`site_url` still points at `localhost:3000`**, which will misdirect every auth
   email the moment this is deployed.

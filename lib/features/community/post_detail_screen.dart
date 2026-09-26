@@ -74,6 +74,7 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
     setState(() => _sending = true);
     await runGuardedAction(
       context,
+      ref: ref,
       prompt: 'Sign in to comment.',
       action: () async {
         await ref

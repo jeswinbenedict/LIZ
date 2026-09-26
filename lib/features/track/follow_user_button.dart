@@ -6,7 +6,11 @@ import 'track_controller.dart';
 
 /// Follow / Following toggle for another user. Prompts sign-in for guests.
 class FollowUserButton extends ConsumerWidget {
-  const FollowUserButton({super.key, required this.userId, this.compact = false});
+  const FollowUserButton({
+    super.key,
+    required this.userId,
+    this.compact = false,
+  });
   final String userId;
   final bool compact;
 
@@ -16,21 +20,24 @@ class FollowUserButton extends ConsumerWidget {
     final controller = ref.read(followUserControllerProvider.notifier);
 
     Future<void> toggle() => runGuardedAction(
-          context,
-          prompt: 'Sign in to follow people.',
-          action: () async {
-            final added = await controller.toggle(userId);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context)
-                ..clearSnackBars()
-                ..showSnackBar(SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 1),
-                  content: Text(added ? 'Following' : 'Unfollowed'),
-                ));
-            }
-          },
-        );
+      context,
+      ref: ref,
+      prompt: 'Sign in to follow people.',
+      action: () async {
+        final added = await controller.toggle(userId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 1),
+                content: Text(added ? 'Following' : 'Unfollowed'),
+              ),
+            );
+        }
+      },
+    );
 
     if (following) {
       return OutlinedButton.icon(
