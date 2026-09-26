@@ -1,0 +1,108 @@
+{
+  "name": "Liz — Scrape from this machine",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      },
+      "id": "b2c3d4e5-0001-4000-8000-000000000001",
+      "name": "Every 12 hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "={{ 'cd \"' + $env.LIZ_REPO_DIR + '/scrapers\" && python -m liz_scraper --limit 30' }}"
+      },
+      "id": "b2c3d4e5-0002-4000-8000-000000000002",
+      "name": "Scrape new launches",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        40,
+        300
+      ],
+      "notesInFlow": true,
+      "notes": "Product Hunt + Hacker News. No --status flag: the quality gate decides per row. Run from here because Product Hunt blocks datacenter IPs, not home connections."
+    },
+    {
+      "parameters": {
+        "command": "={{ 'cd \"' + $env.LIZ_REPO_DIR + '/scrapers\" && python -m liz_scraper.retry_held --apply --limit 50' }}"
+      },
+      "id": "b2c3d4e5-0003-4000-8000-000000000003",
+      "name": "Retry held listings",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        280,
+        300
+      ],
+      "notesInFlow": true,
+      "notes": "Re-fetches Product Hunt rows that were held because a cloud runner got 403. 50 per run keeps it polite; the backlog drains over a few runs."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Both commands print a JSON report as the last thing on stdout. Pull those\n// out so the execution log reads as a result, not a wall of text.\n//\n// The report is pretty-printed, so it starts on a line that is just \"{\".\n// Searching for the last brace instead would land inside a nested object.\n// Written without backslash escapes on purpose: this code travels through JSON\n// and n8n's editor, and every layer is another chance to lose one.\nconst NEWLINE = String.fromCharCode(10);\n\nconst last = (text) => {\n  const lines = (text || '').split(NEWLINE).map((l) => l.trim());\n  for (let i = lines.length - 1; i >= 0; i--) {\n    if (lines[i] !== '{') continue;\n    try {\n      return JSON.parse(lines.slice(i).join(NEWLINE));\n    } catch (_) {\n      // Not the report; keep looking further up.\n    }\n  }\n  return null;\n};\n\nconst scrape = last($('Scrape new launches').first().json.stdout);\nconst retry = last($('Retry held listings').first().json.stdout);\n\n// If every held listing is still unreachable from here, this host is blocked\n// too, and the run is doing nothing useful. Say so loudly.\nconst blocked =\n  retry !== null &&\n  retry.held_listings_tried > 0 &&\n  retry.unreachable === retry.held_listings_tried;\n\nreturn [\n  {\n    json: {\n      scrape,\n      retry,\n      blocked,\n      verdict: blocked\n        ? 'Product Hunt is blocking this machine too. Check the host, or use the official API.'\n        : scrape === null || retry === null\n          ? 'A command did not print its report. Open the failing node for its output.'\n          : 'ok',\n    },\n  },\n];\n"
+      },
+      "id": "b2c3d4e5-0004-4000-8000-000000000004",
+      "name": "Summarise run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Every 12 hours": {
+      "main": [
+        [
+          {
+            "node": "Scrape new launches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape new launches": {
+      "main": [
+        [
+          {
+            "node": "Retry held listings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry held listings": {
+      "main": [
+        [
+          {
+            "node": "Summarise run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

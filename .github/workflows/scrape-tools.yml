@@ -44,7 +44,10 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             python -m liz_scraper --dry-run --limit 20
           else
-            python -m liz_scraper --limit 20 --status pending
+            # No --status: the quality gate decides per row. Passing
+            # --status pending here forced every row into the review queue and
+            # bypassed the gate entirely.
+            python -m liz_scraper --limit 20
           fi
 
       # A tool without an embedding is invisible to Ask Liz, so backfill in the

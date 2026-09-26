@@ -103,7 +103,15 @@ def run(
             row["hold_reason"] = None
             result.published += 1
         else:
-            reason = verdict.reasons[0] if verdict.reasons else "held"
+            # A row can be pending while having passed the gate, when --status
+            # forced it. Recording that as "held" made it look like a real hold
+            # and hid it from the unexplained-backlog signal, so say what
+            # actually happened.
+            reason = (
+                verdict.reasons[0]
+                if verdict.reasons
+                else "passed the quality gate; held by --status override"
+            )
             # Recorded on the row so the admin queue and the health check can
             # tell "held for a known reason" from "nobody has looked at this".
             row["hold_reason"] = reason
