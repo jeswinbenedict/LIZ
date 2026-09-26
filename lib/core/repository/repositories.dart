@@ -198,9 +198,57 @@ class ErrorGroup {
   final String? route;
 }
 
+/// What slice of the catalog an admin is looking at.
+class AdminToolQuery {
+  const AdminToolQuery({
+    this.status,
+    this.search,
+    this.limit = 50,
+    this.offset = 0,
+  });
+
+  /// Null means every status.
+  final PublishStatus? status;
+  final String? search;
+  final int limit;
+  final int offset;
+
+  AdminToolQuery copyWith({
+    PublishStatus? status,
+    bool clearStatus = false,
+    String? search,
+    int? offset,
+  }) => AdminToolQuery(
+    status: clearStatus ? null : (status ?? this.status),
+    search: search ?? this.search,
+    limit: limit,
+    offset: offset ?? this.offset,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is AdminToolQuery &&
+      other.status == status &&
+      other.search == search &&
+      other.limit == limit &&
+      other.offset == offset;
+
+  @override
+  int get hashCode => Object.hash(status, search, limit, offset);
+}
+
 /// Admin / moderation surface (role-gated by RLS in production).
 abstract interface class AdminRepository {
-  Future<List<Tool>> allTools();
+  /// A page of the catalog, filtered and searchable.
+  ///
+  /// Replaces a flat "newest 200", which could not reach a 653-row catalog at
+  /// all — the pending queue it was meant to drain sat entirely outside it.
+  Future<Paginated<Tool>> adminTools(AdminToolQuery query);
+
+  /// Publish or hide many tools at once. Reviewing a backlog one popup menu at
+  /// a time is why the backlog existed.
+  Future<void> setToolStatuses(List<String> toolIds, PublishStatus status);
+
   Future<void> setToolStatus(String toolId, PublishStatus status);
   Future<List<NewsItem>> allNews();
   Future<List<Post>> flaggedPosts();

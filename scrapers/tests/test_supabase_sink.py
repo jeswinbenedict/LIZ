@@ -74,3 +74,40 @@ def test_empty_input_is_a_no_op(sink):
 def test_credentials_are_required():
     with pytest.raises(ValueError):
         SupabaseSink(Settings(supabase_url="", service_role_key=""))
+
+
+class _Response:
+    """Just enough of requests.Response for the dedupe lookup."""
+
+    def __init__(self, payload):
+        self.payload = payload
+        self.captured_params = None
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self.payload
+
+
+def test_only_published_rows_count_as_settled(sink, monkeypatch):
+    """A pending row must be retried, not skipped forever.
+
+    The hash comes from the listing URL, so a row held back because enrichment
+    could not reach the product page would be skipped on every future run and
+    never get a second chance at resolving.
+    """
+    seen = {}
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        seen.update(params or {})
+        return _Response([{"content_hash": "aa"}])
+
+    monkeypatch.setattr(sink._session, "get", fake_get)
+
+    found = sink.existing_hashes(["aa", "bb"])
+
+    assert found == {"aa"}
+    assert seen.get("status") == "eq.published", (
+        "the lookup must exclude pending rows so they are re-attempted"
+    )

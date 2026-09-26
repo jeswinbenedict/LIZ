@@ -7,12 +7,13 @@ without shelling out.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .config import load_settings
 from .enrich import resolve_and_enrich
 from .http_client import PoliteSession
 from .normalize import build_tool_row, choose_name, content_hash
+from .quality import assess
 from .sources import ALL_SOURCES
 from .supabase_sink import SupabaseSink
 
@@ -25,6 +26,8 @@ class RunResult:
     skipped_existing: int = 0
     enriched: int = 0
     written: int = 0
+    published: int = 0
+    held: dict[str, int] = field(default_factory=dict)
     rows: list[dict] | None = None
 
 
@@ -33,8 +36,13 @@ def run(
     sources: list[str] | None = None,
     limit: int = 30,
     dry_run: bool = False,
-    status: str = "pending",
+    status: str | None = None,
 ) -> RunResult:
+    """Run the pipeline.
+
+    `status` forces every row to one status; leaving it None lets the quality
+    gate decide per row, which is what a scheduled run wants.
+    """
     session = PoliteSession()
     selected = sources or list(ALL_SOURCES)
 
@@ -68,25 +76,40 @@ def run(
         if facts is not None:
             result.enriched += 1
 
-        rows.append(
-            build_tool_row(
-                name=choose_name(
-                    candidate.name,
-                    facts.title if facts else "",
-                    url=site_url,
-                ),
-                website_url=site_url,
-                tagline=candidate.tagline or (facts.description if facts else ""),
-                description=(facts.description if facts else candidate.tagline),
-                logo_url=facts.logo_url if facts else None,
-                category=facts.category if facts else None,
-                platforms=facts.platforms if facts else ["web"],
-                pricing_type=facts.pricing_type if facts else "unknown",
-                source=candidate.source,
-                source_url=candidate.url,
-                status=status,
-            )
+        row = build_tool_row(
+            name=choose_name(
+                candidate.name,
+                facts.title if facts else "",
+                url=site_url,
+            ),
+            website_url=site_url,
+            tagline=candidate.tagline or (facts.description if facts else ""),
+            description=(facts.description if facts else candidate.tagline),
+            logo_url=facts.logo_url if facts else None,
+            category=facts.category if facts else None,
+            platforms=facts.platforms if facts else ["web"],
+            pricing_type=facts.pricing_type if facts else "unknown",
+            source=candidate.source,
+            source_url=candidate.url,
+            status="pending",
         )
+
+        # The gate reads the finished row rather than the candidate, so it
+        # judges what a reader would actually get — including whether
+        # enrichment managed to follow the listing through to the product.
+        verdict = assess(row)
+        row["status"] = status or verdict.status
+        if row["status"] == "published":
+            row["hold_reason"] = None
+            result.published += 1
+        else:
+            reason = verdict.reasons[0] if verdict.reasons else "held"
+            # Recorded on the row so the admin queue and the health check can
+            # tell "held for a known reason" from "nobody has looked at this".
+            row["hold_reason"] = reason
+            result.held[reason] = result.held.get(reason, 0) + 1
+
+        rows.append(row)
 
     result.rows = rows
     if sink is not None:

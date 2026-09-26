@@ -5,15 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../core/providers.dart';
 import '../../core/repository/repositories.dart';
-import '../../shared/models/tool.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
-import '../../shared/widgets/tool_logo.dart';
+import 'content_tab.dart';
 import 'health_tab.dart';
 
-final _allToolsProvider = FutureProvider<List<Tool>>(
-  (ref) => ref.watch(adminRepositoryProvider).allTools(),
-);
 final _reportsProvider = FutureProvider<List<ReportEntry>>(
   (ref) => ref.watch(adminRepositoryProvider).openReports(),
 );
@@ -58,70 +54,9 @@ class AdminScreen extends ConsumerWidget {
         body: MaxWidth(
           maxWidth: 1000,
           child: const TabBarView(
-            children: [HealthTab(), _ContentTab(), _ModerationTab()],
+            children: [HealthTab(), ContentTab(), _ModerationTab()],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ContentTab extends ConsumerWidget {
-  const _ContentTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tools = ref.watch(_allToolsProvider);
-    final scheme = Theme.of(context).colorScheme;
-    return tools.when(
-      loading: () => const LoadingView(),
-      error: (_, __) =>
-          ErrorView(onRetry: () => ref.invalidate(_allToolsProvider)),
-      data: (list) => ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: list.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, i) {
-          final t = list[i];
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 6),
-            leading: ToolLogo(tool: t, size: 44),
-            title: Text(t.name),
-            subtitle: Text(
-              '${t.source ?? 'manual'} · ${t.category}',
-              style: TextStyle(color: scheme.onSurfaceVariant),
-            ),
-            trailing: Wrap(
-              spacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                _StatusChip(status: t.status),
-                PopupMenuButton<PublishStatus>(
-                  onSelected: (s) async {
-                    await ref
-                        .read(adminRepositoryProvider)
-                        .setToolStatus(t.id, s);
-                    ref.invalidate(_allToolsProvider);
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: PublishStatus.published,
-                      child: Text('Publish'),
-                    ),
-                    PopupMenuItem(
-                      value: PublishStatus.pending,
-                      child: Text('Mark pending'),
-                    ),
-                    PopupMenuItem(
-                      value: PublishStatus.hidden,
-                      child: Text('Hide'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }
@@ -189,26 +124,6 @@ class _ModerationTab extends ConsumerWidget {
                 );
               },
             ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-  final PublishStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, label) = switch (status) {
-      PublishStatus.published => (Colors.green, 'Published'),
-      PublishStatus.pending => (Colors.orange, 'Pending'),
-      PublishStatus.hidden => (Colors.grey, 'Hidden'),
-    };
-    return Chip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      backgroundColor: color.withValues(alpha: 0.15),
-      side: BorderSide(color: color.withValues(alpha: 0.4)),
-      visualDensity: VisualDensity.compact,
     );
   }
 }

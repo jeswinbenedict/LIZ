@@ -39,7 +39,19 @@ class SupabaseSink:
         }
 
     def existing_hashes(self, hashes: list[str]) -> set[str]:
-        """Ask which content hashes are already stored, so we can skip re-fetching."""
+        """Which hashes are already settled, so a run can skip re-fetching them.
+
+        Only *published* rows count as settled. A pending row is one the
+        quality gate held back — usually because enrichment could not reach the
+        product page and website_url is still the listing — and the reason is
+        often transient: a 403 from one IP, a site that was down, a redirect
+        that resolved later. Treating those as done would freeze the first bad
+        result forever, because the hash is taken from the listing URL and the
+        row would be skipped on every future run.
+
+        Retrying costs little: candidates come from a feed capped per run, so a
+        run only ever re-attempts what is currently on the front page.
+        """
         if not hashes:
             return set()
 
@@ -50,7 +62,11 @@ class SupabaseSink:
             try:
                 resp = self._session.get(
                     f"{self.settings.rest_url}/tools",
-                    params={"select": "content_hash", "content_hash": f"in.({quoted})"},
+                    params={
+                        "select": "content_hash",
+                        "content_hash": f"in.({quoted})",
+                        "status": "eq.published",
+                    },
                     headers=self._headers,
                     timeout=REQUEST_TIMEOUT,
                 )

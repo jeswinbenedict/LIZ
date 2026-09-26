@@ -361,13 +361,42 @@ class SupabaseAdminRepository implements AdminRepository {
   final SupabaseClient _client;
 
   @override
-  Future<List<Tool>> allTools() async {
-    final rows = await _client
+  Future<Paginated<Tool>> adminTools(AdminToolQuery q) async {
+    var query = _client
         .from('tools')
-        .select(SupabaseContentRepository._toolCols)
+        .select('${SupabaseContentRepository._toolCols},hold_reason');
+
+    if (q.status != null) query = query.eq('status', q.status!.value);
+    if (q.search != null && q.search!.trim().isNotEmpty) {
+      final s = q.search!.trim().replaceAll(',', ' ');
+      query = query.or('name.ilike.%$s%,tagline.ilike.%$s%');
+    }
+
+    final rows = await query
         .order('created_at', ascending: false)
-        .limit(200);
-    return (rows as List).map((e) => Tool.fromJson(e)).toList();
+        .range(q.offset, q.offset + q.limit - 1);
+    final items = (rows as List).map((e) => Tool.fromJson(e)).toList();
+    return Paginated(
+      items: items,
+      cursor: items.length < q.limit ? null : '${q.offset + q.limit}',
+    );
+  }
+
+  @override
+  Future<void> setToolStatuses(
+    List<String> toolIds,
+    PublishStatus status,
+  ) async {
+    if (toolIds.isEmpty) return;
+    await _client
+        .from('tools')
+        .update({
+          'status': status.value,
+          // Publishing answers whatever the gate was holding it for; leaving a
+          // stale reason on a live tool would misreport the backlog.
+          if (status == PublishStatus.published) 'hold_reason': null,
+        })
+        .inFilter('id', toolIds);
   }
 
   @override

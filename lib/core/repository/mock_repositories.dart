@@ -429,8 +429,37 @@ class MockAdminRepository implements AdminRepository {
   final MockStore _store;
 
   @override
-  Future<List<Tool>> allTools() async =>
-      [..._store.tools]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  Future<Paginated<Tool>> adminTools(AdminToolQuery q) async {
+    Iterable<Tool> list = _store.tools;
+    if (q.status != null) list = list.where((t) => t.status == q.status);
+    final search = (q.search ?? '').trim().toLowerCase();
+    if (search.isNotEmpty) {
+      list = list.where(
+        (t) =>
+            t.name.toLowerCase().contains(search) ||
+            t.tagline.toLowerCase().contains(search),
+      );
+    }
+    final all = list.toList();
+    final page = all.skip(q.offset).take(q.limit).toList();
+    return Paginated(
+      items: page,
+      cursor: q.offset + page.length >= all.length
+          ? null
+          : '${q.offset + q.limit}',
+    );
+  }
+
+  @override
+  Future<void> setToolStatuses(
+    List<String> toolIds,
+    PublishStatus status,
+  ) async {
+    for (final id in toolIds) {
+      final i = _store.tools.indexWhere((t) => t.id == id);
+      if (i >= 0) _store.tools[i] = _store.tools[i].copyWith(status: status);
+    }
+  }
 
   @override
   Future<void> setToolStatus(String toolId, PublishStatus status) async {

@@ -20,11 +20,11 @@ enum PricingType {
   }
 
   String get label => switch (this) {
-        PricingType.free => 'Free',
-        PricingType.freemium => 'Freemium',
-        PricingType.paid => 'Paid',
-        PricingType.unknown => 'Unknown',
-      };
+    PricingType.free => 'Free',
+    PricingType.freemium => 'Freemium',
+    PricingType.paid => 'Paid',
+    PricingType.unknown => 'Unknown',
+  };
 }
 
 enum PublishStatus {
@@ -33,10 +33,10 @@ enum PublishStatus {
   hidden;
 
   static PublishStatus parse(String? v) => switch (v) {
-        'published' => PublishStatus.published,
-        'hidden' => PublishStatus.hidden,
-        _ => PublishStatus.pending,
-      };
+    'published' => PublishStatus.published,
+    'hidden' => PublishStatus.hidden,
+    _ => PublishStatus.pending,
+  };
 
   String get value => name;
 }
@@ -68,6 +68,7 @@ class Tool {
     required this.status,
     required this.createdAt,
     this.trendRank,
+    this.holdReason,
   });
 
   final String id;
@@ -100,8 +101,11 @@ class Tool {
   /// Null in mock/demo mode (where the badge falls back to the raw score).
   final int? trendRank;
 
-  bool get isNew =>
-      DateTime.now().difference(createdAt).inDays <= 14;
+  /// Why the quality gate held this back, when it is pending. Null once
+  /// published, and null for rows that predate the gate.
+  final String? holdReason;
+
+  bool get isNew => DateTime.now().difference(createdAt).inDays <= 14;
 
   factory Tool.fromJson(Map<String, dynamic> j) {
     // ai_summary may arrive as a jsonb list of strings, or {"bullets": [...]}.
@@ -110,7 +114,9 @@ class Tool {
     if (rawSummary is List) {
       summary = rawSummary.map((e) => e.toString()).toList();
     } else if (rawSummary is Map && rawSummary['bullets'] is List) {
-      summary = (rawSummary['bullets'] as List).map((e) => e.toString()).toList();
+      summary = (rawSummary['bullets'] as List)
+          .map((e) => e.toString())
+          .toList();
     } else {
       summary = const [];
     }
@@ -140,35 +146,36 @@ class Tool {
       status: PublishStatus.parse(asStringOrNull(j['status'])),
       createdAt: asDate(j['created_at']),
       trendRank: j['trend_rank'] == null ? null : asInt(j['trend_rank']),
+      holdReason: asStringOrNull(j['hold_reason']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'slug': slug,
-        'tagline': tagline,
-        'description': description,
-        'ai_summary': aiSummary,
-        'website_url': websiteUrl,
-        'logo_url': logoUrl,
-        'category': category,
-        'tags': tags,
-        'platforms': platforms,
-        'pricing_type': pricingType.name,
-        'price_note': priceNote,
-        'source': source,
-        'source_url': sourceUrl,
-        'launched_at': launchedAt?.toIso8601String(),
-        'trend_score': trendScore,
-        'view_count': viewCount,
-        'save_count': saveCount,
-        'avg_rating': avgRating,
-        'rating_count': ratingCount,
-        'status': status.value,
-        'created_at': createdAt.toIso8601String(),
-        'trend_rank': trendRank,
-      };
+    'id': id,
+    'name': name,
+    'slug': slug,
+    'tagline': tagline,
+    'description': description,
+    'ai_summary': aiSummary,
+    'website_url': websiteUrl,
+    'logo_url': logoUrl,
+    'category': category,
+    'tags': tags,
+    'platforms': platforms,
+    'pricing_type': pricingType.name,
+    'price_note': priceNote,
+    'source': source,
+    'source_url': sourceUrl,
+    'launched_at': launchedAt?.toIso8601String(),
+    'trend_score': trendScore,
+    'view_count': viewCount,
+    'save_count': saveCount,
+    'avg_rating': avgRating,
+    'rating_count': ratingCount,
+    'status': status.value,
+    'created_at': createdAt.toIso8601String(),
+    'trend_rank': trendRank,
+  };
 
   Tool copyWith({
     int? saveCount,
@@ -176,31 +183,31 @@ class Tool {
     double? avgRating,
     int? ratingCount,
     PublishStatus? status,
-  }) =>
-      Tool(
-        id: id,
-        name: name,
-        slug: slug,
-        tagline: tagline,
-        description: description,
-        aiSummary: aiSummary,
-        websiteUrl: websiteUrl,
-        logoUrl: logoUrl,
-        category: category,
-        tags: tags,
-        platforms: platforms,
-        pricingType: pricingType,
-        priceNote: priceNote,
-        source: source,
-        sourceUrl: sourceUrl,
-        launchedAt: launchedAt,
-        trendScore: trendScore,
-        viewCount: viewCount ?? this.viewCount,
-        saveCount: saveCount ?? this.saveCount,
-        avgRating: avgRating ?? this.avgRating,
-        ratingCount: ratingCount ?? this.ratingCount,
-        status: status ?? this.status,
-        createdAt: createdAt,
-        trendRank: trendRank,
-      );
+  }) => Tool(
+    id: id,
+    name: name,
+    slug: slug,
+    tagline: tagline,
+    description: description,
+    aiSummary: aiSummary,
+    websiteUrl: websiteUrl,
+    logoUrl: logoUrl,
+    category: category,
+    tags: tags,
+    platforms: platforms,
+    pricingType: pricingType,
+    priceNote: priceNote,
+    source: source,
+    sourceUrl: sourceUrl,
+    launchedAt: launchedAt,
+    trendScore: trendScore,
+    viewCount: viewCount ?? this.viewCount,
+    saveCount: saveCount ?? this.saveCount,
+    avgRating: avgRating ?? this.avgRating,
+    ratingCount: ratingCount ?? this.ratingCount,
+    status: status ?? this.status,
+    createdAt: createdAt,
+    trendRank: trendRank,
+    holdReason: holdReason,
+  );
 }

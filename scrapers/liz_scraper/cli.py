@@ -32,9 +32,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--status",
-        default="pending",
         choices=["pending", "published"],
-        help="Row status on write. 'pending' queues for admin review.",
+        default=None,
+        help="Force every row to this status. Omit to let the quality gate "
+             "decide per row, which is what a scheduled run wants.",
     )
     parser.add_argument(
         "--out",
@@ -70,6 +71,10 @@ def main(argv: list[str] | None = None) -> int:
         "skipped_existing": result.skipped_existing,
         "enriched": result.enriched,
         "written": result.written,
+        "published": result.published,
+        # Why the rest were held, so a run that publishes nothing says why in
+        # the log instead of looking like it did nothing.
+        "held": result.held,
     }
     print(json.dumps(summary, indent=2))
 
