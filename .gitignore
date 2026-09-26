@@ -25,7 +25,6 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
@@ -40,13 +39,8 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
 
 # Android build artifacts
-android/build/
-android/.gradle/
 
 # ============================================================================
 # Secrets & credentials — NEVER commit these.
@@ -77,8 +71,6 @@ serviceAccountKey*.json
 **/key.properties
 
 # Local machine config
-android/local.properties
-ios/Flutter/flutter_export_environment.sh
 
 # Supabase CLI local state (machine-specific; not app source)
 supabase/.temp/

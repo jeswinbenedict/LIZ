@@ -5,8 +5,8 @@ without Firebase. In-app notifications (a reply to your post, a new follower)
 already work the moment migration `0007_notifications.sql` is applied — **no
 Firebase needed**. This checklist turns on **device push** on top of that.
 
-Firebase Cloud Messaging is **free**. Android + Web cost nothing. iOS push also
-needs a paid Apple Developer account ($99/yr) for APNs.
+Firebase Cloud Messaging is **free** for the web. Liz ships as a web
+application only, so only the web setup below applies.
 
 ---
 
@@ -16,7 +16,7 @@ needs a paid Apple Developer account ($99/yr) for APNs.
 |---|---|---|
 | Token capture + register | `lib/core/notifications/push_service.dart` → `devices` table | ✅ guarded, no-op without config |
 | App wiring (init, re-register on sign-in, tap→route) | `lib/main.dart` | ✅ |
-| In-app notifications (reply / follow) | `supabase/migrations/0007_notifications.sql` | ✅ works now |
+| In-app notifications (reply / follow / tool alerts / health) | `0007`, `0020`, `0024` migrations | ✅ works now |
 | Push sender (FCM HTTP v1) | `supabase/functions/send-notification/index.ts` | ✅ deploy + set secret |
 | Web background handler | `web/firebase-messaging-sw.js` | ⛏ fill config |
 
@@ -26,32 +26,14 @@ needs a paid Apple Developer account ($99/yr) for APNs.
 1. https://console.firebase.google.com → **Add project** (reuse your Google login).
 2. Skip Google Analytics if you like.
 
-## 2. Add the apps
+## 2. Add the web app
 
-### Android (free)
-1. Firebase console → **Add app → Android**.
-2. **Package name:** `com.example.liz` (match `android/app/build.gradle` →
-   `applicationId`; change both together if you want your own).
-3. Download **`google-services.json`** → put it in **`android/app/`**.
-4. Enable the Google Services Gradle plugin:
-   - `android/build.gradle` (project) → `dependencies { classpath 'com.google.gms:google-services:4.4.2' }`
-   - `android/app/build.gradle` (bottom): `apply plugin: 'com.google.gms.google-services'`
-   > Leaving these out keeps Android building fine — push just stays off.
-
-### Web (free)
 1. Firebase console → **Add app → Web**. Copy the config object.
 2. Paste it into **`web/firebase-messaging-sw.js`** (replace the `REPLACE_ME`s).
 3. Also add it to `web/index.html` **only if** you want foreground web pushes —
    otherwise the service worker (background) is enough.
 4. **Cloud Messaging → Web Push certificates → Generate key pair.** Copy the
    **VAPID key** — you pass it at build time (step 5).
-
-### iOS (needs Apple Developer account)
-1. Firebase console → **Add app → iOS**, download **`GoogleService-Info.plist`**
-   → add to `ios/Runner/` via Xcode.
-2. Upload your **APNs auth key** (`.p8`) in Firebase → Cloud Messaging.
-3. Xcode → Runner → Signing & Capabilities → add **Push Notifications** +
-   **Background Modes → Remote notifications**.
 
 ## 3. Deploy the sender + set the Firebase secret
 1. Firebase console → **Project settings → Service accounts → Generate new
@@ -85,12 +67,11 @@ flutter build web \
   --dart-define=SUPABASE_ANON_KEY=<anon-key> \
   --dart-define=FCM_VAPID_KEY=<web-push-cert-key>
 ```
-Android/iOS builds don't need the VAPID key.
 
 ---
 
 ## Test it
-1. Run the app (web or a real Android device — the emulator needs Google Play).
+1. Run the app in a browser that allows notifications.
 2. Sign in → accept the notification permission prompt. A row appears in
    `devices` with your `fcm_token`.
 3. Have a second account **reply to your post** (or **follow you**).
