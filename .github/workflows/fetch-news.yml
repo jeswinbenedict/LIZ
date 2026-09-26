@@ -7,7 +7,7 @@
 #   1. Deploy the function:  supabase functions deploy fetch-news
 #   2. In GitHub → repo → Settings → Secrets and variables → Actions, add:
 #        SUPABASE_FUNCTIONS_URL   e.g. https://<ref>.functions.supabase.co
-#        SUPABASE_ANON_KEY        your project's anon key (public)
+#        SUPABASE_SERVICE_ROLE_KEY  your project's service role key (secret)
 #   3. That's it — it runs hourly, and you can trigger it manually below.
 
 name: fetch-news
@@ -24,15 +24,15 @@ jobs:
       - name: Trigger tech-news ingestion
         env:
           FUNCTIONS_URL: ${{ secrets.SUPABASE_FUNCTIONS_URL }}
-          ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          if [ -z "$FUNCTIONS_URL" ] || [ -z "$ANON_KEY" ]; then
-            echo "::warning::SUPABASE_FUNCTIONS_URL / SUPABASE_ANON_KEY not set — skipping."
+          if [ -z "$FUNCTIONS_URL" ] || [ -z "$SERVICE_KEY" ]; then
+            echo "::warning::SUPABASE_FUNCTIONS_URL / SUPABASE_SERVICE_ROLE_KEY not set — skipping."
             echo "Add them in Settings → Secrets and variables → Actions to enable ingestion."
             exit 0
           fi
           curl -sS -X POST "$FUNCTIONS_URL/fetch-news" \
-            -H "Authorization: Bearer $ANON_KEY" \
+            -H "Authorization: Bearer $SERVICE_KEY" \
             -H "Content-Type: application/json" \
             -d '{}' \
             --fail-with-body

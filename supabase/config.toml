@@ -45,8 +45,22 @@ verify_jwt = false
 [functions.summarize]
 verify_jwt = false
 
+# The ingestion functions run with the service role and spend real quota, so
+# they check the caller themselves (see functions/_shared/auth.ts). verify_jwt
+# stays on as a cheap first gate: it turns away a request with no credentials
+# before an instance is even started. It is not the real gate -- the anon key
+# is a valid JWT and ships in the client bundle.
 [functions.fetch-news]
-verify_jwt = false
+verify_jwt = true
+
+[functions.fetch-tools]
+verify_jwt = true
+
+[functions.embed-tools]
+verify_jwt = true
+
+[functions.summarize-tools]
+verify_jwt = true
 
 [functions.report]
 verify_jwt = true

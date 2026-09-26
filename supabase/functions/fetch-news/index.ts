@@ -19,7 +19,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { parseFeed } from 'https://deno.land/x/rss@1.1.2/mod.ts';
 import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { preflight, requireServiceRole } from '../_shared/auth.ts';
+import { json } from '../_shared/cors.ts';
 import { cleanTitle, stripHtml } from './logic.ts';
 
 interface Article {
@@ -146,9 +147,13 @@ async function sha256(input: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const pre = preflight(req);
+  if (pre) return pre;
+
+  // Only cron and CI may start this: it runs with the service role and spends
+  // real quota. See _shared/auth.ts.
+  const denied = requireServiceRole(req);
+  if (denied) return denied;
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,

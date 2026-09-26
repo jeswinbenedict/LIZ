@@ -10,6 +10,7 @@
 // Deploy public (no JWT): supabase functions deploy logo --no-verify-jwt
 
 import { checkTargetUrl, isAllowedImageType, MAX_IMAGE_BYTES } from './logic.ts';
+import { callerKey, InMemoryLimiter, tooManyRequests } from '../_shared/rate_limit.ts';
 
 const IMG_CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -35,8 +36,18 @@ async function tryFetch(url: string): Promise<Response | null> {
   }
 }
 
+// Counted in memory rather than in the database: one page of the catalog asks
+// for dozens of logos, and a round trip per image to save a favicon fetch
+// would be a poor trade. Per instance, so it blunts a flood from one source
+// rather than enforcing a global ceiling.
+const limiter = new InMemoryLimiter(300, 60_000);
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: IMG_CORS });
+
+  if (!limiter.take(callerKey(req, 'logo'))) {
+    return tooManyRequests(60);
+  }
 
   const u = new URL(req.url);
   const domain = u.searchParams.get('domain');

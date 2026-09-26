@@ -17,8 +17,11 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, json } from '../_shared/cors.ts';
+import { callerKey, tooManyRequests, withinRateLimit } from '../_shared/rate_limit.ts';
 import { embed } from '../_shared/embed.ts';
 import { MIN_SIMILARITY, type Match, reasonFor } from './logic.ts';
+
+const ASK_LIMIT_PER_HOUR = 30;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,6 +32,13 @@ Deno.serve(async (req) => {
     const { query, limit = 5 } = await req.json();
     if (!query || typeof query !== 'string' || !query.trim()) {
       return json({ data: null, error: 'Missing query' }, 400);
+    }
+
+    // Anonymous on purpose — asking a question should not need an account —
+    // but every call runs an embedding model, so it cannot also be unlimited.
+    // Thirty an hour is far above what a person browsing will ever reach.
+    if (!(await withinRateLimit(callerKey(req, 'ask-liz'), ASK_LIMIT_PER_HOUR))) {
+      return tooManyRequests(600);
     }
 
     const supabase = createClient(

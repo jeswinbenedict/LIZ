@@ -14,16 +14,21 @@
 // Deploy: supabase functions deploy summarize-tools
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { preflight, requireServiceRole } from '../_shared/auth.ts';
+import { json } from '../_shared/cors.ts';
 import { summarize } from '../_shared/summary.ts';
 
 const DEFAULT_LIMIT = 4;
 const MAX_LIMIT = 10;
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const pre = preflight(req);
+  if (pre) return pre;
+
+  // Only cron and CI may start this: it runs with the service role and spends
+  // real quota. See _shared/auth.ts.
+  const denied = requireServiceRole(req);
+  if (denied) return denied;
 
   try {
     const body = await req.json().catch(() => ({}));

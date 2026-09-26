@@ -9,7 +9,8 @@
 // uses the service role from Vault.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { preflight, requireServiceRole } from '../_shared/auth.ts';
+import { json } from '../_shared/cors.ts';
 import { isNonProduct } from './logic.ts';
 
 // Search buckets → each maps to a Liz category. Kept product-focused.
@@ -56,7 +57,13 @@ interface Repo {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const pre = preflight(req);
+  if (pre) return pre;
+
+  // Only cron and CI may start this: it runs with the service role and spends
+  // real quota. See _shared/auth.ts.
+  const denied = requireServiceRole(req);
+  if (denied) return denied;
 
   try {
     const admin = createClient(
