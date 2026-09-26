@@ -11,6 +11,7 @@
 // -> { data: [{title, note, url, source, published_at}], error }
 
 import { corsHeaders, json } from '../_shared/cors.ts';
+import { callerKey, InMemoryLimiter, tooManyRequests } from '../_shared/rate_limit.ts';
 
 interface Item {
   title: string;
@@ -108,8 +109,19 @@ async function featureNews(name: string): Promise<Item[]> {
   return items;
 }
 
+// Public on purpose — every tool page asks for its release notes — but each
+// call spends part of GitHub's unauthenticated budget of 60 requests an hour,
+// which is shared by everything this project runs from the same address. One
+// caller looping over it would empty that budget and blank "What's new" for
+// every visitor. A person reading tool pages will not come near 30 a minute.
+const limiter = new InMemoryLimiter(30, 60_000);
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  if (!limiter.take(callerKey(req, 'tool-updates'))) {
+    return tooManyRequests(60);
+  }
 
   try {
     const { name, source_url, slug } = await req.json();

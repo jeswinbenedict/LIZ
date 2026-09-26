@@ -42,9 +42,6 @@ secret = ""
 [functions.ask-liz]
 verify_jwt = false
 
-[functions.summarize]
-verify_jwt = false
-
 # The ingestion functions run with the service role and spend real quota, so
 # they check the caller themselves (see functions/_shared/auth.ts). verify_jwt
 # stays on as a cheap first gate: it turns away a request with no credentials
@@ -60,9 +57,6 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.summarize-tools]
-verify_jwt = true
-
-[functions.report]
 verify_jwt = true
 
 [functions.delete-account]

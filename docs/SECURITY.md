@@ -70,6 +70,36 @@ embed-tools               401        401            200
 summarize-tools           401        401            200
 ```
 
+### Removed: an open AI endpoint
+
+`summarize` took a title and a description and ran them through the LLM, with
+`verify_jwt = false` and no check of its own. Called with no credentials at all
+on 26 September it returned three bullets about the text it was sent — so
+anyone could use this project's Groq quota as a free, general-purpose model.
+Nothing in Liz called it: the batch summariser uses the shared code directly.
+It was missed in the first security pass because that probed a list of
+functions written from memory. It is deleted, and the pass below is now run
+against the list the live project reports.
+
+### Every deployed function, probed
+
+From `supabase functions list`, not from memory:
+
+```
+FUNCTION            no-auth  anon-key   what it is
+fetch-news              401       401   ingestion — service role only
+fetch-tools             401       401   ingestion — service role only
+embed-tools             401       401   ingestion — service role only
+summarize-tools         401       401   ingestion — service role only
+send-notification       401       403   push — service role only
+delete-account          401       401   needs the caller's own session
+ask-liz                 400       400   public, 30 an hour per address
+logo                    400       400   public, 300 a minute per address
+tool-updates            401       400   public, 30 a minute per address
+```
+
+(400 is "you sent an empty body", which is the right answer to an empty probe.)
+
 ### Public by design — rate limited
 
 `ask-liz` and `logo` have to stay anonymous: a visitor asks a question or loads
@@ -87,6 +117,12 @@ mean unlimited.
   from one source rather than enforcing a global ceiling.
 
 Verified: the 31st ask-liz call in an hour returns 429 with `Retry-After: 600`.
+
+- **tool-updates** — 30 per minute per address, in memory. Every tool page asks
+  for release notes, and each call spends part of GitHub's unauthenticated
+  budget of 60 requests an hour, shared by everything this project runs from
+  the same address. One caller looping over it would empty that budget and
+  blank "What's new" for every visitor.
 
 Both limiters **fail open**. A limiter that takes the feature down when the
 database hiccups causes a worse outage than the abuse it guards against, and
@@ -108,6 +144,41 @@ write anything.
   content cannot execute. Scraped HTML is stripped at ingest regardless.
 - **Service-role key handling.** It exists in three places: the Supabase runtime,
   a GitHub Actions secret, and Vault for pg_cron. It never reaches the client.
+
+## Reporting
+
+`reports` is written directly by the app under RLS. The `handle_report` trigger
+hides a post, review or comment once enough people report it.
+
+**What was found:** it counted reports, not reporters, and nothing stopped one
+person reporting the same thing again. Verified on production with throwaway
+accounts: one reported a review three times and it went from `active` to
+`hidden`. Reviews appear on every tool page, so any signed-up user could take
+down any review — and with email confirmation off, signing up costs nothing.
+
+**Now (migration 0034):**
+
+- One report per person per target, enforced by a unique constraint. A repeat
+  returns `23505`, which the app treats as "already reported" rather than an
+  error. An upsert would have been neater and does not work here: `ON CONFLICT`
+  has to read the existing row, only moderators may read reports, so every
+  report would have been refused — measured, before it shipped.
+- Auto-hide needs three *distinct* reporters whose accounts are at least a day
+  old. Reports from new accounts are still filed and still reach moderators;
+  they cannot take something down by themselves.
+- A reason is capped at 500 characters in the table. The removed `report`
+  function applied that cap, but the app never called it, so it had never
+  applied to anything.
+
+Verified afterwards: repeats get `409`, three brand-new accounts cannot hide a
+review, a 5,000-character reason is refused, and three established accounts
+still can hide one — a moderation rule that never fires is broken too.
+
+**Moderation queue.** Hide used to act on posts only; on a reported review it
+quietly dismissed the report instead, so a moderator could believe something
+was gone while it stayed live. It now works for posts, reviews, comments and
+tools, shows what was reported instead of a UUID, and lists everything currently
+hidden with a Restore button.
 
 ## Accounts
 
