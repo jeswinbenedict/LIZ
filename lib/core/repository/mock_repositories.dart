@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import '../../shared/models/app_notification.dart';
 import '../../shared/models/category.dart';
-import '../../shared/models/collection.dart';
 import '../../shared/models/comment.dart';
 import '../../shared/models/news_item.dart';
 import '../../shared/models/paginated.dart';
@@ -34,7 +33,6 @@ class MockStore {
   final Set<String> follows = {}; // followed tool ids
   final Set<String> userFollows = {}; // followed user ids
   final Set<String> likes = {}; // "$type:$id"
-  final List<Collection> collections = [];
 
   /// Seeded so the alerts screen shows what a real one looks like without a
   /// backend — one unread, one already seen.
@@ -58,6 +56,9 @@ class MockStore {
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
     ),
   ];
+
+  /// Who filed each report, so demo mode can refuse a duplicate.
+  final Map<String, String?> reporterOf = {};
 
   /// Seeded so the admin moderation queue isn't empty in demo mode.
   final List<ReportEntry> reports = [
@@ -172,8 +173,11 @@ class MockContentRepository implements ContentRepository {
 
   @override
   Future<Paginated<NewsItem>> news({int limit = 20, String? cursor}) async {
-    final sorted = [..._store.news]
-      ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    // Published only, as the live query is. Demo mode used to show hidden
+    // articles, so moderating one appeared to do nothing.
+    final sorted =
+        _store.news.where((n) => n.status == PublishStatus.published).toList()
+          ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
     return _page(sorted, _decodeCursor(cursor), limit);
   }
 
@@ -419,8 +423,30 @@ class MockCommunityRepository implements CommunityRepository {
     required String reason,
   }) async {
     _requireUser();
-    // In mock mode we just acknowledge; the Supabase impl records + auto-hides.
     await Future<void>.delayed(const Duration(milliseconds: 150));
+    // Recorded, as the live repository does, so a report filed in demo mode
+    // reaches the admin queue instead of vanishing. One per person per target,
+    // matching the constraint in migration 0034; a repeat is a quiet no-op.
+    final me = _auth.currentUserId;
+    final already = _store.reports.any(
+      (r) =>
+          r.targetType == targetType &&
+          r.targetId == targetId &&
+          _store.reporterOf[r.id] == me,
+    );
+    if (already) return;
+    final id = _store.nextId('rep');
+    _store.reporterOf[id] = me;
+    _store.reports.add(
+      ReportEntry(
+        id: id,
+        targetType: targetType,
+        targetId: targetId,
+        reason: reason.length > 500 ? reason.substring(0, 500) : reason,
+        preview: '',
+        createdAt: DateTime.now(),
+      ),
+    );
   }
 }
 
@@ -472,23 +498,112 @@ class MockAdminRepository implements AdminRepository {
   Future<List<NewsItem>> allNews() async => [..._store.news];
 
   @override
-  Future<List<Post>> flaggedPosts() async {
-    final ids = _store.reports
-        .where((r) => r.targetType == 'post')
-        .map((r) => r.targetId)
-        .toSet();
-    return _store.posts.where((p) => ids.contains(p.id)).toList();
+  Future<void> setNewsStatus(String newsId, PublishStatus status) async {
+    final i = _store.news.indexWhere((n) => n.id == newsId);
+    if (i >= 0) _store.news[i] = _store.news[i].copyWith(status: status);
   }
 
   @override
-  Future<void> setPostStatus(String postId, String status) async {
-    final idx = _store.posts.indexWhere((p) => p.id == postId);
-    if (idx >= 0)
-      _store.posts[idx] = _store.posts[idx].copyWith(status: status);
+  Future<List<ReportEntry>> openReports() async => [
+    for (final r in _store.reports)
+      ReportEntry(
+        id: r.id,
+        targetType: r.targetType,
+        targetId: r.targetId,
+        reason: r.reason,
+        preview: r.preview.isNotEmpty
+            ? r.preview
+            : _previewOf(r.targetType, r.targetId),
+        createdAt: r.createdAt,
+      ),
+  ];
+
+  String _previewOf(String type, String id) {
+    switch (type) {
+      case 'post':
+        return _store.posts
+                .where((p) => p.id == id)
+                .map((p) => p.content)
+                .firstOrNull ??
+            '';
+      case 'review':
+        return _store.reviews
+                .where((r) => r.id == id)
+                .map((r) => r.body)
+                .firstOrNull ??
+            '';
+      case 'comment':
+        for (final list in _store.commentsByPost.values) {
+          for (final c in list) {
+            if (c.id == id) return c.body;
+          }
+        }
+        return '';
+      case 'tool':
+        return _store.tools
+                .where((t) => t.id == id)
+                .map((t) => t.name)
+                .firstOrNull ??
+            '';
+    }
+    return '';
   }
 
   @override
-  Future<List<ReportEntry>> openReports() async => [..._store.reports];
+  Future<void> setContentHidden(
+    String targetType,
+    String targetId, {
+    required bool hidden,
+  }) async {
+    final status = hidden ? 'hidden' : 'active';
+    switch (targetType) {
+      case 'post':
+        final i = _store.posts.indexWhere((p) => p.id == targetId);
+        if (i >= 0) _store.posts[i] = _store.posts[i].copyWith(status: status);
+      case 'review':
+        final i = _store.reviews.indexWhere((r) => r.id == targetId);
+        if (i >= 0)
+          _store.reviews[i] = _store.reviews[i].copyWith(status: status);
+      case 'comment':
+        for (final list in _store.commentsByPost.values) {
+          final i = list.indexWhere((c) => c.id == targetId);
+          if (i >= 0) list[i] = list[i].copyWith(status: status);
+        }
+      case 'tool':
+        final i = _store.tools.indexWhere((t) => t.id == targetId);
+        if (i >= 0) {
+          _store.tools[i] = _store.tools[i].copyWith(
+            status: hidden ? PublishStatus.hidden : PublishStatus.published,
+          );
+        }
+    }
+  }
+
+  @override
+  Future<List<HiddenItem>> hiddenContent() async => [
+    for (final p in _store.posts.where((p) => p.status == 'hidden'))
+      HiddenItem(
+        targetType: 'post',
+        targetId: p.id,
+        preview: p.content,
+        createdAt: p.createdAt,
+      ),
+    for (final r in _store.reviews.where((r) => r.status == 'hidden'))
+      HiddenItem(
+        targetType: 'review',
+        targetId: r.id,
+        preview: r.body,
+        createdAt: r.createdAt,
+      ),
+    for (final list in _store.commentsByPost.values)
+      for (final c in list.where((c) => c.status == 'hidden'))
+        HiddenItem(
+          targetType: 'comment',
+          targetId: c.id,
+          preview: c.body,
+          createdAt: c.createdAt,
+        ),
+  ];
 
   @override
   Future<void> resolveReport(String reportId) async {
@@ -577,22 +692,6 @@ class MockTrackRepository implements TrackRepository {
       );
     }
     return added;
-  }
-
-  @override
-  Future<List<Collection>> collections() async => _store.collections;
-
-  @override
-  Future<Collection> createCollection(String name) async {
-    _requireUser();
-    final c = Collection(
-      id: _store.nextId('col'),
-      userId: _auth.currentUserId!,
-      name: name,
-      createdAt: DateTime.now(),
-    );
-    _store.collections.add(c);
-    return c;
   }
 
   @override

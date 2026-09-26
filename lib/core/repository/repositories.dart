@@ -1,6 +1,5 @@
 import '../../shared/models/app_notification.dart';
 import '../../shared/models/category.dart';
-import '../../shared/models/collection.dart';
 import '../../shared/models/comment.dart';
 import '../../shared/models/news_item.dart';
 import '../../shared/models/paginated.dart';
@@ -118,6 +117,21 @@ abstract interface class CommunityRepository {
     required String targetId,
     required String reason,
   });
+}
+
+/// Something taken off the page, and what it said.
+class HiddenItem {
+  const HiddenItem({
+    required this.targetType,
+    required this.targetId,
+    required this.preview,
+    required this.createdAt,
+  });
+
+  final String targetType;
+  final String targetId;
+  final String preview;
+  final DateTime createdAt;
 }
 
 /// A reported item awaiting moderation.
@@ -250,9 +264,33 @@ abstract interface class AdminRepository {
   Future<void> setToolStatuses(List<String> toolIds, PublishStatus status);
 
   Future<void> setToolStatus(String toolId, PublishStatus status);
+
+  /// The newest articles in every status, for moderation.
   Future<List<NewsItem>> allNews();
-  Future<List<Post>> flaggedPosts();
-  Future<void> setPostStatus(String postId, String status);
+
+  /// Hide or restore an article. The feed is scraped from eight sources and
+  /// occasionally pulls in something that should not be on the page; until now
+  /// the only way to take it down was the database console.
+  Future<void> setNewsStatus(String newsId, PublishStatus status);
+
+  /// Hide or restore anything a reader can report: a post, a review, a
+  /// comment or a tool.
+  ///
+  /// Replaces a post-only version. The moderation queue could dismiss a report
+  /// about a review but had no way to act on it — and reviews are shown on
+  /// every tool page, so a moderator could not take a bad one down.
+  Future<void> setContentHidden(
+    String targetType,
+    String targetId, {
+    required bool hidden,
+  });
+
+  /// Community content currently hidden, newest first.
+  ///
+  /// The report trigger hides things on its own once enough established
+  /// accounts agree, and nothing used to show what it had taken down. This is
+  /// where a moderator confirms that or puts it back.
+  Future<List<HiddenItem>> hiddenContent();
   Future<List<ReportEntry>> openReports();
   Future<void> resolveReport(String reportId);
 
@@ -268,14 +306,11 @@ abstract interface class AdminRepository {
   Future<List<ErrorGroup>> recentErrors({int limit = 20});
 }
 
-/// Track / follow: bookmarks, collections, follows.
+/// Track / follow: bookmarks and follows.
 abstract interface class TrackRepository {
   Future<Set<String>> bookmarkedToolIds();
   Future<List<Tool>> bookmarkedTools();
   Future<bool> toggleBookmark(String toolId);
-
-  Future<List<Collection>> collections();
-  Future<Collection> createCollection(String name);
 
   Future<Set<String>> followedToolIds();
   Future<bool> toggleFollowTool(String toolId);

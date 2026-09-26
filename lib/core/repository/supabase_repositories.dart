@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../shared/models/app_notification.dart';
 import '../../shared/models/json.dart';
 import '../../shared/models/category.dart';
-import '../../shared/models/collection.dart';
 import '../../shared/models/comment.dart';
 import '../../shared/models/news_item.dart';
 import '../../shared/models/paginated.dart';
@@ -344,15 +343,27 @@ class SupabaseCommunityRepository implements CommunityRepository {
     required String reason,
   }) async {
     final uid = _requireUser();
-    // Insert directly (RLS allows a user to file their own report); the
-    // handle_report trigger applies the auto-hide threshold server-side. This
-    // keeps reporting working without any Edge Function deployed.
-    await _client.from('reports').insert({
-      'reporter_id': uid,
-      'target_type': targetType,
-      'target_id': targetId,
-      'reason': reason,
-    });
+    // Filed directly: RLS lets a user report as themselves, and the table
+    // itself enforces one report per person per target and a 500-character
+    // reason (migration 0034), so no client can skip either rule.
+    //
+    // Not an upsert. ON CONFLICT has to read the existing row to find the
+    // conflict, and reports are readable by moderators only, so an upsert is
+    // refused by row-level security for everyone else — every report would
+    // fail, not just repeats. That was measured, not guessed.
+    try {
+      await _client.from('reports').insert({
+        'reporter_id': uid,
+        'target_type': targetType,
+        'target_id': targetId,
+        'reason': reason.length > 500 ? reason.substring(0, 500) : reason,
+      });
+    } on PostgrestException catch (e) {
+      // 23505: this person already reported this. They did what they meant
+      // to do; "something went wrong" would only prompt a third try.
+      if (e.code == '23505') return;
+      rethrow;
+    }
   }
 }
 
@@ -418,42 +429,118 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<List<Post>> flaggedPosts() async {
-    final rows = await _client
-        .from('posts')
-        .select()
-        .inFilter('status', ['hidden', 'active'])
-        .order('created_at', ascending: false)
-        .limit(100);
-    return (rows as List).map((e) => Post.fromJson(e)).toList();
+  Future<void> setNewsStatus(String newsId, PublishStatus status) async {
+    await _client
+        .from('news')
+        .update({'status': status.value})
+        .eq('id', newsId);
   }
 
-  @override
-  Future<void> setPostStatus(String postId, String status) async {
-    await _client.from('posts').update({'status': status}).eq('id', postId);
-  }
+  /// Where each reportable thing keeps its words, and the status column that
+  /// hides it. Tools use the catalog's publish status; the rest are community
+  /// content with their own.
+  static const _moderated =
+      <String, ({String table, String text, String on, String off})>{
+        'post': (table: 'posts', text: 'content', on: 'active', off: 'hidden'),
+        'review': (table: 'reviews', text: 'body', on: 'active', off: 'hidden'),
+        'comment': (
+          table: 'comments',
+          text: 'body',
+          on: 'active',
+          off: 'hidden',
+        ),
+        'tool': (table: 'tools', text: 'name', on: 'published', off: 'hidden'),
+      };
 
   @override
   Future<List<ReportEntry>> openReports() async {
-    final rows = await _client
-        .from('reports')
-        .select()
-        .eq('status', 'open')
-        .order('created_at', ascending: false);
-    return (rows as List)
-        .map(
-          (e) => ReportEntry(
-            id: e['id'].toString(),
-            targetType: e['target_type'].toString(),
-            targetId: e['target_id'].toString(),
-            reason: (e['reason'] ?? '').toString(),
-            preview: '',
-            createdAt:
-                DateTime.tryParse(e['created_at']?.toString() ?? '') ??
-                DateTime.now(),
+    final rows =
+        (await _client
+                .from('reports')
+                .select()
+                .eq('status', 'open')
+                .order('created_at', ascending: false))
+            as List;
+
+    // Moderators used to see a bare UUID for what had been reported, so every
+    // decision started with a trip to the database. One query per kind of
+    // target, not per report.
+    final previews = <String, String>{};
+    final byType = <String, Set<String>>{};
+    for (final r in rows) {
+      byType
+          .putIfAbsent(r['target_type'].toString(), () => {})
+          .add(r['target_id'].toString());
+    }
+    for (final entry in byType.entries) {
+      final spec = _moderated[entry.key];
+      if (spec == null) continue;
+      final found = await _client
+          .from(spec.table)
+          .select('id,${spec.text}')
+          .inFilter('id', entry.value.toList());
+      for (final f in (found as List)) {
+        previews['${entry.key}:${f['id']}'] = (f[spec.text] ?? '').toString();
+      }
+    }
+
+    return rows.map((e) {
+      final type = e['target_type'].toString();
+      final id = e['target_id'].toString();
+      return ReportEntry(
+        id: e['id'].toString(),
+        targetType: type,
+        targetId: id,
+        reason: (e['reason'] ?? '').toString(),
+        // Empty when the thing reported has since been deleted.
+        preview: previews['$type:$id'] ?? '',
+        createdAt:
+            DateTime.tryParse(e['created_at']?.toString() ?? '') ??
+            DateTime.now(),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<void> setContentHidden(
+    String targetType,
+    String targetId, {
+    required bool hidden,
+  }) async {
+    final spec = _moderated[targetType];
+    if (spec == null) {
+      throw LizException('Cannot moderate a $targetType.');
+    }
+    await _client
+        .from(spec.table)
+        .update({'status': hidden ? spec.off : spec.on})
+        .eq('id', targetId);
+  }
+
+  @override
+  Future<List<HiddenItem>> hiddenContent() async {
+    final out = <HiddenItem>[];
+    for (final type in const ['post', 'review', 'comment']) {
+      final spec = _moderated[type]!;
+      final rows = await _client
+          .from(spec.table)
+          .select('id,${spec.text},created_at')
+          .eq('status', spec.off)
+          .order('created_at', ascending: false)
+          .limit(50);
+      for (final r in (rows as List)) {
+        out.add(
+          HiddenItem(
+            targetType: type,
+            targetId: r['id'].toString(),
+            preview: (r[spec.text] ?? '').toString(),
+            createdAt: asDate(r['created_at']),
           ),
-        )
-        .toList();
+        );
+      }
+    }
+    out.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return out;
   }
 
   @override
@@ -568,29 +655,6 @@ class SupabaseTrackRepository implements TrackRepository {
     }
     await _client.from('bookmarks').insert({'user_id': uid, 'tool_id': toolId});
     return true;
-  }
-
-  @override
-  Future<List<Collection>> collections() async {
-    final uid = _auth.currentUserId;
-    if (uid == null) return [];
-    final rows = await _client
-        .from('collections')
-        .select()
-        .eq('user_id', uid)
-        .order('created_at', ascending: false);
-    return (rows as List).map((e) => Collection.fromJson(e)).toList();
-  }
-
-  @override
-  Future<Collection> createCollection(String name) async {
-    final uid = _requireUser();
-    final row = await _client
-        .from('collections')
-        .insert({'user_id': uid, 'name': name})
-        .select()
-        .single();
-    return Collection.fromJson(row);
   }
 
   @override
