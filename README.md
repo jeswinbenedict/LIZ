@@ -2,226 +2,130 @@
 
 **Discover the next big AI tool before everyone else.**
 
-Liz is an AI & technology discovery platform — one Flutter codebase shipping to
-**Web, iOS, and Android**, backed by Supabase. Find new and rising tools early,
-compare them, track them, and share honest community reviews.
+Liz is a web application for finding AI tools while they are still rising. It
+collects new launches from Product Hunt, Hacker News and GitHub, decides which
+are worth showing, summarises them, and lets people search in plain language,
+follow the ones they care about, and hear when something changes.
 
-This repo contains the Phase 1 MVP: a fully responsive Flutter app plus the
-Supabase backend (schema, RLS, triggers, seed, Edge Functions) and n8n ingestion
-notes.
+Built with Flutter for the web, backed by Supabase. Every AI feature runs on
+free and open models: search uses `gte-small` embeddings computed inside
+Supabase, and summaries use open-source models on Groq's free tier.
 
 ---
 
-## Run it right now (no backend needed)
+## Run it
 
-The app ships with a rich bundled dataset, so it runs and is fully explorable
-with **zero configuration** — "demo mode".
+### With bundled demo data — no setup
 
 ```bash
 flutter pub get
 flutter run -d chrome
 ```
 
-Everything works against local mock data: Discover / Rising Early / Trending,
-search, tool detail, Ask Liz, community posts & reviews, bookmarks, compare,
-profile, settings, and the admin panel (the demo user is an admin). Sign-in shows
-a **"continue as demo user"** shortcut.
+With no Supabase credentials the app uses a bundled dataset and a mock backend,
+so every screen works offline. Sign in with any email and password: the demo
+account is an admin, so the admin console is reachable too.
 
-Resize the window from ~320px to desktop to see the adaptive shell morph:
-**bottom nav → nav rail → sidebar**.
-
----
-
-## Project layout
-
-```
-lib/
-  app/            router (go_router), theme, responsive shell + breakpoints
-  core/
-    config/       env (SUPABASE_URL / ANON_KEY via --dart-define)
-    auth/         AuthRepository: mock + Supabase implementations
-    data/         bundled mock dataset (24 tools + reviews/posts/news)
-    repository/   Content/Community/Track/Admin repos: mock + Supabase
-    providers.dart  Riverpod wiring — picks mock vs Supabase from Env.useSupabase
-  features/       discover, tool_detail, compare, community, reviews, track,
-                  ask_liz, auth, profile, admin
-  shared/         models, reusable widgets (cards, badges, states, avatars)
-supabase/
-  migrations/     0001 schema · 0002 RLS · 0003 functions/triggers
-  seed.sql        categories + 24 tools + news (safe to re-run)
-  seed_community.sql  starter reviews/posts (needs real user UUIDs — template)
-  functions/      ask-liz · summarize · report · delete-account (Deno/TS)
-  config.toml     local dev config
-n8n/README.md     ingestion pipeline (sources → normalize → dedupe → AI → Supabase)
-```
-
-The repository layer is **backend-agnostic**: features talk to interfaces, and
-`providers.dart` swaps in the Supabase implementation automatically once
-credentials are present.
-
----
-
-## Connect the real backend (Supabase)
-
-### 1. Create the project & install the CLI
-
-- Create a project at [supabase.com](https://supabase.com) (or run locally).
-- Install the CLI: `npm i -g supabase` (or `scoop install supabase`).
-
-### 2. Apply the schema, policies, and seed
-
-```bash
-supabase link --project-ref <your-project-ref>
-supabase db push          # applies migrations/0001..0003
-supabase db execute --file supabase/seed.sql
-```
-
-Local alternative (Docker): `supabase start` then `supabase db reset` (runs
-migrations + `seed.sql` automatically).
-
-### 3. Configure auth providers
-
-In the dashboard (Authentication → Providers) enable **Email**, **Google**, and
-**Apple** (Apple is required on iOS if any social login is offered). Add redirect
-URLs including your app scheme (see `supabase/config.toml`).
-
-### 4. Deploy the Edge Functions & set secrets
-
-```bash
-supabase functions deploy ask-liz summarize report delete-account
-# AI (summaries + Ask Liz) uses a FREE, OpenAI-compatible provider — Groq by
-# default (open-source Llama models). Get a free key at console.groq.com:
-supabase secrets set AI_API_KEY=gsk_...                # server-side only
-# Optional overrides to switch providers (all OpenAI-compatible):
-#   Groq (default):  AI_BASE_URL=https://api.groq.com/openai/v1  AI_MODEL=llama-3.3-70b-versatile
-#   OpenRouter:      AI_BASE_URL=https://openrouter.ai/api/v1    AI_MODEL=meta-llama/llama-3.3-70b-instruct:free
-#   Gemini:          AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai  AI_MODEL=gemini-2.0-flash
-```
-
-`SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected
-into functions by the platform automatically.
-
-### 5. (Optional) Seed starter community content
-
-Create 2–3 users (dashboard or via the app), then edit the UUIDs in
-`supabase/seed_community.sql` and run it — so the community isn't an empty room.
-
-### 6. Point the app at Supabase
-
-Only the **anon** key belongs in the client. The service-role key stays in
-n8n / Edge Functions.
+### Against the live backend
 
 ```bash
 flutter run -d chrome \
-  --dart-define=SUPABASE_URL=https://<ref>.supabase.co \
+  --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=<anon-key>
 ```
 
-With both defines present the app switches from mock to live data automatically.
+With both values present the app switches to live data automatically. Only the
+anon key belongs in the client — it is public by design and every table is
+protected by row-level security. `.claude/launch.json` has both configurations.
 
 ---
 
-## Content ingestion (n8n)
+## What is in here
 
-See [`n8n/README.md`](n8n/README.md). n8n pulls from APIs (Product Hunt, GitHub,
-Hacker News) and RSS on a schedule, dedupes via `content_hash`, enriches with the
-`/summarize` function, and upserts into Supabase with `status = 'pending'` for
-admin review. The Flutter app never scrapes.
-
-Schedule `select refresh_trend_scores();` nightly to update trend / "Rising Early"
-rankings.
-
----
-
-## Technology News Feed
-
-The **News** tab shows live technology headlines, updated continuously — all from
-**free, open-source** sources.
-
-**How content arrives:**
-1. The [`fetch-news`](supabase/functions/fetch-news/index.ts) Edge Function pulls the
-   latest tech news from:
-   - **RSS/Atom feeds** (open standard): TechCrunch, The Verge, Ars Technica, Wired,
-     Engadget, VentureBeat, and Hacker News (via `hnrss.org`).
-   - The **Dev.to** public API (free, no key).
-   - A **`deno-dom` scraping fallback** (`scrapeHeadlines`) for sources without a feed.
-     For JS-heavy sites that need a real browser, point a **Playwright/Cheerio** worker
-     (n8n or a small VPS) at the same `news` table.
-   It normalizes, dedupes by URL, and upserts — safe to run repeatedly.
-2. It runs **hourly** via a free **GitHub Actions** cron
-   ([`.github/workflows/fetch-news.yml`](.github/workflows/fetch-news.yml)), or via the
-   `pg_cron` template in [`0004_news_realtime.sql`](supabase/migrations/0004_news_realtime.sql).
-3. New rows are pushed to the app **in real time** via **Supabase Realtime** — the feed
-   shows a **LIVE** badge and prepends articles as they land.
-
-**Set it up:**
-```bash
-supabase functions deploy fetch-news
-supabase functions invoke fetch-news    # one-time backfill
 ```
-Then add repo secrets `SUPABASE_FUNCTIONS_URL` and `SUPABASE_ANON_KEY` in GitHub
-(Settings → Secrets → Actions) and the hourly job runs itself. Optionally set
-a free `AI_API_KEY` (Groq/OpenRouter/Gemini) to attach 3-bullet AI "quick takes" per article.
-
-> Liz shows a **snippet + link out** to the original source — it never republishes full
-> articles.
-
-## Push notifications (FCM)
-
-Activity notifications are built and **fail-open**: in-app notifications (a reply
-to your post, a new follower) work as soon as `0007_notifications.sql` is applied
-— **no Firebase required**. Device **push** layers on top via the
-[`send-notification`](supabase/functions/send-notification/index.ts) Edge Function
-(FCM HTTP v1) and the guarded [`PushService`](lib/core/notifications/push_service.dart),
-which registers each device's token to the `devices` table and no-ops cleanly when
-Firebase isn't configured. To switch push on (free for Android + Web), follow
-[`docs/FCM_SETUP.md`](docs/FCM_SETUP.md).
-
-## Build targets
-
-```bash
-flutter build web        # → build/web  (host on Cloudflare Pages / Vercel / Netlify)
-flutter build appbundle  # Android
-flutter build ipa        # iOS (Apple Sign-In + privacy manifest + delete-account required)
+lib/                Flutter web app
+  app/              router, theme, responsive shell
+  core/             auth, config, repositories (mock + Supabase), telemetry
+  features/         discover, search, ask_liz, tool_detail, news, alerts,
+                    track (saved, follow), compare, profile, auth, admin,
+                    community (built, hidden from navigation — see below)
+  shared/           models and widgets
+supabase/
+  migrations/       schema, RLS, triggers, cron jobs, health checks
+  functions/        Edge Functions (Deno) and their tests
+scrapers/           Python/BeautifulSoup scraper, quality gate, backlog tools
+n8n/                workflow for running the scraper from your own machine
+docs/               how the pieces work — start here
+test/               Flutter tests
 ```
 
-Pass the same `--dart-define` values shown above to production builds.
+## How the catalog fills itself
+
+Scheduled jobs inside Supabase fetch GitHub tools daily and news hourly,
+compute embeddings and summaries every fifteen minutes, and refresh rankings.
+The Python scraper finds Product Hunt and Hacker News launches, follows each
+listing to the product's own site, and a **quality gate** decides whether the
+result is fit to publish. Anything held back keeps a recorded reason, visible in
+the admin console.
+
+→ [docs/CATALOG_PIPELINE.md](docs/CATALOG_PIPELINE.md)
+
+Product Hunt blocks datacenter addresses, so its launches only resolve when the
+scraper runs from a home connection. That is what the n8n workflow is for.
+
+→ [n8n/README.md](n8n/README.md)
+
+## Knowing it still works
+
+`system_health()` reports ten signals derived from the data itself — catalog and
+news freshness, embedding and summary coverage, unexplained backlog, failed
+scheduled calls, crash reports, open reports. It runs hourly and notifies admins
+when something fails, at most once every six hours. The admin console's
+**Health** tab shows all of it.
+
+## Security
+
+What is protected, how it was checked, and what was found — including the
+problems fixed along the way.
+
+→ [docs/SECURITY.md](docs/SECURITY.md)
+
+## Tests
+
+```bash
+flutter analyze --no-fatal-infos
+flutter test                                              # app
+cd scrapers && python -m pytest tests                     # scraper
+deno test --allow-env --no-check supabase/functions/tests # Edge Functions
+```
+
+All three run in CI on every push. Beyond behaviour, the app suite checks the
+catalog, account and community screens at 320 pixels wide and at 1.5× text
+size, and runs Flutter's accessibility guidelines — labelled controls,
+tap-target size and contrast in light and dark — on Discover, News and the tool
+page. Extending both sweeps to every screen is on the list below.
 
 ---
 
-## Security & production notes
+## Deliberate decisions
 
-### What's public vs secret (and why the repo is safe)
-Some keys **belong** in the client and are committed on purpose; the real secrets
-never touch the repo:
+- **Web only.** The Android and iOS scaffolds were removed rather than carried
+  unbuilt. `flutter create --platforms android,ios .` restores them; re-enable
+  the platform keys in `pubspec.yaml` for icons and splash at the same time.
+- **Community is built but hidden.** Posts, comments and their moderation work
+  and are tested, but an empty forum reads worse to a first-time visitor than no
+  tab at all. Adding it back is one entry in `kNavDestinations`. Reviews on tool
+  pages are separate and live.
+- **No paid AI APIs.** Semantic search is embeddings in the database; summaries
+  use free open models.
 
-| Value | In repo? | Why it's safe / where it lives |
-|---|---|---|
-| Supabase **anon** key | ✅ committed (`run_web.ps1`, `.claude/launch.json`) | Public by design — ships in every client bundle, gated by RLS |
-| Firebase **web config** (`apiKey`, `appId`, VAPID) | ✅ committed (`push_service.dart`, `firebase-messaging-sw.js`) | Public project identifiers, gated by Firebase security rules |
-| Supabase **service_role** key | ❌ never | Supabase **Vault** + Edge Function env only |
-| **Groq** `AI_API_KEY` | ❌ never | Supabase Edge Function secret |
-| **Firebase service account** JSON | ❌ never | `FIREBASE_SERVICE_ACCOUNT` Edge secret |
-| DB password | ❌ never | Not stored anywhere in the project |
+## Still to do
 
-Secret-bearing files (`.env`, `google-services.json`, `GoogleService-Info.plist`,
-`*serviceAccount*.json`, `*.p8/.p12/.jks/.keystore`, `key.properties`) are
-`.gitignore`d so they can't be committed by accident.
-
-### Other measures
-- **RLS on every table**, deny-by-default; users edit only their own content;
-  moderators/admins can hide/remove any content (see `0002_rls.sql`).
-- **Service-role key never ships to the client** — server-side only.
-- **`send-notification` is locked to service-role callers** — clients can't send pushes.
-- **Moderation from day one**: report button → `handle_report` trigger auto-hides
-  at 3 reports → admin review queue.
-- **Delete-account flow** (`/delete-account` function) for App Store compliance.
-- Enable Supabase automated backups; wire up Sentry + analytics before launch.
-
-## Status
-
-Phase 1 (MVP) is implemented, plus the live Supabase backend, the Technology News
-Feed, image uploads (Storage), and **FCM push + activity notifications**. Remaining
-Phase 2 items (full "Rising Early" engine, richer Ask Liz, collections UI, analytics
-dashboard) and Phase 3 hooks are scaffolded in the models, schema, and repository
-interfaces.
+- **Email delivery.** No SMTP provider is configured, so password-reset links,
+  magic links and confirmation emails are built and tested but cannot be sent.
+- **Google and Apple sign-in** need OAuth credentials; only email works today.
+- **Deployment.** No host is configured yet, `site_url` still points at
+  `localhost:3000`, and URLs use `/#/` rather than clean paths.
+  `toolBySlug()` is kept for the per-tool URLs that work will add.
+- **Test coverage** for profile, settings, alerts and the admin console at small
+  sizes, plus the remaining untested Edge Functions.
