@@ -12,14 +12,47 @@ class ToolRanking {
   /// Words that appear in almost any request for a tool. Overlap on these says
   /// nothing about whether the tool does what was asked for.
   static const genericTerms = {
-    'free', 'paid', 'cheap', 'best', 'good', 'great', 'tool', 'tools', 'app',
-    'apps', 'software', 'online', 'website', 'need', 'want', 'find', 'looking',
-    'help', 'something', 'anything', 'that', 'this', 'with', 'for', 'and',
-    'the', 'you', 'your', 'can', 'from', 'use', 'using', 'make', 'get',
+    'free',
+    'paid',
+    'cheap',
+    'best',
+    'good',
+    'great',
+    'tool',
+    'tools',
+    'app',
+    'apps',
+    'software',
+    'online',
+    'website',
+    'need',
+    'want',
+    'find',
+    'looking',
+    'help',
+    'something',
+    'anything',
+    'that',
+    'this',
+    'with',
+    'for',
+    'and',
+    'the',
+    'you',
+    'your',
+    'can',
+    'from',
+    'use',
+    'using',
+    'make',
+    'get',
   };
 
-  static Set<String> termsOf(String query) =>
-      query.toLowerCase().split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toSet();
+  static Set<String> termsOf(String query) => query
+      .toLowerCase()
+      .split(RegExp(r'\s+'))
+      .where((t) => t.isNotEmpty)
+      .toSet();
 
   static String haystack(Tool t) =>
       '${t.name} ${t.tagline} ${t.description} ${t.tags.join(' ')} ${t.category}'
@@ -46,8 +79,11 @@ class ToolRanking {
 
   /// The tools worth showing, best first. Anything with no topical overlap is
   /// dropped rather than padded in behind the ones that do match.
-  static List<Tool> shortlist(List<Tool> pool, Set<String> terms,
-      {int limit = 5}) {
+  static List<Tool> shortlist(
+    List<Tool> pool,
+    Set<String> terms, {
+    int limit = 5,
+  }) {
     final matching = pool.where((t) => topicScore(t, terms) > 0).toList()
       ..sort((a, b) => rank(b, terms).compareTo(rank(a, terms)));
     return matching.take(limit).toList();
@@ -66,4 +102,19 @@ class ToolRanking {
     final prefix = free ? 'Free. ' : '';
     return '${prefix}Matches "$matched" — ${tool.tagline}';
   }
+}
+
+/// What to tell the reader when the server refuses, or null when the refusal
+/// is better handled by quietly falling back to on-device ranking.
+///
+/// Only the rate limit earns a message. A 500 or a dropped connection means
+/// the local ranking should step in without ceremony; being told "the backend
+/// is unavailable" helps nobody who just wants an answer. Being told "you have
+/// asked a lot, wait a few minutes" does, because waiting is the fix.
+String? noticeForStatus(int? status) {
+  if (status == 429) {
+    return 'That is a lot of questions in a short time. Give it a few '
+        'minutes and ask again.';
+  }
+  return null;
 }

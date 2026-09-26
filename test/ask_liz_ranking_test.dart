@@ -97,12 +97,20 @@ void main() {
 
   group('shortlist', () {
     test('drops tools with no topical overlap however free or trending', () {
-      final terms = ToolRanking.termsOf('free AI tool to remove image backgrounds');
-      final result =
-          ToolRanking.shortlist([_codeHelper, _ragBuilder, _backgroundRemover], terms);
+      final terms = ToolRanking.termsOf(
+        'free AI tool to remove image backgrounds',
+      );
+      final result = ToolRanking.shortlist([
+        _codeHelper,
+        _ragBuilder,
+        _backgroundRemover,
+      ], terms);
 
-      expect(result.map((t) => t.name), ['Cutout'],
-          reason: 'a Claude Code helper is not an answer to a background remover');
+      expect(
+        result.map((t) => t.name),
+        ['Cutout'],
+        reason: 'a Claude Code helper is not an answer to a background remover',
+      );
     });
 
     test('returns nothing when the catalog cannot answer the question', () {
@@ -119,7 +127,10 @@ void main() {
         trendScore: 100,
       );
       final terms = ToolRanking.termsOf('remove image backgrounds');
-      final result = ToolRanking.shortlist([weakButTrending, _backgroundRemover], terms);
+      final result = ToolRanking.shortlist([
+        weakButTrending,
+        _backgroundRemover,
+      ], terms);
 
       expect(result.first.name, 'Cutout');
     });
@@ -129,7 +140,10 @@ void main() {
         10,
         (i) => _tool(id: '$i', name: 'Tool $i', tagline: 'image editing'),
       );
-      expect(ToolRanking.shortlist(many, ToolRanking.termsOf('image')).length, 5);
+      expect(
+        ToolRanking.shortlist(many, ToolRanking.termsOf('image')).length,
+        5,
+      );
     });
   });
 
@@ -151,11 +165,33 @@ void main() {
         tags: ['background'],
         pricing: PricingType.free,
       );
-      final reason =
-          ToolRanking.reasonFor(freeMatch, ToolRanking.termsOf('free background remover'));
+      final reason = ToolRanking.reasonFor(
+        freeMatch,
+        ToolRanking.termsOf('free background remover'),
+      );
 
       expect(reason, startsWith('Free. '));
       expect(reason, contains('background'));
+    });
+  });
+
+  group('when the server refuses', () {
+    test('a rate limit is worth saying out loud', () {
+      // ask-liz is capped at 30 questions an hour per address. Silently
+      // falling through to keyword ranking would hand back visibly worse
+      // answers and blame nothing — the failure this screen was rebuilt to
+      // remove — so this one gets a message.
+      final notice = noticeForStatus(429);
+      expect(notice, isNotNull);
+      expect(notice, contains('few minutes'));
+    });
+
+    test('everything else falls back quietly', () {
+      // "The backend is unavailable" helps nobody who just wants an answer,
+      // and the on-device ranking can give them one.
+      for (final status in [null, 400, 401, 500, 502, 503]) {
+        expect(noticeForStatus(status), isNull, reason: 'status $status');
+      }
     });
   });
 }

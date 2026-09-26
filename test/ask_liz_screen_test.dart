@@ -11,18 +11,16 @@ import 'package:liz/features/ask_liz/ask_liz_screen.dart';
 Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
     ProviderScope(
-      child: MaterialApp(
-        theme: LizTheme.light(),
-        home: const AskLizScreen(),
-      ),
+      child: MaterialApp(theme: LizTheme.light(), home: const AskLizScreen()),
     ),
   );
   await tester.pumpAndSettle(const Duration(seconds: 1));
 }
 
 void main() {
-  testWidgets('opens on the prompt, with examples to choose from',
-      (tester) async {
+  testWidgets('opens on the prompt, with examples to choose from', (
+    tester,
+  ) async {
     await _pump(tester);
 
     expect(find.text('Describe what you need'), findsOneWidget);
@@ -40,24 +38,25 @@ void main() {
     expect(find.text('Describe what you need'), findsNothing);
   });
 
-  testWidgets('says so plainly when nothing in the catalog fits',
-      (tester) async {
+  testWidgets('says so plainly when nothing in the catalog fits', (
+    tester,
+  ) async {
     await _pump(tester);
 
     await tester.enterText(
-        find.byType(TextField), 'zzzz nonexistent quantum bagel');
+      find.byType(TextField),
+      'zzzz nonexistent quantum bagel',
+    );
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     // An honest "no match" beats a confident wrong answer.
-    expect(
-      find.textContaining("couldn't find a great match"),
-      findsOneWidget,
-    );
+    expect(find.textContaining("couldn't find a great match"), findsOneWidget);
   });
 
-  testWidgets('a matching question produces results with reasons',
-      (tester) async {
+  testWidgets('a matching question produces results with reasons', (
+    tester,
+  ) async {
     await _pump(tester);
 
     await tester.enterText(find.byType(TextField), 'video');
@@ -69,8 +68,9 @@ void main() {
     expect(find.textContaining('Matches "video"'), findsWidgets);
   });
 
-  testWidgets('an empty question is ignored rather than searched',
-      (tester) async {
+  testWidgets('an empty question is ignored rather than searched', (
+    tester,
+  ) async {
     await _pump(tester);
 
     await tester.enterText(find.byType(TextField), '   ');

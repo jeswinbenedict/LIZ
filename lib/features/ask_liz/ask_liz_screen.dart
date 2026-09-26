@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/responsive/adaptive_shell.dart';
 import '../../app/responsive/breakpoints.dart';
@@ -32,6 +33,10 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
   String? _answered;
   List<_Suggestion> _results = [];
 
+  /// Set when the server refused for a reason worth saying out loud, rather
+  /// than one worth quietly working around.
+  String? _notice;
+
   static const _examples = [
     'free AI tool to remove image backgrounds',
     'edit video by transcript',
@@ -51,12 +56,20 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     setState(() {
       _loading = true;
       _answered = q;
+      _notice = null;
     });
 
     // Semantic search on the server is authoritative — including when it finds
     // nothing. "No tool is close enough" is a real answer, so only an
     // unreachable backend (null) falls through to on-device keyword ranking.
     final server = await _askServer(q);
+    if (_notice != null) {
+      // Falling through to keyword ranking here would hand back visibly worse
+      // answers and blame nothing — the exact failure this screen was rebuilt
+      // to remove. Say what happened instead.
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
     if (server != null) {
       if (mounted) {
         setState(() {
@@ -123,6 +136,12 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
         if (t != null) out.add(_Suggestion(t, (p['reason'] ?? '').toString()));
       }
       return out;
+    } on FunctionException catch (e) {
+      // 429 is the rate limit doing its job. It is a state worth naming: the
+      // reader asked a lot in a short time, and the answer is to wait, not to
+      // accept a worse result they cannot account for.
+      _notice = noticeForStatus(e.status);
+      return null;
     } catch (_) {
       return null;
     }
@@ -174,6 +193,28 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                             const Padding(
                               padding: EdgeInsets.all(24),
                               child: Center(child: CircularProgressIndicator()),
+                            )
+                          else if (_notice != null)
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: LizColors.rising.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(
+                                  LizRadius.md,
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.hourglass_bottom,
+                                    size: 20,
+                                    color: LizColors.rising,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: Text(_notice!)),
+                                ],
+                              ),
                             )
                           else if (_results.isEmpty)
                             Text(
