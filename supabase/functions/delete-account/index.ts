@@ -1,9 +1,11 @@
-// POST /delete-account — permanently delete the caller's account (App Store /
-// Play Store requirement). Uses the service role to remove the auth user;
-// ON DELETE CASCADE removes their profile, posts, reviews, etc.
+// POST /delete-account — permanently delete the caller's account. Uses the
+// service role to remove the auth user; ON DELETE CASCADE removes their
+// profile, posts, reviews, bookmarks and the rest (see migration 0033 for why
+// that cascade needs definer-rights counter triggers).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, json } from '../_shared/cors.ts';
+import { deleteCaller } from './logic.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,28 +13,24 @@ Deno.serve(async (req) => {
   }
   try {
     const authHeader = req.headers.get('Authorization') ?? '';
+    const url = Deno.env.get('SUPABASE_URL')!;
 
-    // Identify the caller from their JWT.
-    const asUser = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: userData } = await asUser.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) {
-      return json({ data: null, error: 'Sign in required' }, 401);
-    }
-
-    // Delete with the service role (admin API).
-    const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-    const { error } = await admin.auth.admin.deleteUser(userId);
-    if (error) return json({ data: null, error: error.message }, 400);
-
-    return json({ data: { ok: true }, error: null });
+    const outcome = await deleteCaller({
+      // Identify the caller from their own JWT.
+      callerId: async () => {
+        const asUser = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data } = await asUser.auth.getUser();
+        return data.user?.id ?? null;
+      },
+      deleteUser: async (id) => {
+        const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+        const { error } = await admin.auth.admin.deleteUser(id);
+        return error?.message ?? null;
+      },
+    });
+    return json(outcome.body, outcome.status);
   } catch (err) {
     return json({ data: null, error: String(err) }, 500);
   }

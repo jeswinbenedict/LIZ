@@ -12,7 +12,9 @@
 // skipped:true, so callers/triggers never error just because push isn't set up.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { preflight, requireServiceRole } from '../_shared/auth.ts';
+import { json } from '../_shared/cors.ts';
+import { fcmMessage, isDeadToken, targetIds } from './logic.ts';
 
 interface ServiceAccount {
   client_email: string;
@@ -82,30 +84,15 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return tok.access_token;
 }
 
-/// The gateway already verified the JWT's signature; we only read the role
-/// claim to ensure the caller is server-side (the DB trigger), not a client.
-function callerRole(req: Request): string | null {
-  const m = (req.headers.get('Authorization') ?? '').match(/^Bearer\s+(.+)$/i);
-  if (!m) return null;
-  const parts = m[1].split('.');
-  if (parts.length < 2) return null;
-  try {
-    const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(json).role ?? null;
-  } catch {
-    return null;
-  }
-}
-
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const pre = preflight(req);
+  if (pre) return pre;
 
-  // Server-to-server only: reject anon/authenticated clients.
-  if (callerRole(req) !== 'service_role') {
-    return json({ data: null, error: 'forbidden' }, 403);
-  }
+  // Server-to-server only: the notify_user() trigger, with the service role.
+  // This had its own copy of the role check, which skipped base64 padding and
+  // did not accept the newer opaque keys; it now uses the shared, tested one.
+  const denied = requireServiceRole(req);
+  if (denied) return denied;
 
   try {
     const raw = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
@@ -115,16 +102,9 @@ Deno.serve(async (req) => {
     }
     const sa = JSON.parse(raw) as ServiceAccount;
 
-    const {
-      user_id,
-      user_ids,
-      title,
-      body,
-      route,
-      data = {},
-    } = await req.json();
-
-    const ids: string[] = user_ids ?? (user_id ? [user_id] : []);
+    const payload = await req.json();
+    const { title, body, route, data = {} } = payload;
+    const ids = targetIds(payload);
     if (ids.length === 0 || !title) {
       return json({ data: null, error: 'user_id(s) and title required' }, 400);
     }
@@ -154,17 +134,7 @@ Deno.serve(async (req) => {
     const stale: string[] = [];
     let sent = 0;
     await Promise.all(tokens.map(async (token) => {
-      const message = {
-        message: {
-          token,
-          notification: { title: String(title), body: String(body ?? '') },
-          data: Object.fromEntries(
-            Object.entries({ route: route ?? '', ...data })
-              .map(([k, v]) => [k, String(v)]),
-          ),
-          webpush: route ? { fcm_options: { link: String(route) } } : undefined,
-        },
-      };
+      const message = fcmMessage(token, { title, body, route, data });
       const r = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -175,8 +145,7 @@ Deno.serve(async (req) => {
       });
       if (r.ok) {
         sent++;
-      } else if (r.status === 404 || r.status === 400) {
-        // UNREGISTERED / invalid token — drop it so we stop trying.
+      } else if (isDeadToken(r.status)) {
         stale.push(token);
       }
     }));

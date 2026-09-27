@@ -17,6 +17,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
+import { clampLimit, embedBatch } from '../_shared/batch.ts';
 import { EMBEDDING_MODEL, embed, toolText } from '../_shared/embed.ts';
 
 const DEFAULT_LIMIT = 5;
@@ -33,7 +34,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const limit = Math.min(Number(body?.limit) || DEFAULT_LIMIT, MAX_LIMIT);
+    const limit = clampLimit(body, DEFAULT_LIMIT, MAX_LIMIT);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -53,30 +54,21 @@ Deno.serve(async (req) => {
       return json({ data: { embedded: 0, remaining: 0, model: EMBEDDING_MODEL }, error: null });
     }
 
-    let embedded = 0;
-    const failures: string[] = [];
-
-    for (const tool of pending) {
-      const text = toolText(tool);
-      if (!text) continue;
-
-      try {
-        const vector = await embed(text);
-        const { error: updateError } = await supabase
+    const { embedded, failures } = await embedBatch(pending, {
+      text: toolText,
+      embed,
+      save: async (id, vector) => {
+        const { error } = await supabase
           .from('tools')
           .update({
             embedding: vector,
             embedding_model: EMBEDDING_MODEL,
             embedded_at: new Date().toISOString(),
           })
-          .eq('id', tool.id);
-
-        if (updateError) failures.push(`${tool.id}: ${updateError.message}`);
-        else embedded++;
-      } catch (err) {
-        failures.push(`${tool.id}: ${String(err)}`);
-      }
-    }
+          .eq('id', id);
+        return error?.message ?? null;
+      },
+    });
 
     // Report what is still outstanding so a scheduler knows to run again.
     const { count } = await supabase

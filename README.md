@@ -99,12 +99,13 @@ cd scrapers && python -m pytest tests                     # scraper
 deno test --allow-env --no-check supabase/functions/tests # Edge Functions
 ```
 
-All three run in CI on every push. Beyond behaviour, the app suite checks the
-catalog, account and community screens at 320 pixels wide and at 1.5× text
-size, and runs Flutter's accessibility guidelines — labelled controls,
-tap-target size and contrast in light and dark — on Discover, News, the tool
-page, Ask Liz, the welcome card and the privacy policy and terms. Extending both
-sweeps to every screen is on the list below.
+All three run in CI on every push, and `flutter analyze` fails on infos too.
+Beyond behaviour, `test/screen_sweep_test.dart` puts every screen, signed out
+and signed in, through a 320-pixel phone, 1.5× text and a tablet, and through
+Flutter's accessibility guidelines — labelled controls, 48-pixel tap targets
+and contrast in light and dark. A new screen goes in that list. Every Edge
+Function has tests; their decisions live in `logic.ts` files so the tests need
+no network.
 
 ---
 
@@ -139,5 +140,3 @@ They were written from the code, not by a lawyer.
 - **Deployment.** No host is configured yet, `site_url` still points at
   `localhost:3000`, and URLs use `/#/` rather than clean paths.
   `toolBySlug()` is kept for the per-tool URLs that work will add.
-- **Test coverage** for profile, settings, alerts and the admin console at small
-  sizes, plus the remaining untested Edge Functions.

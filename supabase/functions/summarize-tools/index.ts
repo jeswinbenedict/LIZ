@@ -16,6 +16,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
+import { clampLimit, summarizeBatch } from '../_shared/batch.ts';
 import { summarize } from '../_shared/summary.ts';
 
 const DEFAULT_LIMIT = 4;
@@ -32,7 +33,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const limit = Math.min(Number(body?.limit) || DEFAULT_LIMIT, MAX_LIMIT);
+    const limit = clampLimit(body, DEFAULT_LIMIT, MAX_LIMIT);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -49,41 +50,20 @@ Deno.serve(async (req) => {
       return json({ data: { summarized: 0, remaining: 0 }, error: null });
     }
 
-    let summarized = 0;
-    const failures: string[] = [];
-
-    for (const tool of pending) {
-      try {
-        const bullets = await summarize({
-          title: tool.name,
-          description: `${tool.tagline ?? ''} ${tool.description ?? ''}`.trim(),
-        });
-
-        // A row that yields nothing usable will usually yield nothing usable
-        // again — a README that is a badge table, a description that is one
-        // line of shell. Skipping alone leaves it in the backlog forever, so
-        // once this has happened three times the row drops out of the view and
-        // stops spending a batch slot every quarter of an hour.
-        //
-        // Only this branch counts. A thrown error is a rate limit or a network
-        // failure, which is not the row's fault.
-        if (bullets.length === 0) {
-          failures.push(`${tool.name}: no usable bullets`);
-          await supabase.rpc('note_summary_attempt', { tool_id: tool.id });
-          continue;
-        }
-
-        const { error: updateError } = await supabase
+    // Which failures count against a row is decided in _shared/batch.ts.
+    const { summarized, failures } = await summarizeBatch(pending, {
+      summarize,
+      save: async (id, bullets) => {
+        const { error } = await supabase
           .from('tools')
           .update({ ai_summary: bullets })
-          .eq('id', tool.id);
-
-        if (updateError) failures.push(`${tool.name}: ${updateError.message}`);
-        else summarized++;
-      } catch (err) {
-        failures.push(`${tool.name}: ${String(err)}`);
-      }
-    }
+          .eq('id', id);
+        return error?.message ?? null;
+      },
+      noteAttempt: async (id) => {
+        await supabase.rpc('note_summary_attempt', { tool_id: id });
+      },
+    });
 
     const { count } = await supabase
       .from('tools_needing_summary')

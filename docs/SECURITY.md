@@ -91,7 +91,7 @@ fetch-news              401       401   ingestion — service role only
 fetch-tools             401       401   ingestion — service role only
 embed-tools             401       401   ingestion — service role only
 summarize-tools         401       401   ingestion — service role only
-send-notification       401       403   push — service role only
+send-notification       401       401   push — service role only
 delete-account          401       401   needs the caller's own session
 ask-liz                 400       400   public, 30 an hour per address
 logo                    400       400   public, 300 a minute per address
@@ -99,6 +99,12 @@ tool-updates            401       400   public, 30 a minute per address
 ```
 
 (400 is "you sent an empty body", which is the right answer to an empty probe.)
+
+`send-notification` used to carry its own copy of the role check, which read
+the JWT without restoring base64 padding and did not accept opaque keys. It now
+uses `_shared/auth.ts` like the others; re-probed after deploying on 27
+September with the same results, except that the anon key now gets 401 rather
+than 403.
 
 ### Public by design — rate limited
 
