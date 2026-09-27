@@ -26,7 +26,8 @@ proxies. Running it from a connection that is not blocked is the honest fix.
 
 ## What it does
 
-Every twelve hours, in order:
+Every twelve hours — or whenever you press **Run now** in the editor, which is
+also what the CLI's `execute` starts from — in order:
 
 1. **Scrape new launches** — `python -m liz_scraper --limit 30`. Product Hunt and
    Hacker News. The quality gate in `liz_scraper/quality.py` decides whether each
@@ -36,38 +37,80 @@ Every twelve hours, in order:
    Product Hunt rows written while the scraper ran somewhere blocked are held
    because their website is still the listing. This re-reads each one from here.
    Fifty per run keeps it polite; the backlog drains over a few runs.
-3. **Summarise run** — pulls the JSON report out of both commands' output, and
-   if every held listing was still unreachable, says that this machine is blocked
-   too rather than letting the run look like it succeeded.
+3. **Summarise run** — pulls the JSON report out of both commands' output and
+   gives a verdict: `ok`, a command that did not finish (with its error), or
+   every held listing still unreachable, meaning this machine is blocked too.
+4. **Verdict ok?** — anything but `ok` ends at **Mark the run failed**, so a bad
+   run shows red in the execution list instead of passing as green.
+
+A failed scrape does not stop the retry, and neither stops the summary: the
+summary is where a failure gets explained.
 
 It does not fetch news, GitHub tools, embeddings or summaries — pg_cron already
 does all of those, and running them here as well would double every job.
 
 ## Setting it up
 
-1. **Get the code and its dependencies.** Clone the repository somewhere
-   permanent and install the scraper's requirements:
+This runs on **self-hosted n8n on the machine at home** — the free community
+edition, not n8n Cloud. n8n Cloud cannot do this job: it runs from datacenter
+addresses that Product Hunt blocks, it does not offer the Execute Command node
+the workflow is built on, and it is a paid plan after its trial.
 
-   ```bash
-   pip install -r scrapers/requirements.txt
-   ```
+Everything lives in `~/.liz`, outside this repository (which OneDrive syncs):
 
-2. **Give n8n three environment variables** — however you run it (Docker
-   `-e` flags, a `.env` file, or system variables for `npx n8n`):
+| Path | What | How it was made |
+|---|---|---|
+| `~/.liz/node24/` | Portable Node 24 LTS, used by n8n only | the `win-x64.zip` from nodejs.org/dist/latest-v24.x, checksum-verified |
+| `~/.liz/n8n/` | n8n 2.40.7 | `npm install n8n@2.40.7`, run with that Node 24 |
+| `~/.liz/scraper-venv/` | Python 3.11 with the scraper's requirements | `python -m venv`, then `pip install -r scrapers/requirements.txt` |
+| `~/.liz/n8n.env` | `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` | readable by your account only |
 
-   | Variable | Value |
-   |---|---|
-   | `LIZ_REPO_DIR` | The repository's full path, with forward slashes — e.g. `C:/Users/you/LIZ` or `/data/liz` in Docker |
-   | `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
-   | `SUPABASE_SERVICE_ROLE_KEY` | The service-role key. It bypasses row-level security, so it stays on this machine and never goes anywhere else. |
+Why each is separate:
 
-   The workflow reads `LIZ_REPO_DIR` through an n8n expression. If your n8n
-   blocks environment access in expressions, set
-   `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`.
+- **Node 24, not the system's.** n8n needs Node 24 or later, but one of its
+  dependencies (`isolated-vm`) has no prebuilt binary for Node 25 and would
+  need a C++ toolchain. The LTS line installs cleanly; the system Node is left
+  alone.
+- **Its own Python.** A bare `python` on this machine resolves to another
+  tool's virtual environment. The workflow names this one explicitly.
+- **The key in a file only you can read.** It bypasses row-level security. It
+  never goes in the repository or in n8n's own database.
 
-3. **Import** `workflows/liz-scrape-from-home.json` (Workflows → Import from
-   File), run it once by hand, and check the last node says `"verdict": "ok"`.
-   Then activate it.
+### Starting it
+
+```powershell
+powershell -ExecutionPolicy Bypass -File n8n\start-n8n.ps1
+```
+
+Then open <http://localhost:5678>. The script:
+
+- loads `~/.liz/n8n.env` into the process, so the scraper inherits the keys;
+- sets `LIZ_REPO_DIR` and `LIZ_PYTHON`, which the commands read through the
+  shell (`%LIZ_PYTHON%`). Not through n8n's `$env`, which n8n 2.x blocks in
+  expressions — and should: allowing it would hand the service key to every
+  expression and Code node;
+- re-enables Execute Command (`NODES_EXCLUDE=[]`), which n8n 2.x turns off;
+- binds n8n to `127.0.0.1` only, because a node that can run commands must not
+  be reachable from the network;
+- forces UTF-8 for Python, since Windows pipes default to cp1252 and the first
+  non-ASCII tool name would end the run;
+- turns off n8n's telemetry.
+
+Anything after the script name is passed to the n8n CLI:
+
+```powershell
+n8n\start-n8n.ps1 import:workflow --input=n8n\workflows\liz-scrape-from-home.json
+n8n\start-n8n.ps1 execute --id=LizScrapeHome001
+```
+
+The workflow has a fixed id, `LizScrapeHome001`, so importing it again updates
+it rather than creating a copy. The commands use `cmd.exe` syntax; on Linux or
+Docker they would read `cd "$LIZ_REPO_DIR/scrapers" && "$LIZ_PYTHON" …`.
+
+### The first visit
+
+The first time <http://localhost:5678> opens, n8n asks you to create its owner
+account. That account exists only in this local n8n.
 
 ## Checking it worked
 

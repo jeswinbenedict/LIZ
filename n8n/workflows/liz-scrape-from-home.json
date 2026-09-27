@@ -1,4 +1,5 @@
 {
+  "id": "LizScrapeHome001",
   "name": "Liz — Scrape from this machine",
   "nodes": [
     {
@@ -22,8 +23,19 @@
       ]
     },
     {
+      "parameters": {},
+      "name": "Run now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        500
+      ],
+      "id": "b3f1c2a4-6d0e-4b8a-9c11-2f7e5a9d0c03"
+    },
+    {
       "parameters": {
-        "command": "={{ 'cd \"' + $env.LIZ_REPO_DIR + '/scrapers\" && python -m liz_scraper --limit 30' }}"
+        "command": "cd /d \"%LIZ_REPO_DIR%\\scrapers\" && \"%LIZ_PYTHON%\" -m liz_scraper --limit 30"
       },
       "id": "b2c3d4e5-0002-4000-8000-000000000002",
       "name": "Scrape new launches",
@@ -34,11 +46,12 @@
         300
       ],
       "notesInFlow": true,
-      "notes": "Product Hunt + Hacker News. No --status flag: the quality gate decides per row. Run from here because Product Hunt blocks datacenter IPs, not home connections."
+      "notes": "Product Hunt + Hacker News. No --status flag: the quality gate decides per row. Run from here because Product Hunt blocks datacenter IPs, not home connections.",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "command": "={{ 'cd \"' + $env.LIZ_REPO_DIR + '/scrapers\" && python -m liz_scraper.retry_held --apply --limit 50' }}"
+        "command": "cd /d \"%LIZ_REPO_DIR%\\scrapers\" && \"%LIZ_PYTHON%\" -m liz_scraper.retry_held --apply --limit 50"
       },
       "id": "b2c3d4e5-0003-4000-8000-000000000003",
       "name": "Retry held listings",
@@ -49,11 +62,12 @@
         300
       ],
       "notesInFlow": true,
-      "notes": "Re-fetches Product Hunt rows that were held because a cloud runner got 403. 50 per run keeps it polite; the backlog drains over a few runs."
+      "notes": "Re-fetches Product Hunt rows that were held because a cloud runner got 403. 50 per run keeps it polite; the backlog drains over a few runs.",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "// Both commands print a JSON report as the last thing on stdout. Pull those\n// out so the execution log reads as a result, not a wall of text.\n//\n// The report is pretty-printed, so it starts on a line that is just \"{\".\n// Searching for the last brace instead would land inside a nested object.\n// Written without backslash escapes on purpose: this code travels through JSON\n// and n8n's editor, and every layer is another chance to lose one.\nconst NEWLINE = String.fromCharCode(10);\n\nconst last = (text) => {\n  const lines = (text || '').split(NEWLINE).map((l) => l.trim());\n  for (let i = lines.length - 1; i >= 0; i--) {\n    if (lines[i] !== '{') continue;\n    try {\n      return JSON.parse(lines.slice(i).join(NEWLINE));\n    } catch (_) {\n      // Not the report; keep looking further up.\n    }\n  }\n  return null;\n};\n\nconst scrape = last($('Scrape new launches').first().json.stdout);\nconst retry = last($('Retry held listings').first().json.stdout);\n\n// If every held listing is still unreachable from here, this host is blocked\n// too, and the run is doing nothing useful. Say so loudly.\nconst blocked =\n  retry !== null &&\n  retry.held_listings_tried > 0 &&\n  retry.unreachable === retry.held_listings_tried;\n\nreturn [\n  {\n    json: {\n      scrape,\n      retry,\n      blocked,\n      verdict: blocked\n        ? 'Product Hunt is blocking this machine too. Check the host, or use the official API.'\n        : scrape === null || retry === null\n          ? 'A command did not print its report. Open the failing node for its output.'\n          : 'ok',\n    },\n  },\n];\n"
+        "jsCode": "// Both commands print a JSON report as the last thing on stdout. Pull those\n// out so the execution log reads as a result, not a wall of text, and decide\n// whether the run did its job.\n//\n// The report is pretty-printed, so it starts on a line that is just \"{\".\n// Searching for the last brace instead would land inside a nested object.\n// Written without backslash escapes on purpose: this code travels through JSON\n// and n8n's editor, and every layer is another chance to lose one.\nconst NEWLINE = String.fromCharCode(10);\n\nconst report = (text) => {\n  const lines = (text || '').split(NEWLINE).map((l) => l.trim());\n  for (let i = lines.length - 1; i >= 0; i--) {\n    if (lines[i] !== '{') continue;\n    try {\n      return JSON.parse(lines.slice(i).join(NEWLINE));\n    } catch (_) {\n      // Not the report; keep looking further up.\n    }\n  }\n  return null;\n};\n\n// What went wrong in a command, in a few lines: its error if the node failed,\n// otherwise the end of what it wrote to stderr.\nconst trouble = (out) => {\n  if (out.error) return String(out.error.message || out.error).slice(0, 400);\n  const tail = (out.stderr || '').trim().split(NEWLINE).slice(-4).join(' | ');\n  return tail ? tail.slice(0, 400) : null;\n};\n\nconst scrapeOut = $('Scrape new launches').first().json;\nconst retryOut = $('Retry held listings').first().json;\nconst scrape = report(scrapeOut.stdout);\nconst retry = report(retryOut.stdout);\n\n// If every held listing is still unreachable from here, this host is blocked\n// too, and the run is doing nothing useful. Say so loudly.\nconst blocked =\n  retry !== null &&\n  retry.held_listings_tried > 0 &&\n  retry.unreachable === retry.held_listings_tried;\n\nlet verdict = 'ok';\nif (scrape === null) {\n  verdict = 'The scrape did not finish: ' + (trouble(scrapeOut) || 'no report printed');\n} else if (retry === null) {\n  verdict = 'The retry did not finish: ' + (trouble(retryOut) || 'no report printed');\n} else if (blocked) {\n  verdict = 'Product Hunt is blocking this machine too. Check the host, or use the official API.';\n}\n\nreturn [{ json: { scrape, retry, blocked, verdict } }];\n"
       },
       "id": "b2c3d4e5-0004-4000-8000-000000000004",
       "name": "Summarise run",
@@ -63,6 +77,39 @@
         520,
         300
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.verdict }}",
+              "value2": "ok"
+            }
+          ]
+        }
+      },
+      "name": "Verdict ok?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        760,
+        300
+      ],
+      "id": "b3f1c2a4-6d0e-4b8a-9c11-2f7e5a9d0c01"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.verdict }}"
+      },
+      "name": "Mark the run failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        400
+      ],
+      "id": "b3f1c2a4-6d0e-4b8a-9c11-2f7e5a9d0c02"
     }
   ],
   "connections": {
@@ -98,11 +145,46 @@
           }
         ]
       ]
+    },
+    "Summarise run": {
+      "main": [
+        [
+          {
+            "node": "Verdict ok?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verdict ok?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Mark the run failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run now": {
+      "main": [
+        [
+          {
+            "node": "Scrape new launches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1"
   },
   "pinData": {},
-  "tags": []
+  "tags": [],
+  "active": false
 }
