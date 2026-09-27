@@ -14,17 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Pinned so a new stable release can't fail unrelated PRs with lints the
-      # team hasn't seen locally. This is the oldest stable whose Dart SDK
-      # satisfies the ^3.11.0 constraint in pubspec.yaml — bump both together.
+      # team hasn't seen locally. go_router 18 and cached_network_image 4 need
+      # Dart 3.12, the floor in pubspec.yaml — bump both together, and keep a
+      # local SDK on the same version (`flutter --version`).
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.2
           channel: stable
           cache: true
       - run: flutter pub get
-      # Errors and warnings block the merge. The repo still carries ~43
-      # info-level lints; promote these to fatal once that backlog is cleared.
-      - run: flutter analyze --no-fatal-infos
+      # Clean at every level, infos included, since September 2026. Keeping it
+      # fatal is what stops a backlog of 50 "only infos" from growing back.
+      - run: flutter analyze
       - run: flutter test
 
   scrapers:

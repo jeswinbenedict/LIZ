@@ -220,7 +220,7 @@ class PostCard extends ConsumerWidget {
                     image: true,
                     child: Image(image: image, fit: BoxFit.cover),
                   ),
-                  errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                  errorWidget: (_, _, _) => const SizedBox.shrink(),
                 ),
               ),
             ],

@@ -23,7 +23,8 @@ Future<void> main() async {
     if (Env.useSupabase) {
       await Supabase.initialize(
         url: Env.supabaseUrl,
-        anonKey: Env.supabaseAnonKey,
+        // The same public key under the name Supabase now uses for it.
+        publishableKey: Env.supabaseAnonKey,
       );
     }
 
@@ -31,6 +32,11 @@ Future<void> main() async {
 
     runApp(
       ProviderScope(
+        // Riverpod 3 retries a failed provider up to ten times with backoff.
+        // Liz's failures are mostly ones a retry cannot fix — a row-level
+        // security refusal, an expired session — and every screen already
+        // shows its error with a Retry button, so errors surface at once.
+        retry: (retryCount, error) => null,
         overrides: [
           sharedPreferencesProvider.overrideWith((ref) => prefs),
         ],

@@ -8,11 +8,17 @@ final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) {
 });
 
 /// App theme mode (system / light / dark), persisted across launches.
-class ThemeModeController extends StateNotifier<ThemeMode> {
-  ThemeModeController(this._prefs) : super(_read(_prefs));
-
+class ThemeModeController extends Notifier<ThemeMode> {
   static const _key = 'theme_mode';
-  final SharedPreferences? _prefs;
+  SharedPreferences? _prefs;
+
+  @override
+  ThemeMode build() {
+    // Read prefs if already loaded; otherwise start with system and update
+    // once they arrive.
+    _prefs = ref.watch(sharedPreferencesProvider).value;
+    return _read(_prefs);
+  }
 
   static ThemeMode _read(SharedPreferences? prefs) {
     switch (prefs?.getString(_key)) {
@@ -35,9 +41,6 @@ class ThemeModeController extends StateNotifier<ThemeMode> {
   }
 }
 
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeController, ThemeMode>((ref) {
-  // Read prefs if already loaded; otherwise start with system and update later.
-  final prefs = ref.watch(sharedPreferencesProvider).valueOrNull;
-  return ThemeModeController(prefs);
-});
+final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(
+  ThemeModeController.new,
+);

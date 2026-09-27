@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/responsive/adaptive_shell.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../core/providers.dart';
+import '../../core/ui_state.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/skeletons.dart';
@@ -14,11 +15,11 @@ import '../auth/sign_in_view.dart';
 import 'track_controller.dart';
 
 /// Tools selected for side-by-side comparison from the Saved screen.
-final compareSelectionProvider = StateProvider<Set<String>>((ref) => {});
+final compareSelectionProvider = uiStateProvider<Set<String>>(const {});
 
 /// Price filter on the Saved list. Filtered in memory: the list is already
 /// loaded and short, so asking the server again would only be slower.
-final savedPricingProvider = StateProvider<PricingType?>((ref) => null);
+final savedPricingProvider = uiStateProvider<PricingType?>(null);
 
 class SavedScreen extends ConsumerWidget {
   const SavedScreen({super.key});
@@ -69,7 +70,7 @@ class SavedScreen extends ConsumerWidget {
               else
                 saved.when(
                   loading: () => const ToolGridSkeletonSliver(count: 4),
-                  error: (_, __) => SliverToBoxAdapter(
+                  error: (_, _) => SliverToBoxAdapter(
                     child: ErrorView(
                       onRetry: () => ref.invalidate(bookmarkedToolsProvider),
                     ),
@@ -101,8 +102,7 @@ class SavedScreen extends ConsumerWidget {
                                 onChanged: (value) =>
                                     ref
                                             .read(savedPricingProvider.notifier)
-                                            .state =
-                                        value,
+                                            .set(value),
                               ),
                             ),
                           ),
@@ -118,8 +118,7 @@ class SavedScreen extends ConsumerWidget {
                                 onPressed: () =>
                                     ref
                                             .read(savedPricingProvider.notifier)
-                                            .state =
-                                        null,
+                                            .set(null),
                                 child: const Text('Show all'),
                               ),
                             ),
@@ -166,7 +165,7 @@ class SavedScreen extends ConsumerWidget {
     } else if (next.length < 3) {
       next.add(id);
     }
-    ref.read(compareSelectionProvider.notifier).state = next;
+    ref.read(compareSelectionProvider.notifier).set(next);
   }
 
   void _promptSignIn(BuildContext context) {

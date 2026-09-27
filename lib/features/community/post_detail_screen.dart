@@ -36,7 +36,7 @@ class PostDetailScreen extends ConsumerWidget {
       ),
       body: postAsync.when(
         loading: () => const LoadingView(),
-        error: (_, __) =>
+        error: (_, _) =>
             ErrorView(onRetry: () => ref.invalidate(postByIdProvider(postId))),
         data: (post) => post == null
             ? const EmptyView(
@@ -81,7 +81,7 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
             .read(communityActionsProvider)
             .addComment(widget.post.id, text);
         _controller.clear();
-        FocusScope.of(context).unfocus();
+        if (mounted) FocusScope.of(context).unfocus();
       },
     );
     if (mounted) setState(() => _sending = false);
@@ -205,7 +205,7 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                     padding: EdgeInsets.all(20),
                     child: LoadingView(),
                   ),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
                   data: (list) => list.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 20),

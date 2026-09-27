@@ -64,7 +64,7 @@ class ToolLogo extends StatelessWidget {
           child: Image(image: imageProvider, fit: BoxFit.contain),
         ),
         placeholder: (c, _) => _fallback(radius),
-        errorWidget: (c, _, __) => _fallback(radius),
+        errorWidget: (c, _, _) => _fallback(radius),
       );
     }
     return _fallback(radius);

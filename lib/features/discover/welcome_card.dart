@@ -7,12 +7,15 @@ import '../../core/providers.dart';
 
 /// Whether this browser has put the welcome card away. Kept in the browser
 /// only: it is a convenience, and losing it costs one extra card.
-class WelcomeDismissedController extends StateNotifier<bool> {
-  WelcomeDismissedController(this._prefs)
-    : super(_prefs?.getBool(_key) ?? false);
-
+class WelcomeDismissedController extends Notifier<bool> {
   static const _key = 'welcome_dismissed';
-  final SharedPreferences? _prefs;
+  SharedPreferences? _prefs;
+
+  @override
+  bool build() {
+    _prefs = ref.watch(sharedPreferencesProvider).value;
+    return _prefs?.getBool(_key) ?? false;
+  }
 
   Future<void> dismiss() async {
     state = true;
@@ -21,11 +24,9 @@ class WelcomeDismissedController extends StateNotifier<bool> {
 }
 
 final welcomeDismissedProvider =
-    StateNotifierProvider<WelcomeDismissedController, bool>((ref) {
-      return WelcomeDismissedController(
-        ref.watch(sharedPreferencesProvider).valueOrNull,
-      );
-    });
+    NotifierProvider<WelcomeDismissedController, bool>(
+      WelcomeDismissedController.new,
+    );
 
 /// What Liz is, for someone who arrived without knowing.
 ///

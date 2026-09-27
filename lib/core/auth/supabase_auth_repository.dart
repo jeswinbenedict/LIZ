@@ -157,9 +157,9 @@ class SupabaseAuthRepository implements AuthRepository {
     final row = await _client
         .from('profiles')
         .update({
-          if (displayName != null) 'display_name': displayName,
-          if (bio != null) 'bio': bio,
-          if (avatarUrl != null) 'avatar_url': avatarUrl,
+          'display_name': ?displayName,
+          'bio': ?bio,
+          'avatar_url': ?avatarUrl,
         })
         .eq('id', id)
         .select()

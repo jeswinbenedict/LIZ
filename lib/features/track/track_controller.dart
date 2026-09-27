@@ -3,93 +3,90 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 
-/// Tracks which tool IDs the current user has bookmarked. Reloads whenever the
-/// signed-in user changes. Toggling rethrows [AuthRequiredException] for guests
-/// so the UI can prompt sign-in.
-class BookmarkController extends StateNotifier<Set<String>> {
-  BookmarkController(this._ref) : super(const {}) {
+/// A set of ids the signed-in user has marked — bookmarked tools, followed
+/// tools, followed people. A toggle changes the set only once the server has
+/// agreed, not optimistically.
+///
+/// Rebuilt whenever the signed-in user changes, so one account's marks never
+/// show under another. A Riverpod 3 notifier keeps its instance across a
+/// rebuild, so a load still in flight for the previous account is discarded by
+/// generation rather than by the instance going away.
+abstract class _IdSetController extends Notifier<Set<String>> {
+  int _generation = 0;
+
+  Future<Set<String>> fetch();
+  Future<bool> write(String id);
+
+  @override
+  Set<String> build() {
+    ref.watch(currentUserProvider);
     _load();
+    return const {};
   }
-  final Ref _ref;
 
   Future<void> _load() async {
-    final ids = await _ref.read(trackRepositoryProvider).bookmarkedToolIds();
-    if (mounted) state = ids;
+    final generation = ++_generation;
+    final ids = await fetch();
+    if (ref.mounted && generation == _generation) state = ids;
   }
 
-  Future<void> refresh() => _load();
+  bool contains(String id) => state.contains(id);
 
-  bool contains(String toolId) => state.contains(toolId);
-
-  /// Returns the new bookmarked state. May throw [AuthRequiredException].
-  Future<bool> toggle(String toolId) async {
-    final added = await _ref.read(trackRepositoryProvider).toggleBookmark(toolId);
-    state = added ? {...state, toolId} : (state.toSet()..remove(toolId));
+  /// Returns the new marked state. May throw [AuthRequiredException] for a
+  /// guest, so the UI can prompt sign-in.
+  Future<bool> toggle(String id) async {
+    final added = await write(id);
+    if (!ref.mounted) return added;
+    state = added ? {...state, id} : (state.toSet()..remove(id));
     return added;
   }
+}
+
+/// Which tool ids the current user has bookmarked.
+class BookmarkController extends _IdSetController {
+  @override
+  Future<Set<String>> fetch() =>
+      ref.read(trackRepositoryProvider).bookmarkedToolIds();
+
+  @override
+  Future<bool> write(String id) =>
+      ref.read(trackRepositoryProvider).toggleBookmark(id);
+
+  Future<void> refresh() => _load();
 }
 
 final bookmarkControllerProvider =
-    StateNotifierProvider<BookmarkController, Set<String>>((ref) {
-  // Rebuild when auth changes so bookmarks reload for the new session.
-  ref.watch(currentUserProvider);
-  return BookmarkController(ref);
-});
+    NotifierProvider<BookmarkController, Set<String>>(BookmarkController.new);
 
-class FollowController extends StateNotifier<Set<String>> {
-  FollowController(this._ref) : super(const {}) {
-    _load();
-  }
-  final Ref _ref;
+/// Which tool ids the current user follows.
+class FollowController extends _IdSetController {
+  @override
+  Future<Set<String>> fetch() =>
+      ref.read(trackRepositoryProvider).followedToolIds();
 
-  Future<void> _load() async {
-    final ids = await _ref.read(trackRepositoryProvider).followedToolIds();
-    if (mounted) state = ids;
-  }
-
-  bool contains(String toolId) => state.contains(toolId);
-
-  Future<bool> toggle(String toolId) async {
-    final added =
-        await _ref.read(trackRepositoryProvider).toggleFollowTool(toolId);
-    state = added ? {...state, toolId} : (state.toSet()..remove(toolId));
-    return added;
-  }
+  @override
+  Future<bool> write(String id) =>
+      ref.read(trackRepositoryProvider).toggleFollowTool(id);
 }
 
 final followControllerProvider =
-    StateNotifierProvider<FollowController, Set<String>>((ref) {
-  ref.watch(currentUserProvider);
-  return FollowController(ref);
-});
+    NotifierProvider<FollowController, Set<String>>(FollowController.new);
 
-/// Tracks which user IDs the current user follows.
-class FollowUserController extends StateNotifier<Set<String>> {
-  FollowUserController(this._ref) : super(const {}) {
-    _load();
-  }
-  final Ref _ref;
+/// Which user ids the current user follows.
+class FollowUserController extends _IdSetController {
+  @override
+  Future<Set<String>> fetch() =>
+      ref.read(trackRepositoryProvider).followedUserIds();
 
-  Future<void> _load() async {
-    final ids = await _ref.read(trackRepositoryProvider).followedUserIds();
-    if (mounted) state = ids;
-  }
-
-  bool contains(String userId) => state.contains(userId);
-
-  Future<bool> toggle(String userId) async {
-    final added =
-        await _ref.read(trackRepositoryProvider).toggleFollowUser(userId);
-    state = added ? {...state, userId} : (state.toSet()..remove(userId));
-    return added;
-  }
+  @override
+  Future<bool> write(String id) =>
+      ref.read(trackRepositoryProvider).toggleFollowUser(id);
 }
 
 final followUserControllerProvider =
-    StateNotifierProvider<FollowUserController, Set<String>>((ref) {
-  ref.watch(currentUserProvider);
-  return FollowUserController(ref);
-});
+    NotifierProvider<FollowUserController, Set<String>>(
+      FollowUserController.new,
+    );
 
 /// Bookmarked tools as full objects (for the Saved screen).
 final bookmarkedToolsProvider = FutureProvider<List<Tool>>((ref) async {

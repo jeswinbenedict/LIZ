@@ -83,7 +83,7 @@ void main() {
       final container = await _pump(tester);
       expect(find.textContaining('selected'), findsNothing);
 
-      container.read(adminSelectionProvider.notifier).state = {'t-1', 't-2'};
+      container.read(adminSelectionProvider.notifier).set({'t-1', 't-2'});
       await tester.pumpAndSettle();
 
       expect(find.text('2 selected'), findsOneWidget);

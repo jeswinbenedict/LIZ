@@ -102,7 +102,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
     // While this resolves, and if it fails, no social buttons are shown: the
     // email form below is a complete sign-in on its own.
     final providers =
-        ref.watch(enabledAuthProvidersProvider).valueOrNull ??
+        ref.watch(enabledAuthProvidersProvider).value ??
         EnabledAuthProviders.none;
 
     return SingleChildScrollView(

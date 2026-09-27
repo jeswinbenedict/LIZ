@@ -49,19 +49,23 @@ class NewsState {
 
 /// Loads the tech-news feed and, when the live backend is connected, subscribes
 /// to Supabase Realtime so newly-ingested articles appear at the top instantly.
-class NewsController extends StateNotifier<NewsState> {
-  NewsController(this._ref) : super(const NewsState()) {
-    load();
+class NewsController extends Notifier<NewsState> {
+  @override
+  NewsState build() {
     _subscribeRealtime();
+    _fetch();
+    return const NewsState();
   }
 
-  final Ref _ref;
-  RealtimeChannel? _channel;
-
-  Future<void> load() async {
+  Future<void> load() {
     state = const NewsState(loading: true);
+    return _fetch();
+  }
+
+  Future<void> _fetch() async {
     try {
-      final page = await _ref.read(contentRepositoryProvider).news();
+      final page = await ref.read(contentRepositoryProvider).news();
+      if (!ref.mounted) return;
       state = state.copyWith(
         items: page.items,
         loading: false,
@@ -69,6 +73,7 @@ class NewsController extends StateNotifier<NewsState> {
         clearCursor: page.cursor == null,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = NewsState(loading: false, error: e);
     }
   }
@@ -80,7 +85,8 @@ class NewsController extends StateNotifier<NewsState> {
     state = state.copyWith(loadingMore: true);
     try {
       final page =
-          await _ref.read(contentRepositoryProvider).news(cursor: state.cursor);
+          await ref.read(contentRepositoryProvider).news(cursor: state.cursor);
+      if (!ref.mounted) return;
       state = state.copyWith(
         items: [...state.items, ...page.items],
         loadingMore: false,
@@ -88,14 +94,15 @@ class NewsController extends StateNotifier<NewsState> {
         clearCursor: page.cursor == null,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(loadingMore: false, error: e);
     }
   }
 
   void _subscribeRealtime() {
-    final client = _ref.read(supabaseClientProvider);
+    final client = ref.read(supabaseClientProvider);
     if (client == null) return; // mock mode: no realtime
-    _channel = client
+    final channel = client
         .channel('public:news')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -104,14 +111,15 @@ class NewsController extends StateNotifier<NewsState> {
           callback: _onInsert,
         )
         .subscribe((status, _) {
-      if (status == RealtimeSubscribeStatus.subscribed && mounted) {
+      if (status == RealtimeSubscribeStatus.subscribed && ref.mounted) {
         state = state.copyWith(live: true);
       }
     });
+    ref.onDispose(() => client.removeChannel(channel));
   }
 
   void _onInsert(PostgresChangePayload payload) {
-    if (!mounted) return;
+    if (!ref.mounted) return;
     final row = payload.newRecord;
     if (row['status'] != 'published') return;
     final item = NewsItem.fromJson(row);
@@ -119,18 +127,8 @@ class NewsController extends StateNotifier<NewsState> {
     // Prepend the freshly-ingested article.
     state = state.copyWith(items: [item, ...state.items]);
   }
-
-  @override
-  void dispose() {
-    final ch = _channel;
-    if (ch != null) {
-      _ref.read(supabaseClientProvider)?.removeChannel(ch);
-    }
-    super.dispose();
-  }
 }
 
-final newsControllerProvider =
-    StateNotifierProvider<NewsController, NewsState>((ref) {
-  return NewsController(ref);
-});
+final newsControllerProvider = NotifierProvider<NewsController, NewsState>(
+  NewsController.new,
+);

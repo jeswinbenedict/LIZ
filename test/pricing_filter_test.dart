@@ -67,7 +67,7 @@ void main() {
     // makes the catalog look empty for no visible reason.
     expect(find.text('Any price'), findsOneWidget);
 
-    container.read(discoverPricingProvider.notifier).state = PricingType.free;
+    container.read(discoverPricingProvider.notifier).set(PricingType.free);
     await tester.pumpAndSettle();
 
     expect(find.text('Free'), findsWidgets);
@@ -94,8 +94,8 @@ void main() {
 
   test('a search key with a different price is a different search', () {
     // Same reason as the feed: results are cached per key.
-    const anyPrice = (query: 'ai', pricing: null);
-    const freeOnly = (query: 'ai', pricing: PricingType.free);
+    const SearchKey anyPrice = (query: 'ai', pricing: null);
+    const SearchKey freeOnly = (query: 'ai', pricing: PricingType.free);
     expect(anyPrice == freeOnly, isFalse);
   });
 
@@ -132,14 +132,14 @@ void main() {
     expect(find.text(saved[0].name), findsOneWidget);
     expect(find.text(saved[1].name), findsOneWidget);
 
-    container.read(savedPricingProvider.notifier).state = PricingType.free;
+    container.read(savedPricingProvider.notifier).set(PricingType.free);
     await tester.pumpAndSettle();
     expect(find.text(saved[0].name), findsOneWidget);
     expect(find.text(saved[1].name), findsNothing);
 
     // A filter that empties the list must say so and offer the way back,
     // not read as though nothing was ever saved.
-    container.read(savedPricingProvider.notifier).state = PricingType.freemium;
+    container.read(savedPricingProvider.notifier).set(PricingType.freemium);
     await tester.pumpAndSettle();
     expect(find.text('Nothing saved at this price'), findsOneWidget);
     expect(find.text('Nothing saved yet'), findsNothing);

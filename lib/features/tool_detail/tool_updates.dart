@@ -73,8 +73,9 @@ class ToolUpdatesSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // No backend in demo/mock mode → hide the section entirely.
-    if (ref.watch(supabaseClientProvider) == null)
+    if (ref.watch(supabaseClientProvider) == null) {
       return const SizedBox.shrink();
+    }
 
     final scheme = Theme.of(context).colorScheme;
     final key = (name, sourceUrl, slug);
@@ -109,7 +110,7 @@ class ToolUpdatesSection extends ConsumerWidget {
               ),
             ),
           ),
-          error: (_, __) => _Hint(
+          error: (_, _) => _Hint(
             text: "Couldn't load updates right now.",
             onRetry: () => ref.invalidate(toolUpdatesProvider(key)),
           ),

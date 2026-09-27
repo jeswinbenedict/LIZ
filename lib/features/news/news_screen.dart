@@ -60,7 +60,7 @@ class NewsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                     sliver: SliverList.separated(
                       itemCount: state.items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
                         if (i >= state.items.length - 3) {
                           WidgetsBinding.instance.addPostFrameCallback(

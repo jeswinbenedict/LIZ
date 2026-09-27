@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/providers.dart';
+import '../../core/ui_state.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/models/paginated.dart';
 import '../../shared/models/tool.dart';
@@ -12,10 +13,10 @@ import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_logo.dart';
 
 /// What the admin is currently looking at.
-final adminQueryProvider = StateProvider<AdminToolQuery>(
+final adminQueryProvider = uiStateProvider<AdminToolQuery>(
   // Pending first: it is the queue that needs a person, and it is the reason
   // this screen exists.
-  (ref) => const AdminToolQuery(status: PublishStatus.pending),
+  const AdminToolQuery(status: PublishStatus.pending),
 );
 
 final adminToolsProvider = FutureProvider.autoDispose
@@ -24,7 +25,7 @@ final adminToolsProvider = FutureProvider.autoDispose
     );
 
 /// Tools ticked for a bulk action, by id.
-final adminSelectionProvider = StateProvider<Set<String>>((ref) => {});
+final adminSelectionProvider = uiStateProvider<Set<String>>(const {});
 
 /// The catalog, filtered — and reviewable in bulk.
 ///
@@ -57,7 +58,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
       ref
           .read(adminQueryProvider.notifier)
           .update((q) => q.copyWith(search: value, offset: 0));
-      ref.read(adminSelectionProvider.notifier).state = {};
+      ref.read(adminSelectionProvider.notifier).set({});
     });
   }
 
@@ -71,7 +72,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
             offset: 0,
           ),
         );
-    ref.read(adminSelectionProvider.notifier).state = {};
+    ref.read(adminSelectionProvider.notifier).set({});
   }
 
   Future<void> _applyToSelection(PublishStatus status) async {
@@ -80,7 +81,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     final messenger = ScaffoldMessenger.of(context);
 
     await ref.read(adminRepositoryProvider).setToolStatuses(ids, status);
-    ref.read(adminSelectionProvider.notifier).state = {};
+    ref.read(adminSelectionProvider.notifier).set({});
     ref.invalidate(adminToolsProvider);
 
     messenger
@@ -115,7 +116,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
             count: selection.length,
             onPublish: () => _applyToSelection(PublishStatus.published),
             onHide: () => _applyToSelection(PublishStatus.hidden),
-            onClear: () => ref.read(adminSelectionProvider.notifier).state = {},
+            onClear: () => ref.read(adminSelectionProvider.notifier).set({}),
           ),
         Expanded(
           child: page.when(
@@ -135,12 +136,12 @@ class _ContentTabState extends ConsumerState<ContentTab> {
                     onToggle: (id) {
                       final next = {...selection};
                       next.contains(id) ? next.remove(id) : next.add(id);
-                      ref.read(adminSelectionProvider.notifier).state = next;
+                      ref.read(adminSelectionProvider.notifier).set(next);
                     },
                     onSelectAll: () =>
-                        ref.read(adminSelectionProvider.notifier).state = {
+                        ref.read(adminSelectionProvider.notifier).set({
                           for (final t in result.items) t.id,
-                        },
+                        }),
                     onPage: (delta) {
                       ref
                           .read(adminQueryProvider.notifier)
@@ -152,7 +153,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
                               ),
                             ),
                           );
-                      ref.read(adminSelectionProvider.notifier).state = {};
+                      ref.read(adminSelectionProvider.notifier).set({});
                     },
                     offset: query.offset,
                   ),

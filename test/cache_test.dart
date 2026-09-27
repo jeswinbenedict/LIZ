@@ -22,11 +22,11 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    container.listen(_cached, (_, __) {}).close();
+    container.listen(_cached, (_, _) {}).close();
     await Future<void>.delayed(const Duration(milliseconds: 20));
 
     // Still inside the grace period, so coming back is instant and free.
-    container.listen(_cached, (_, __) {}).close();
+    container.listen(_cached, (_, _) {}).close();
     expect(_builds, 1);
   });
 
@@ -34,10 +34,10 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    container.listen(_cached, (_, __) {}).close();
+    container.listen(_cached, (_, _) {}).close();
     await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    container.listen(_cached, (_, __) {}).close();
+    container.listen(_cached, (_, _) {}).close();
     expect(_builds, 2, reason: 'the cached value should have expired');
   });
 
@@ -49,10 +49,10 @@ void main() {
     // onResume cancelling the pending timer, the first departure's timer would
     // still fire and drop a provider that is being watched.
     for (var i = 0; i < 3; i++) {
-      container.listen(_cached, (_, __) {}).close();
+      container.listen(_cached, (_, _) {}).close();
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
-    container.listen(_cached, (_, __) {}).close();
+    container.listen(_cached, (_, _) {}).close();
 
     expect(_builds, 1);
   });
@@ -62,11 +62,11 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    container.listen(_uncached, (_, __) {}).close();
+    container.listen(_uncached, (_, _) {}).close();
     // Disposal is scheduled rather than immediate, so give it the same 20ms
     // the cached provider survived above — the contrast is the point.
     await Future<void>.delayed(const Duration(milliseconds: 20));
-    container.listen(_uncached, (_, __) {}).close();
+    container.listen(_uncached, (_, _) {}).close();
 
     // This is the behaviour search results want: nothing outlives its query.
     expect(_builds, 2);

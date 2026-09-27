@@ -47,8 +47,8 @@ class NewsCard extends StatelessWidget {
                     // Press photos arrive at full editorial resolution — a
                     // quarter-megabyte JPEG decoded for a 168-pixel strip.
                     memCacheHeight: 336,
-                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                    placeholder: (_, __) => Container(
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                    placeholder: (_, _) => Container(
                       height: 168,
                       color: scheme.surfaceContainerHighest,
                     ),

@@ -63,7 +63,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 ),
                 feed.when(
                   loading: () => const SliverToBoxAdapter(child: LoadingView()),
-                  error: (_, __) => SliverToBoxAdapter(
+                  error: (_, _) => SliverToBoxAdapter(
                     child: ErrorView(
                         onRetry: () => ref.invalidate(postFeedProvider(key))),
                   ),
@@ -84,7 +84,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                           sliver: SliverList.separated(
                             itemCount: posts.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            separatorBuilder: (_, _) => const SizedBox(height: 12),
                             itemBuilder: (context, i) => PostCard(post: posts[i]),
                           ),
                         ),

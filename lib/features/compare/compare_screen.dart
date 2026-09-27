@@ -39,7 +39,7 @@ class CompareScreen extends ConsumerWidget {
       ),
       body: async.when(
         loading: () => const LoadingView(),
-        error: (_, __) => ErrorView(
+        error: (_, _) => ErrorView(
           onRetry: () => ref.invalidate(_compareProvider(toolIds.join(','))),
         ),
         data: (tools) => tools.length < 2

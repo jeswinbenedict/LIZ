@@ -34,7 +34,7 @@ class UserProfileScreen extends ConsumerWidget {
       ),
       body: profileAsync.when(
         loading: () => const LoadingView(),
-        error: (_, __) =>
+        error: (_, _) =>
             ErrorView(onRetry: () => ref.invalidate(profileByIdProvider(userId))),
         data: (profile) => profile == null
             ? const EmptyView(
@@ -118,7 +118,7 @@ class _Body extends ConsumerWidget {
           ),
           reviews.when(
             loading: () => const LoadingView(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (list) => list.isEmpty
                 ? Padding(
                     padding:
@@ -143,7 +143,7 @@ class _Body extends ConsumerWidget {
           ),
           posts.when(
             loading: () => const LoadingView(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (list) => list.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

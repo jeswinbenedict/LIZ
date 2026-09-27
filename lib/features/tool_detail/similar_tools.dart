@@ -29,7 +29,7 @@ class SimilarToolsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final similar = ref.watch(similarToolsProvider(toolId));
-    final tools = similar.valueOrNull ?? const <Tool>[];
+    final tools = similar.value ?? const <Tool>[];
     if (tools.isEmpty) return const SizedBox.shrink();
 
     return Column(

@@ -28,7 +28,7 @@ Future<void> runGuardedAction(
       try {
         await attempt();
       } catch (e) {
-        _toast(context, e);
+        if (context.mounted) _toast(context, e);
       }
     }
   }
@@ -48,7 +48,7 @@ Future<void> runGuardedAction(
       await offerSignIn('Your session expired. Sign in again to continue.');
       return;
     }
-    _toast(context, e);
+    if (context.mounted) _toast(context, e);
   }
 }
 

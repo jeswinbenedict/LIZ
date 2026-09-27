@@ -32,8 +32,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
     WidgetsBinding.instance.addObserver(this);
     if (widget.initialCategory != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(discoverCategoryProvider.notifier).state =
-            widget.initialCategory;
+        ref.read(discoverCategoryProvider.notifier).set(widget.initialCategory);
       });
     }
   }
@@ -122,7 +121,7 @@ class _CategoryChips extends ConsumerWidget {
 
     return categoriesAsync.when(
       loading: () => const SizedBox(height: 48),
-      error: (_, __) => const SizedBox(height: 0),
+      error: (_, _) => const SizedBox(height: 0),
       data: (categories) => SizedBox(
         height: 48,
         child: ListView(
@@ -164,7 +163,7 @@ class _CategoryChips extends ConsumerWidget {
         selected: selected,
         showCheckmark: false,
         onSelected: (_) =>
-            ref.read(discoverCategoryProvider.notifier).state = slug,
+            ref.read(discoverCategoryProvider.notifier).set(slug),
       ),
     );
   }
@@ -200,13 +199,13 @@ class _SortBar extends ConsumerWidget {
                   // pushed labels past the border — "Trending" lost its 'g'.
                   showCheckmark: false,
                   onSelected: (_) =>
-                      ref.read(discoverSortProvider.notifier).state = entry.key,
+                      ref.read(discoverSortProvider.notifier).set(entry.key),
                 ),
               ),
             PricingFilter(
               selected: ref.watch(discoverPricingProvider),
               onChanged: (value) =>
-                  ref.read(discoverPricingProvider.notifier).state = value,
+                  ref.read(discoverPricingProvider.notifier).set(value),
             ),
           ],
         ),

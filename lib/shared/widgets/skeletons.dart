@@ -202,7 +202,7 @@ class ToolGridSkeletonSliver extends StatelessWidget {
               mainAxisExtent: toolCardExtent(context),
             ),
             itemCount: count,
-            itemBuilder: (_, __) => const ToolCardSkeleton(),
+            itemBuilder: (_, _) => const ToolCardSkeleton(),
           ),
         ),
       ),

@@ -37,12 +37,12 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final currentProfileProvider = StreamProvider<Profile?>((ref) {
   final auth = ref.watch(authRepositoryProvider);
   return auth.authStateChanges();
-}, dependencies: const []);
+});
 
 /// Convenience: synchronous current profile (may briefly be null before the
 /// stream emits). Prefer [currentProfileProvider] where async state matters.
 final currentUserProvider = Provider<Profile?>((ref) {
-  return ref.watch(currentProfileProvider).valueOrNull ??
+  return ref.watch(currentProfileProvider).value ??
       ref.watch(authRepositoryProvider).currentProfile;
 });
 

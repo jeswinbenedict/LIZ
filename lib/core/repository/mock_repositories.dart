@@ -492,8 +492,9 @@ class MockAdminRepository implements AdminRepository {
   @override
   Future<void> setToolStatus(String toolId, PublishStatus status) async {
     final idx = _store.tools.indexWhere((t) => t.id == toolId);
-    if (idx >= 0)
+    if (idx >= 0) {
       _store.tools[idx] = _store.tools[idx].copyWith(status: status);
+    }
   }
 
   @override
@@ -564,8 +565,9 @@ class MockAdminRepository implements AdminRepository {
         if (i >= 0) _store.posts[i] = _store.posts[i].copyWith(status: status);
       case 'review':
         final i = _store.reviews.indexWhere((r) => r.id == targetId);
-        if (i >= 0)
+        if (i >= 0) {
           _store.reviews[i] = _store.reviews[i].copyWith(status: status);
+        }
       case 'comment':
         for (final list in _store.commentsByPost.values) {
           final i = list.indexWhere((c) => c.id == targetId);

@@ -56,7 +56,7 @@ class ToolDetailScreen extends ConsumerWidget {
       ),
       body: toolAsync.when(
         loading: () => const LoadingView(),
-        error: (_, __) =>
+        error: (_, _) =>
             ErrorView(onRetry: () => ref.invalidate(toolByIdProvider(toolId))),
         data: (tool) => tool == null
             ? const EmptyView(
@@ -254,7 +254,7 @@ class _ToolBody extends ConsumerWidget {
               padding: EdgeInsets.all(20),
               child: LoadingView(),
             ),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (List<Review> reviews) => reviews.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -294,7 +294,7 @@ class _ToolBody extends ConsumerWidget {
               padding: EdgeInsets.all(20),
               child: LoadingView(),
             ),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (posts) => posts.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -371,7 +371,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(title, style: Theme.of(context).textTheme.titleMedium),
         const Spacer(),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }

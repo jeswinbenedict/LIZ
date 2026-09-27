@@ -33,23 +33,34 @@ class AlertsState {
 /// follow, so this only reads them. New ones arrive over Realtime rather than
 /// by polling: the whole point is that you hear about a change without having
 /// gone looking for it.
-class AlertsController extends StateNotifier<AlertsState> {
-  AlertsController(this._ref) : super(const AlertsState()) {
-    load();
+class AlertsController extends Notifier<AlertsState> {
+  int _generation = 0;
+
+  @override
+  AlertsState build() {
+    // Rebuilt on sign-in and sign-out: alerts belong to a person, and a
+    // guest must not keep showing the last account's badge.
+    ref.watch(currentUserProvider);
     _subscribe();
+    _fetch();
+    return const AlertsState();
   }
 
-  final Ref _ref;
-  RealtimeChannel? _channel;
-
-  Future<void> load() async {
+  Future<void> load() {
     state = state.copyWith(loading: true, clearError: true);
+    return _fetch();
+  }
+
+  Future<void> _fetch() async {
+    // A notifier keeps its instance across a rebuild, so a load still in
+    // flight for the previous account is dropped by generation.
+    final generation = ++_generation;
     try {
-      final items = await _ref.read(trackRepositoryProvider).notifications();
-      if (!mounted) return;
+      final items = await ref.read(trackRepositoryProvider).notifications();
+      if (!ref.mounted || generation != _generation) return;
       state = AlertsState(items: items, loading: false);
     } catch (e) {
-      if (!mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       state = AlertsState(loading: false, error: e);
     }
   }
@@ -68,7 +79,7 @@ class AlertsController extends StateNotifier<AlertsState> {
       ],
     );
     try {
-      await _ref.read(trackRepositoryProvider).markNotificationRead(n.id);
+      await ref.read(trackRepositoryProvider).markNotificationRead(n.id);
     } catch (_) {
       // Left as-is; load() is the source of truth.
     }
@@ -80,17 +91,17 @@ class AlertsController extends StateNotifier<AlertsState> {
       items: [for (final item in state.items) item.copyWith(read: true)],
     );
     try {
-      await _ref.read(trackRepositoryProvider).markAllNotificationsRead();
+      await ref.read(trackRepositoryProvider).markAllNotificationsRead();
     } catch (_) {
       // As above.
     }
   }
 
   void _subscribe() {
-    final client = _ref.read(supabaseClientProvider);
-    final uid = _ref.read(authRepositoryProvider).currentUserId;
+    final client = ref.read(supabaseClientProvider);
+    final uid = ref.read(authRepositoryProvider).currentUserId;
     if (client == null || uid == null) return;
-    _channel = client
+    final channel = client
         .channel('public:notifications:$uid')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -106,32 +117,21 @@ class AlertsController extends StateNotifier<AlertsState> {
           callback: _onInsert,
         )
         .subscribe();
+    // Runs on rebuild as well as disposal, so signing out drops the last
+    // account's channel.
+    ref.onDispose(() => client.removeChannel(channel));
   }
 
   void _onInsert(PostgresChangePayload payload) {
-    if (!mounted) return;
+    if (!ref.mounted) return;
     final item = AppNotification.fromJson(payload.newRecord);
     if (state.items.any((n) => n.id == item.id)) return;
     state = state.copyWith(items: [item, ...state.items]);
   }
-
-  @override
-  void dispose() {
-    final ch = _channel;
-    if (ch != null) {
-      _ref.read(supabaseClientProvider)?.removeChannel(ch);
-    }
-    super.dispose();
-  }
 }
 
 final alertsControllerProvider =
-    StateNotifierProvider<AlertsController, AlertsState>((ref) {
-      // Rebuilt on sign-in and sign-out: alerts belong to a person, and a
-      // guest must not keep showing the last account's badge.
-      ref.watch(currentUserProvider);
-      return AlertsController(ref);
-    });
+    NotifierProvider<AlertsController, AlertsState>(AlertsController.new);
 
 /// How many alerts are waiting, for the bell badge. Zero for a guest.
 final unreadAlertsProvider = Provider<int>(

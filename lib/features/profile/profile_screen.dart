@@ -132,7 +132,7 @@ class _ProfileBody extends ConsumerWidget {
         ),
         reviews.when(
           loading: () => const LoadingView(),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (list) => list.isEmpty
               ? Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -156,7 +156,7 @@ class _ProfileBody extends ConsumerWidget {
         ),
         posts.when(
           loading: () => const LoadingView(),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (list) => list.isEmpty
               ? Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

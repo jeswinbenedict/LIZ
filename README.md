@@ -93,7 +93,7 @@ problems fixed along the way.
 ## Tests
 
 ```bash
-flutter analyze --no-fatal-infos
+flutter analyze                                           # clean at every level
 flutter test                                              # app
 cd scrapers && python -m pytest tests                     # scraper
 deno test --allow-env --no-check supabase/functions/tests # Edge Functions

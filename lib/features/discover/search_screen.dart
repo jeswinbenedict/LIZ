@@ -122,7 +122,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           )
         : results.when(
             loading: () => const ToolGridSkeleton(),
-            error: (_, __) => ErrorView(
+            error: (_, _) => ErrorView(
               onRetry: () => ref.invalidate(searchResultsProvider(key)),
             ),
             data: (tools) => tools.isEmpty
