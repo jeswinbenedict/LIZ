@@ -226,10 +226,19 @@ def test_a_silent_home_page_is_answered_by_its_pricing_page():
     assert facts.pricing_type == "freemium"
 
 
-def test_a_home_page_that_states_its_price_costs_no_second_request():
+def test_the_pricing_page_outranks_the_home_page():
+    # Noodle Seed's home page shows its demo shop ("Everyday Backpack $89");
+    # its pricing page has a free plan.
     session = _Session({
-        "https://acme.ai": "<a href='/pricing'>Pricing</a> Only $9 per month.",
+        "https://acme.ai": "<a href='/pricing'>Pricing</a> Everyday Backpack $89",
+        "https://acme.ai/pricing": "Free $0 / month. Growth $49 / month.",
     })
+    facts = enrich_module.enrich_url(session, "https://acme.ai")
+    assert facts.pricing_type == "freemium"
+
+
+def test_with_no_pricing_page_the_home_page_still_answers():
+    session = _Session({"https://acme.ai": "Only $9 per month."})
     facts = enrich_module.enrich_url(session, "https://acme.ai")
     assert facts.pricing_type == "paid"
     assert session.fetched == ["https://acme.ai"]

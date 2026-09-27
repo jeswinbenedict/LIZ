@@ -90,8 +90,11 @@ page through, tick several rows and publish or hide them together. It opens on
 or **unknown**, which it prefers to a guess: a wrong badge is worse than none,
 because a reader cannot tell it is wrong.
 
-Most products keep figures off the landing page and link a pricing page, so when
-the home page is silent enrichment follows that link — only one the page itself
+Most products keep figures off the landing page and link a pricing page, so
+enrichment follows that link, and when it answers it outranks the home page — a
+home page carries demos and testimonials, and one shopping agent's demo stock
+("Everyday Backpack $89") made it "paid" when its pricing page has a free plan.
+The home page only decides when there is no pricing page. Only a link the page itself
 links, never a guessed `/pricing`, and only on the same site. When the tool is
 one page of a bigger site (a plugin in a community directory, an article on a
 company blog) only a pricing page under the tool's own path counts; otherwise an
@@ -113,8 +116,9 @@ raised", "1,000 free conversations · $30 value", "Free $0" beside a paid plan
 (that is freemium), a newsletter's "Subscribe" button, and a shopping agent's
 demo shop ("hoodie €42 each", "€180 per night").
 
-The dry run over the 134 unknown tools on 27 September learned 14: 7 from a
-linked pricing page, 7 from home pages that state it.
+Applied on 27 September: 15 of the 134 unknown tools learned a price, and every
+one was then re-read under the pricing-page-first rule; one (Noodle Seed) moved
+from paid to freemium.
 
 Expect most of the remainder to stay unknown. The bulk are Hacker News side
 projects with no pricing at all, and unknown is the honest answer for them.

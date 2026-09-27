@@ -237,18 +237,19 @@ def resolve_and_enrich(
 def enrich_url(session: PoliteSession, url: str) -> PageFacts | None:
     """Fetch and parse a product page. Returns None when the page is unusable.
 
-    When the home page says nothing about price, the pricing page usually
-    does: most products keep figures off the landing page and link a
-    "Pricing" tab instead. One more polite request answers it.
+    When the site links its own pricing page, that page decides. A home page
+    is a poor witness to price: it carries demos, testimonials and "under
+    $100" examples, and one shopping agent's demo stock ("Everyday Backpack
+    $89") made it "paid" when its pricing page offers a free plan. The home
+    page's reading is kept only for when there is no pricing page to ask.
     """
     response = _html(session, url)
     if response is None:
         return None
     facts = parse_page(response.content, url)
-    if facts.pricing_type == "unknown":
-        facts.pricing_type = pricing_from_linked_page(
-            session, response.content, url
-        )
+    from_pricing_page = pricing_from_linked_page(session, response.content, url)
+    if from_pricing_page != "unknown":
+        facts.pricing_type = from_pricing_page
     return facts
 
 
