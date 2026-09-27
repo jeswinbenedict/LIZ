@@ -1,5 +1,5 @@
 import { assert, assertEquals } from 'jsr:@std/assert@1';
-import { isNonProduct } from '../fetch-tools/logic.ts';
+import { isNonProduct, websiteFor } from '../fetch-tools/logic.ts';
 
 // GitHub's topic search returns plenty that isn't a product. These are real
 // repos that reached the live catalog and had to be hidden by hand, plus the
@@ -53,4 +53,37 @@ Deno.test('"prompt" in a name does not disqualify a real tool', () => {
 
 Deno.test('handles empty input without throwing', () => {
   assertEquals(isNonProduct('', '', []), false);
+});
+
+const REPO = 'https://github.com/acme/tool';
+
+Deno.test('a real homepage is the website', () => {
+  assertEquals(websiteFor('https://ollama.com', REPO), 'https://ollama.com/');
+  assertEquals(websiteFor('https://docs.langchain.com/oss/', REPO), 'https://docs.langchain.com/oss/');
+});
+
+Deno.test('a homepage that is not one falls back to the repository', () => {
+  // Each of these reached the catalog as a tool's website.
+  for (const bad of [
+    'https://amzn.to/4fqvn0D',
+    'https://discord.gg/m88xfYMbK6',
+    'https://www.linkedin.com/in/areganti/',
+    'https://www.youtube.com/SECourses',
+    'https://dsc.gg/jcodesmore',
+    'https://arxiv.org/pdf/2412.20138',
+    'https://example.com/whitepaper.pdf',
+    'ftp://example.com',
+    'not a url',
+    '',
+    null,
+  ]) {
+    assertEquals(websiteFor(bad, REPO), REPO, String(bad));
+  }
+});
+
+Deno.test('campaign tags are stripped, other parameters kept', () => {
+  assertEquals(
+    websiteFor('https://muapi.ai/open?utm_source=github&utm_medium=about&ref=x', REPO),
+    'https://muapi.ai/open?ref=x',
+  );
 });

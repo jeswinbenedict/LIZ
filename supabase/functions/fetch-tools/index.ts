@@ -11,7 +11,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
-import { isNonProduct } from './logic.ts';
+import { isNonProduct, websiteFor } from './logic.ts';
 
 // Search buckets → each maps to a Liz category. Kept product-focused.
 const QUERIES: { q: string; category: string }[] = [
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
           tagline: r.description.slice(0, 140),
           description: r.description,
           ai_summary: [],
-          website_url: r.homepage && r.homepage.startsWith('http') ? r.homepage : r.html_url,
+          website_url: websiteFor(r.homepage, r.html_url),
           logo_url: r.owner.avatar_url, // real org/user logo
           category: categoryFor(topics, category),
           tags: topics.slice(0, 5),

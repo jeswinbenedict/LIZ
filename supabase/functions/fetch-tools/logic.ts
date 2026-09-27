@@ -61,3 +61,45 @@ export function isNonProduct(
   if (NON_PRODUCT_DESCRIPTION.some((re) => re.test(description))) return true;
   return false;
 }
+
+// ---------------------------------------------------------------------------
+// A repo's "homepage" field is whatever its owner typed, and not always a
+// home page. Among the rows this wrote: an Amazon affiliate link, a Discord
+// invite, a LinkedIn profile, a YouTube channel and an arXiv PDF, each shown
+// behind a "Visit" button as the tool's website. For those the repository is
+// the better answer — it is at least the thing itself.
+// ---------------------------------------------------------------------------
+
+const NOT_A_HOMEPAGE_HOSTS = [
+  // social and chat
+  'discord.gg', 'discord.com', 'dsc.gg', 'linkedin.com', 'twitter.com', 'x.com',
+  'youtube.com', 'youtu.be', 't.me', 'facebook.com', 'instagram.com',
+  // shorteners and affiliate links hide where they go
+  'amzn.to', 'amazon.com', 'bit.ly', 'tinyurl.com', 'aka.ms', 'goo.gl',
+  // papers are about a tool, not the tool
+  'arxiv.org',
+];
+
+function hostMatches(host: string, entry: string): boolean {
+  return host === entry || host.endsWith(`.${entry}`);
+}
+
+/** The URL to show as a GitHub tool's website: its homepage if it is one. */
+export function websiteFor(homepage: string | null | undefined, repoUrl: string): string {
+  if (!homepage) return repoUrl;
+  let url: URL;
+  try {
+    url = new URL(homepage.trim());
+  } catch {
+    return repoUrl;
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return repoUrl;
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  if (NOT_A_HOMEPAGE_HOSTS.some((entry) => hostMatches(host, entry))) return repoUrl;
+  if (/\.(pdf|zip|docx?|pptx?)$/i.test(url.pathname)) return repoUrl;
+  // Campaign tags say where a click came from; the catalog is not GitHub.
+  for (const key of [...url.searchParams.keys()]) {
+    if (key.toLowerCase().startsWith('utm_')) url.searchParams.delete(key);
+  }
+  return url.toString();
+}
