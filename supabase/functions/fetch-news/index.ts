@@ -2,7 +2,7 @@
 //
 // Sources are all FREE + OPEN:
 //   • RSS/Atom feeds (open standard) — TechCrunch, The Verge, Ars Technica,
-//     Wired, Engadget, VentureBeat, Hacker News (via hnrss.org).
+//     Wired, Engadget, MIT Technology Review, Hacker News (via hnrss.org).
 //   • Dev.to public API (free, no key).
 //   • deno-dom scraping fallback for sources without a feed (see scrapeHeadlines).
 //
@@ -38,7 +38,11 @@ const FEEDS: { source: string; url: string }[] = [
   { source: 'arstechnica', url: 'https://feeds.arstechnica.com/arstechnica/technology-lab' },
   { source: 'wired', url: 'https://www.wired.com/feed/rss' },
   { source: 'engadget', url: 'https://www.engadget.com/rss.xml' },
-  { source: 'venturebeat', url: 'https://venturebeat.com/feed/' },
+  // VentureBeat was here until September 2026, when it put its feed behind a
+  // bot challenge that answers 429 to every automated reader. Getting past a
+  // challenge is evading it, so the source was replaced rather than worked
+  // around; its old Feedburner mirror had stopped updating anyway.
+  { source: 'techreview', url: 'https://www.technologyreview.com/topic/artificial-intelligence/feed' },
   { source: 'hackernews', url: 'https://hnrss.org/frontpage' },
 ];
 
