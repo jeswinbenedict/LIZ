@@ -77,6 +77,22 @@ class _SignInViewState extends ConsumerState<SignInView> {
     }
   }
 
+  /// Opens another page from this view.
+  ///
+  /// This view is shown both as a bottom sheet and as a full page. A sheet has
+  /// to be dismissed first or it covers the screen being pushed; a page must
+  /// not be — it is where Back should return to. onSignedIn cannot tell the two
+  /// apart: on the page it means "signed in, leave", which is how the reset
+  /// link first sent people to Discover. [keepSheet] is for pages that are
+  /// read and closed, where dismissing would throw away the half-filled form;
+  /// those push above the sheet on the root navigator instead.
+  void _openPage(String path, {bool keepSheet = false}) {
+    if (!keepSheet && ModalRoute.of(context) is PopupRoute) {
+      Navigator.of(context).pop();
+    }
+    context.push(path);
+  }
+
   @override
   Widget build(BuildContext context) {
     final busy = ref.watch(authControllerProvider);
@@ -220,6 +236,28 @@ class _SignInViewState extends ConsumerState<SignInView> {
                 : Text(_isSignUp ? 'Create account' : 'Sign in'),
           ),
           const SizedBox(height: 8),
+          // Say what signing up agrees to before it happens, and let it be
+          // read without losing what has been typed into the form.
+          if (_isSignUp)
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'By creating an account you agree to the',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                TextButton(
+                  onPressed: () => _openPage('/terms', keepSheet: true),
+                  child: const Text('Terms'),
+                ),
+                Text('and', style: Theme.of(context).textTheme.bodySmall),
+                TextButton(
+                  onPressed: () => _openPage('/privacy', keepSheet: true),
+                  child: const Text('Privacy policy'),
+                ),
+              ],
+            ),
           if (!_isSignUp)
             TextButton(
               onPressed: busy || _email.text.trim().isEmpty
@@ -242,17 +280,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
                   ? null
                   : () {
                       final email = _email.text.trim();
-                      // This view is shown both as a bottom sheet and as a
-                      // full page. A sheet has to be dismissed first or it
-                      // covers the screen we are about to push. A page must
-                      // not be — it is where Back from the reset screen should
-                      // return to. onSignedIn cannot tell the two apart: on
-                      // the page it means "signed in, leave", which is how
-                      // this first sent people to Discover.
-                      if (ModalRoute.of(context) is PopupRoute) {
-                        Navigator.of(context).pop();
-                      }
-                      context.push(
+                      _openPage(
                         email.isEmpty
                             ? '/forgot-password'
                             : '/forgot-password?email='

@@ -49,14 +49,14 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.privacy_tip_outlined),
               title: const Text('Privacy policy'),
-              trailing: const Icon(Icons.open_in_new, size: 18),
-              onTap: () {},
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/privacy'),
             ),
             ListTile(
               leading: const Icon(Icons.description_outlined),
               title: const Text('Terms of service'),
-              trailing: const Icon(Icons.open_in_new, size: 18),
-              onTap: () {},
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/terms'),
             ),
             ListTile(
               leading: const Icon(Icons.info_outline),

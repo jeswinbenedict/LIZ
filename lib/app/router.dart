@@ -13,6 +13,7 @@ import '../features/community/post_detail_screen.dart';
 import '../features/compare/compare_screen.dart';
 import '../features/discover/discover_screen.dart';
 import '../features/discover/search_screen.dart';
+import '../features/legal/legal_screen.dart';
 import '../features/news/news_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/profile/settings_screen.dart';
@@ -175,6 +176,16 @@ GoRouter buildRouter() {
         path: '/reset-password',
         parentNavigatorKey: _rootKey,
         builder: (c, s) => const ResetPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const LegalScreen(document: LegalDocument.privacy),
+      ),
+      GoRoute(
+        path: '/terms',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const LegalScreen(document: LegalDocument.terms),
       ),
       GoRoute(
         path: '/admin',
