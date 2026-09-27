@@ -52,4 +52,26 @@ void main() {
     const proxied = '$_base/logo?domain=acme.ai';
     expect(Env.proxiedImage(proxied), proxied);
   });
+
+  test('a tool with no stored logo is looked up by its domain', () {
+    expect(
+      Env.buildDomainLogoUrl(_base, 'https://www.spiteware.ai/about'),
+      '$_base/logo?domain=spiteware.ai',
+    );
+  });
+
+  test('a shared host is not taken for the tool’s own', () {
+    // Every repository would wear GitHub's mark, and every Cloud Run app
+    // Google's — a wrong logo reads as a real one, a letter tile does not.
+    for (final site in [
+      'https://github.com/acme/tool',
+      'https://raw.githubusercontent.com/a/b/paper.pdf',
+      'https://search-1835.asia-southeast1.run.app',
+      'https://www.producthunt.com/products/x',
+      null,
+      'not a url at all',
+    ]) {
+      expect(Env.buildDomainLogoUrl(_base, site), isNull, reason: '$site');
+    }
+  });
 }

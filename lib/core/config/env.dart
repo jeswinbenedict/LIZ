@@ -159,6 +159,39 @@ class Env {
     return '$base/logo?url=${Uri.encodeComponent(url)}$suffix';
   }
 
+  /// A logo for a tool that has none stored, looked up by its site's domain.
+  ///
+  /// Null off the web, without a backend, or when the domain would give the
+  /// wrong picture: every repository on github.com would get GitHub's mark, and
+  /// every file on a shared host that host's — the same mistake as stamping a
+  /// directory's logo on everything found there.
+  static String? domainLogo(String? websiteUrl) {
+    if (!kIsWeb) return null;
+    final base = resolvedFunctionsUrl;
+    if (base.isEmpty) return null;
+    return buildDomainLogoUrl(base, websiteUrl);
+  }
+
+  @visibleForTesting
+  static String? buildDomainLogoUrl(String base, String? websiteUrl) {
+    final domain = logoDomainOf(websiteUrl);
+    if (domain == null) return null;
+    final shared = _sharedHosts.any(
+      (host) => domain == host || domain.endsWith('.$host'),
+    );
+    if (shared) return null;
+    return '$base/logo?domain=${Uri.encodeComponent(domain)}';
+  }
+
+  static const _sharedHosts = [
+    'github.com',
+    'githubusercontent.com',
+    'producthunt.com',
+    'ycombinator.com',
+    'run.app',
+    'google.com',
+  ];
+
   static final RegExp _domainLike = RegExp(
     r'^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$',
     caseSensitive: false,

@@ -29,7 +29,14 @@ class ToolLogo extends StatelessWidget {
 
   Widget _buildMark(BuildContext context) {
     final radius = size * 0.28;
-    if (tool.logoUrl != null && tool.logoUrl!.isNotEmpty) {
+    final stored = tool.logoUrl != null && tool.logoUrl!.isNotEmpty;
+    // A tenth of the catalog was scraped without a logo, and every one showed
+    // a letter tile even when its site has a perfectly good icon. Asking the
+    // proxy by domain finds it; a miss still falls back to the letter.
+    final source = stored
+        ? Env.proxiedImage(tool.logoUrl!, fallbackDomain: tool.websiteUrl)
+        : Env.domainLogo(tool.websiteUrl);
+    if (source != null) {
       // Present every logo as a clean, padded "app-icon" tile on a light
       // background so dark, transparent, or oddly-cropped marks all look uniform
       // and professional (instead of a raw edge-to-edge black square). The tile
@@ -40,10 +47,7 @@ class ToolLogo extends StatelessWidget {
         // fetches image bytes — so without the proxy every scraped tool falls
         // back to its initial tile. GitHub avatars happened to work, which is
         // why this only surfaced once the catalog went beyond them.
-        imageUrl: Env.proxiedImage(
-          tool.logoUrl!,
-          fallbackDomain: tool.websiteUrl,
-        ),
+        imageUrl: source,
         // Decode at the size actually drawn. A grid of tools would otherwise
         // hold full-resolution bitmaps in memory to paint 48-pixel tiles.
         memCacheWidth: (size * 3).round(),
