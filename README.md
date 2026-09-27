@@ -138,5 +138,7 @@ They were written from the code, not by a lawyer.
 - **A contact address** for the privacy policy and terms (`LEGAL_CONTACT`), and
   a legal read of both before launch.
 - **Deployment.** No host is configured yet, `site_url` still points at
-  `localhost:3000`, and URLs use `/#/` rather than clean paths.
+  `localhost:3000`, and URLs use `/#/` rather than clean paths. Build with
+  `--wasm` when it happens: evaluated, working and 30% smaller →
+  [docs/WEB_BUILD.md](docs/WEB_BUILD.md).
   `toolBySlug()` is kept for the per-tool URLs that work will add.
