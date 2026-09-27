@@ -114,7 +114,18 @@ class _Verdict extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontWeight: FontWeight.w700, color: colour),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                // The status colour on a tint of itself: amber on pale amber
+                // read at 2.25:1. Same hue, dark enough to read.
+                color: LizColors.legibleOn(
+                  colour,
+                  Color.alphaBlend(
+                    colour.withValues(alpha: 0.10),
+                    scheme.surface,
+                  ),
+                ),
+              ),
             ),
           ),
         ],

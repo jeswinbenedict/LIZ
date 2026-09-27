@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
 import '../models/profile.dart';
 
 /// Circular avatar with a deterministic color + initials fallback.
@@ -31,7 +32,9 @@ class UserAvatar extends StatelessWidget {
     }
     return CircleAvatar(
       radius: radius,
-      backgroundColor: _color(),
+      // White initials on the palette's lighter members (green, amber, cyan)
+      // measured as low as 2.4:1; darken each just enough to read.
+      backgroundColor: LizColors.legibleOn(_color(), Colors.white),
       child: Text(
         profile.initials,
         style: TextStyle(

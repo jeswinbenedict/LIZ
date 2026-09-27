@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
-import '../../app/theme.dart';
 import '../../shared/models/comment.dart';
 import '../../shared/models/post.dart';
 import '../../shared/widgets/states.dart';
@@ -105,18 +104,10 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                 // Post
                 Row(
                   children: [
-                    if (author != null)
-                      InkWell(
-                        borderRadius: BorderRadius.circular(24),
-                        onTap: () => context.push('/user/${author.id}'),
-                        child: UserAvatar(profile: author, radius: 20),
-                      ),
-                    const SizedBox(width: 10),
                     Expanded(
-                      child: InkWell(
-                        onTap: author == null
-                            ? null
-                            : () => context.push('/user/${author.id}'),
+                      child: AuthorLink(
+                        author: author,
+                        avatarRadius: 20,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -157,33 +148,7 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
                 ),
                 if (post.toolId != null && post.toolName != null) ...[
                   const SizedBox(height: 12),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(LizRadius.sm),
-                    onTap: () => context.push('/tool/${post.toolId}'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest.withValues(
-                          alpha: 0.5,
-                        ),
-                        borderRadius: BorderRadius.circular(LizRadius.sm),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.link, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            post.toolName!,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  ToolLinkChip(toolId: post.toolId!, name: post.toolName!),
                 ],
                 const SizedBox(height: 8),
                 LikeButton(
@@ -282,13 +247,24 @@ class _CommentTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // The avatar is the link to the commenter; the name beside it is
+          // part of the comment. Sized and labelled as a control, not a
+          // 32px picture read out as initials.
           if (author != null)
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => context.push('/user/${author.id}'),
-              child: UserAvatar(profile: author, radius: 16),
+            Semantics(
+              button: true,
+              label: '${author.displayName}, profile',
+              excludeSemantics: true,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => context.push('/user/${author.id}'),
+                child: SizedBox.square(
+                  dimension: 48,
+                  child: Center(child: UserAvatar(profile: author, radius: 16)),
+                ),
+              ),
             ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

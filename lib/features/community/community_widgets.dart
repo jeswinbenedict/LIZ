@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../shared/models/post.dart';
+import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/time_ago.dart';
@@ -160,18 +161,10 @@ class PostCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                if (author != null)
-                  InkWell(
-                    borderRadius: BorderRadius.circular(22),
-                    onTap: () => context.push('/user/${author.id}'),
-                    child: UserAvatar(profile: author, radius: 18),
-                  ),
-                const SizedBox(width: 10),
                 Expanded(
-                  child: InkWell(
-                    onTap: author == null
-                        ? null
-                        : () => context.push('/user/${author.id}'),
+                  child: AuthorLink(
+                    author: author,
+                    avatarRadius: 18,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -226,33 +219,7 @@ class PostCard extends ConsumerWidget {
             ],
             if (post.toolId != null && post.toolName != null) ...[
               const SizedBox(height: 10),
-              InkWell(
-                borderRadius: BorderRadius.circular(LizRadius.sm),
-                onTap: () => context.push('/tool/${post.toolId}'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(
-                      alpha: 0.5,
-                    ),
-                    borderRadius: BorderRadius.circular(LizRadius.sm),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.link, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        post.toolName!,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              ToolLinkChip(toolId: post.toolId!, name: post.toolName!),
             ],
             const SizedBox(height: 6),
             Row(
@@ -300,40 +267,32 @@ class ReviewTile extends ConsumerWidget {
         children: [
           Row(
             children: [
-              if (author != null)
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => context.push('/user/${author.id}'),
-                  child: UserAvatar(profile: author, radius: 16),
-                ),
-              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    InkWell(
-                      onTap: author == null
-                          ? null
-                          : () => context.push('/user/${author.id}'),
-                      child: Text(
+                child: AuthorLink(
+                  author: author,
+                  avatarRadius: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         author?.displayName ?? 'Reviewer',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                    ),
-                    Row(
-                      children: [
-                        RatingStars(review.rating.toDouble(), size: 14),
-                        const SizedBox(width: 6),
-                        Text(
-                          timeAgo(review.createdAt),
-                          style: TextStyle(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 12,
+                      Row(
+                        children: [
+                          RatingStars(review.rating.toDouble(), size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            timeAgo(review.createdAt),
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               IconButton(
@@ -353,6 +312,98 @@ class ReviewTile extends ConsumerWidget {
             Text(review.body, style: const TextStyle(height: 1.35)),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Who wrote something: avatar and name as one link to their profile.
+///
+/// They were two links, each smaller than a fingertip — a 32px avatar and a
+/// one-line name — and a screen reader announced the first as "MC". One target
+/// at least 48px tall, read as the person's name, fixes both.
+class AuthorLink extends StatelessWidget {
+  const AuthorLink({
+    super.key,
+    required this.author,
+    required this.avatarRadius,
+    required this.child,
+  });
+
+  final Profile? author;
+  final double avatarRadius;
+
+  /// The name and whatever sits under it (handle, time, rating).
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final who = author;
+    return MergeSemantics(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(LizRadius.sm),
+        onTap: who == null ? null : () => context.push('/user/${who.id}'),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Row(
+            children: [
+              if (who != null) ...[
+                ExcludeSemantics(
+                  child: UserAvatar(profile: who, radius: avatarRadius),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(child: child),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The tool a post is about, as a link to its page.
+///
+/// Drawn as a compact chip but hit as a 48px-tall target: it was 36px, under
+/// the size a finger can reliably land on.
+class ToolLinkChip extends StatelessWidget {
+  const ToolLinkChip({super.key, required this.toolId, required this.name});
+  final String toolId;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(LizRadius.sm),
+      onTap: () => context.push('/tool/$toolId'),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          widthFactor: 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(LizRadius.sm),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.link, size: 16),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

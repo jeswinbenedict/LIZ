@@ -19,6 +19,39 @@ class LizColors {
 
   /// Warning / paid pricing.
   static const Color warn = Color(0xFFF79009);
+
+  /// [accent], darkened on a light [background] or lightened on a dark one,
+  /// just far enough to reach [minimum] contrast (WCAG: 4.5 for body text).
+  ///
+  /// The accents above are chosen to be seen, not read: orange text on a pale
+  /// orange tint measured 2.2:1, and white initials on the green avatar 2.4:1.
+  /// Adjusting lightness alone keeps the hue, so a badge still reads as the
+  /// same colour — only one that can be read.
+  static Color legibleOn(
+    Color accent,
+    Color background, {
+    double minimum = 4.5,
+  }) {
+    final darken = background.computeLuminance() > 0.4;
+    var hsl = HSLColor.fromColor(accent);
+    var colour = accent;
+    for (var i = 0; i < 40 && contrast(colour, background) < minimum; i++) {
+      hsl = hsl.withLightness(
+        (hsl.lightness + (darken ? -0.02 : 0.02)).clamp(0.0, 1.0),
+      );
+      colour = hsl.toColor();
+    }
+    return colour;
+  }
+
+  /// WCAG contrast ratio between two opaque colours, from 1 to 21.
+  static double contrast(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    final hi = la > lb ? la : lb;
+    final lo = la > lb ? lb : la;
+    return (hi + 0.05) / (lo + 0.05);
+  }
 }
 
 class LizRadius {

@@ -22,21 +22,34 @@ class LizPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final c = color ?? scheme.primary;
+    final accent = color ?? scheme.primary;
+    final tint = accent.withValues(alpha: 0.12);
+    // Filled: white on the accent, so the accent is what has to darken.
+    // Tinted: the accent on its own pale tint, so the text has to. A pill
+    // usually sits on a card rather than bare surface, so aim a little above
+    // the 4.5 minimum to leave room for the difference.
+    final fill = filled ? LizColors.legibleOn(accent, Colors.white) : tint;
+    final ink = filled
+        ? Colors.white
+        : LizColors.legibleOn(
+            accent,
+            Color.alphaBlend(tint, scheme.surface),
+            minimum: 4.8,
+          );
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: icon != null ? 8 : 10,
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: filled ? c : c.withValues(alpha: 0.12),
+        color: fill,
         borderRadius: BorderRadius.circular(LizRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: filled ? Colors.white : c),
+            Icon(icon, size: 13, color: ink),
             const SizedBox(width: 4),
           ],
           // A long tag on a narrow phone would otherwise push the pill past
@@ -47,7 +60,7 @@ class LizPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: filled ? Colors.white : c,
+                color: ink,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.1,
