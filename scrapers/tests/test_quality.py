@@ -138,3 +138,34 @@ class TestSummarise:
         counts = summarise(rows)
         assert sum(counts.values()) == len(rows)
         assert counts["published"] == 1
+
+
+class TestSharedContent:
+    """Published rows from 27 September 2026 that were not products."""
+
+    def test_a_shared_chat_or_artifact_is_held(self):
+        for url in [
+            "https://claude.ai/artifact/XmWGFtQPgn8aJvU193Ksf8",
+            "https://claude.ai/share/61ae35d6-82f2-425a-84b6-907a3ec1b5c4",
+            "https://gemini.google.com/app/b4b90aeb20c60c14",
+            "https://chatgpt.com/share/abc",
+        ]:
+            verdict = assess(_row(website_url=url))
+            assert not verdict.publish, url
+            assert "shared chat or file" in verdict.reasons[0]
+
+    def test_a_file_is_held(self):
+        for url in [
+            "https://raw.githubusercontent.com/kbr-/math-research/3979e0c/"
+            "publications/whitepaper.pdf",
+            "https://acme.ai/whitepaper.pdf",
+            "https://gist.github.com/someone/abc123",
+        ]:
+            assert not assess(_row(website_url=url)).publish, url
+
+    def test_the_assistants_themselves_still_pass(self):
+        # The rule is about what is at the path, not the host: Claude, ChatGPT
+        # and Gemini are products, a conversation inside one is not.
+        for url in ["https://claude.ai", "https://chatgpt.com",
+                    "https://gemini.google.com", "https://chatgpt.com/g/g-xyz"]:
+            assert assess(_row(website_url=url)).publish, url

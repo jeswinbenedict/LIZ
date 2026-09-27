@@ -199,3 +199,35 @@ def test_choose_name_falls_back_to_the_domain_before_a_sentence():
 
 def test_choose_name_still_prefers_a_real_title_over_the_domain():
     assert choose_name("Posterlet", "", url="https://some-host.com") == "Posterlet"
+
+
+# --- pricing false positives found by the 27 September backfill dry run -----
+
+from liz_scraper.normalize import infer_pricing as _infer  # noqa: E402
+
+
+def test_a_zero_dollar_plan_beside_a_paid_one_is_freemium():
+    assert _infer("Free $0 A complete way to start. Premium $12 / month") == "freemium"
+
+
+def test_what_a_freebie_is_worth_is_not_a_price():
+    assert _infer("1,000 free conversations · $30 value. Join the waitlist") == "unknown"
+
+
+def test_a_newsletter_subscribe_button_is_not_a_plan():
+    assert _infer("Home Tools About Sign in Subscribe Experiments") == "unknown"
+
+
+def test_real_prices_still_read_as_paid():
+    assert _infer("Pro $20 per month") == "paid"
+    assert _infer("Starter $9.99") == "paid"
+    assert _infer("Only 10 USD") == "paid"
+    assert _infer("$2M raised") == "unknown"
+
+
+def test_prices_of_goods_on_a_demo_are_not_the_products_price():
+    # An AI shopping agent's home page, full of its demo shop's stock.
+    assert _infer(
+        "Everyday hoodie Grey / Small €42 each View product. "
+        "Garden House Lisbon €180 per night View rooms"
+    ) == "unknown"

@@ -46,17 +46,24 @@ _CATEGORY_KEYWORDS: list[tuple[str, tuple[str, ...]]] = [
 ]
 
 # An actual price, not any stray "$". The trailing guard rejects funding
-# amounts — "$2M raised", "$500K seed" — which say nothing about what the
-# product costs.
+# amounts — "$2M raised", "$500K seed" — and what a freebie is "worth" ("1,000
+# free conversations · $30 value"), and the price of goods on a shopping demo
+# ("hoodie €42 each", "€180 per night"), none of which is what the product
+# costs.
+# Zero is not a price either: "Free $0" is the free plan (see _FREE_TIER).
 _PRICE_FIGURE = re.compile(
-    r"[$€£]\s?\d[\d,]*(?:\.\d+)?(?![\d,.]*\s?[mkb]\b)"
-    r"|\b\d+(?:\.\d+)?\s?(?:usd|eur|gbp)\b",
+    r"[$€£]\s?(?!0(?:[.,]0+)?(?![\d.,]))\d[\d,]*(?:\.\d+)?"
+    r"(?![\d,.]*\s?(?:[mkb]|value|worth|each"
+    r"|per\s+(?:night|item|person|piece|unit))\b)"
+    r"|\b(?!0(?:\.0+)?\s)\d+(?:\.\d+)?\s?(?:usd|eur|gbp)\b",
     re.I,
 )
 
+# A bare "Subscribe" is not here: on a launch page it is almost always the
+# newsletter box, and it once marked a free write-up as paid.
 _SUBSCRIPTION = re.compile(
     r"\bper\s+(?:month|year|seat|user)\b|/\s?(?:mo|month|yr|year)\b"
-    r"|\bbilled\s+(?:annually|monthly|yearly)\b|\bsubscribe\b"
+    r"|\bbilled\s+(?:annually|monthly|yearly)\b"
     r"|\bupgrade\s+to\s+(?:pro|premium|plus|paid)\b",
     re.I,
 )
@@ -74,6 +81,7 @@ _FREE_TIER = re.compile(
     r"|\b(?:get\s+started|start|sign\s+up)\s+(?:for\s+)?free\b(?!\s+trial)"
     r"|\bno\s+credit\s+card\b"
     r"|\bfree\s+to\s+use\b"
+    r"|[$€£]\s?0(?:[.,]00?)?(?![\d.,])"
     r"|\bfree\s+for\s+(?:personal|individual|non[-\s]?commercial)\b",
     re.I,
 )

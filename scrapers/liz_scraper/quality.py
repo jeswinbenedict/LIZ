@@ -46,6 +46,33 @@ _WRITE_UP_HOSTS = {
 }
 
 
+# Where a link is one person's conversation, generated page or file rather than
+# a product. Launch posts link these often: "I built this with Claude" goes to
+# the shared artifact. Published, one was listed as "Claude" and sat beside the
+# real Claude; another was a PDF named after the host it was served from.
+_SHARED_PATHS = {
+    "claude.ai": ("/share/", "/artifact/", "/artifacts/", "/public/"),
+    "chatgpt.com": ("/share/", "/c/"),
+    "chat.openai.com": ("/share/", "/c/"),
+    "gemini.google.com": ("/app/", "/share/", "/gem/"),
+    "g.co": ("/gemini/",),
+}
+_FILE_HOSTS = {"raw.githubusercontent.com", "gist.github.com",
+               "gist.githubusercontent.com"}
+_FILE_SUFFIXES = (".pdf", ".zip", ".doc", ".docx", ".ppt", ".pptx", ".csv")
+
+
+def _is_shared_content(website: str, host: str) -> bool:
+    try:
+        path = urlsplit(website).path.lower()
+    except ValueError:
+        return False
+    if _matches(host, _FILE_HOSTS) or path.endswith(_FILE_SUFFIXES):
+        return True
+    prefixes = _SHARED_PATHS.get(host, ())
+    return any(path.startswith(prefix) for prefix in prefixes)
+
+
 @dataclass(frozen=True)
 class Verdict:
     """Whether a row may be published, and why not when it may not."""
@@ -110,6 +137,8 @@ def assess(row: dict) -> Verdict:
             reasons.append(f"website is still the {host} listing, not the product")
         elif _matches(host, _WRITE_UP_HOSTS):
             reasons.append(f"website is a post on {host}, not a product")
+        elif _is_shared_content(website, host):
+            reasons.append(f"website is a shared chat or file on {host}, not a product")
 
     if not tagline:
         reasons.append("no tagline")

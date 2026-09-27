@@ -172,3 +172,87 @@ def test_category_prefers_title_over_body_noise():
     """
     facts = parse_page(html, "https://moodjournal.com")
     assert facts.category == "ai-productivity"
+
+
+# --- the pricing page -------------------------------------------------------
+
+from liz_scraper import enrich as enrich_module  # noqa: E402
+from liz_scraper.enrich import find_pricing_url  # noqa: E402
+
+
+def test_a_pricing_link_is_found_by_its_label():
+    html = """<a href="/docs">Docs</a><a href="/p/tiers">Pricing</a>"""
+    assert find_pricing_url(html, "https://acme.ai/") == "https://acme.ai/p/tiers"
+
+
+def test_a_pricing_link_is_found_by_its_path_when_the_label_says_nothing():
+    html = """<a href="https://app.acme.ai/plans">See what fits</a>"""
+    assert find_pricing_url(html, "https://acme.ai") == "https://app.acme.ai/plans"
+
+
+def test_someone_elses_pricing_page_is_not_this_products():
+    html = """<a href="https://stripe.com/pricing">Pricing</a>
+              <a href="https://other.co.uk/pricing">Pricing</a>"""
+    assert find_pricing_url(html, "https://acme.co.uk") is None
+
+
+def test_no_pricing_link_means_no_guess():
+    assert find_pricing_url("<a href='/blog'>Blog</a>", "https://acme.ai") is None
+
+
+class _Response:
+    def __init__(self, html):
+        self.content = html.encode()
+        self.headers = {"Content-Type": "text/html; charset=utf-8"}
+
+
+class _Session:
+    def __init__(self, pages):
+        self.pages = pages
+        self.fetched = []
+
+    def get(self, url):
+        self.fetched.append(url)
+        page = self.pages.get(url)
+        return _Response(page) if page is not None else None
+
+
+def test_a_silent_home_page_is_answered_by_its_pricing_page():
+    session = _Session({
+        "https://acme.ai": "<title>Acme</title><a href='/pricing'>Pricing</a>",
+        "https://acme.ai/pricing": "Free plan. Pro $20 per month.",
+    })
+    facts = enrich_module.enrich_url(session, "https://acme.ai")
+    assert facts.pricing_type == "freemium"
+
+
+def test_a_home_page_that_states_its_price_costs_no_second_request():
+    session = _Session({
+        "https://acme.ai": "<a href='/pricing'>Pricing</a> Only $9 per month.",
+    })
+    facts = enrich_module.enrich_url(session, "https://acme.ai")
+    assert facts.pricing_type == "paid"
+    assert session.fetched == ["https://acme.ai"]
+
+
+def test_an_unreadable_pricing_page_leaves_it_unknown():
+    session = _Session({"https://acme.ai": "<a href='/pricing'>Pricing</a>"})
+    facts = enrich_module.enrich_url(session, "https://acme.ai")
+    assert facts.pricing_type == "unknown"
+
+
+def test_a_tool_inside_a_bigger_site_does_not_take_the_sites_prices():
+    # Found in the first dry run: an Obsidian plugin came out "paid" from
+    # Obsidian Sync's pricing, a free survey from its publisher's SEO plans.
+    html = """<a href="https://obsidian.md/pricing">Pricing</a>
+              <a href="/pricing">Pricing</a>"""
+    assert find_pricing_url(
+        html, "https://community.obsidian.md/plugins/modelica-studio"
+    ) is None
+
+
+def test_a_tool_inside_a_bigger_site_may_have_pricing_of_its_own():
+    html = """<a href="/apps/acme/pricing">Pricing</a>"""
+    assert find_pricing_url(html, "https://host.dev/apps/acme") == (
+        "https://host.dev/apps/acme/pricing"
+    )

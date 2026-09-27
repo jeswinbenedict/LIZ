@@ -8,13 +8,23 @@ platforms it ships on.
 
 from __future__ import annotations
 
+import logging
+import re
 from dataclasses import dataclass, field
 from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 
 from .http_client import PoliteSession
-from .normalize import DEFAULT_CATEGORY, clean_text, infer_category, infer_pricing
+from .normalize import (
+    DEFAULT_CATEGORY,
+    canonical_url,
+    clean_text,
+    infer_category,
+    infer_pricing,
+)
+
+log = logging.getLogger(__name__)
 
 # Listing sites describe a product but are not the product. Their favicon and
 # og:image belong to the directory, so taking either would stamp the same logo
@@ -225,11 +235,107 @@ def resolve_and_enrich(
 
 
 def enrich_url(session: PoliteSession, url: str) -> PageFacts | None:
-    """Fetch and parse a product page. Returns None when the page is unusable."""
+    """Fetch and parse a product page. Returns None when the page is unusable.
+
+    When the home page says nothing about price, the pricing page usually
+    does: most products keep figures off the landing page and link a
+    "Pricing" tab instead. One more polite request answers it.
+    """
+    response = _html(session, url)
+    if response is None:
+        return None
+    facts = parse_page(response.content, url)
+    if facts.pricing_type == "unknown":
+        facts.pricing_type = pricing_from_linked_page(
+            session, response.content, url
+        )
+    return facts
+
+
+def _html(session: PoliteSession, url: str):
     response = session.get(url)
     if response is None:
         return None
-    content_type = response.headers.get("Content-Type", "")
-    if "html" not in content_type.lower():
+    if "html" not in response.headers.get("Content-Type", "").lower():
         return None
-    return parse_page(response.content, url)
+    return response
+
+
+# Link text that names a pricing page, in the forms sites actually use.
+_PRICING_TEXT = re.compile(
+    r"^\s*(?:pricing|prices|plans|plans\s*(?:&|and)\s*pricing|"
+    r"pricing\s*(?:&|and)\s*plans|see\s+pricing|view\s+pricing)\s*$",
+    re.I,
+)
+_PRICING_PATH = re.compile(r"/(?:pricing|plans|prices)(?:[/.#?]|$)", re.I)
+
+
+def _site(host: str) -> str:
+    """The registrable part of a host: app.acme.ai and acme.ai are one site.
+
+    Two labels, or three under a country's second level (acme.co.uk), so that
+    every .co.uk site is not taken for the same one.
+    """
+    labels = host.lower().split(":")[0].removeprefix("www.").split(".")
+    if len(labels) >= 3 and len(labels[-1]) == 2 and labels[-2] in _SECOND_LEVEL:
+        return ".".join(labels[-3:])
+    return ".".join(labels[-2:])
+
+
+_SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov", "edu"}
+
+
+def find_pricing_url(html: str | bytes, base_url: str) -> str | None:
+    """The product's own pricing page, as linked from its home page.
+
+    Only a page on the same site counts. A "Pricing" link to a payment
+    processor or a marketplace describes someone else's prices.
+
+    And when the tool is one page of a bigger site — a plugin in a community
+    directory, an article on a company blog — the site's pricing is the host's,
+    not the tool's: an Obsidian plugin is not $4 a month because Obsidian Sync
+    is. Then only a pricing page under the tool's own path counts.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    base = urlsplit(base_url)
+    home = _site(base.netloc)
+    scope = base.path.rstrip("/")
+    by_path = None
+    for anchor in soup.find_all("a", href=True):
+        href = anchor["href"].strip()
+        if href.startswith(("mailto:", "tel:", "javascript:")):
+            continue
+        absolute = urljoin(base_url, href)
+        parts = urlsplit(absolute)
+        if parts.scheme not in ("http", "https") or _site(parts.netloc) != home:
+            continue
+        if scope and not (
+            parts.netloc == base.netloc and parts.path.startswith(scope + "/")
+        ):
+            continue
+        if _PRICING_TEXT.match(anchor.get_text(" ", strip=True)):
+            return absolute
+        if by_path is None and _PRICING_PATH.search(parts.path):
+            by_path = absolute
+    return by_path
+
+
+def pricing_from_linked_page(
+    session: PoliteSession, home_html: str | bytes, home_url: str
+) -> str:
+    """Pricing model read from the page the home page links as its pricing.
+
+    "unknown" when there is no such link or it cannot be read. The URL is never
+    guessed: a /pricing that the site does not link is as likely to be a 404
+    page or a stale leftover as the real thing.
+    """
+    pricing_url = find_pricing_url(home_html, home_url)
+    if pricing_url is None or canonical_url(pricing_url) == canonical_url(home_url):
+        return "unknown"
+    response = _html(session, pricing_url)
+    if response is None:
+        return "unknown"
+    soup = BeautifulSoup(response.content, "lxml")
+    pricing = infer_pricing(clean_text(soup.get_text(" "), limit=20000))
+    log.debug("pricing for %s read from %s: %s", home_url, pricing_url, pricing)
+    return pricing

@@ -6,6 +6,12 @@ there is no second definition of "good enough" to drift from the first.
 
     python -m liz_scraper.review                 # report, change nothing
     python -m liz_scraper.review --apply         # publish what passes
+    python -m liz_scraper.review --published     # re-judge what is live
+
+When the rule gets stricter, rows published under the old one do not fail it
+by themselves. --published re-judges the live catalog by the current rule and,
+with --apply, moves what now fails back to pending with the reason recorded —
+held, not deleted, so a moderator can still restore one.
 
 Held rows keep their status. They are not deleted: most are held because
 enrichment could not reach the product page from a cloud IP, and a run from a
@@ -37,8 +43,10 @@ def _headers(key: str) -> dict[str, str]:
     }
 
 
-def fetch_pending(settings, session: requests.Session) -> list[dict]:
-    """Every pending row, paged — there are more than one request returns."""
+def fetch_pending(
+    settings, session: requests.Session, status: str = "pending"
+) -> list[dict]:
+    """Every row with `status`, paged — there are more than one request returns."""
     rows: list[dict] = []
     offset = 0
     while True:
@@ -46,7 +54,7 @@ def fetch_pending(settings, session: requests.Session) -> list[dict]:
             f"{settings.rest_url}/tools",
             params={
                 "select": "id,name,tagline,description,website_url,source",
-                "status": "eq.pending",
+                "status": f"eq.{status}",
                 "order": "created_at.asc",
                 "offset": offset,
                 "limit": PAGE,
@@ -96,12 +104,67 @@ def note_hold(settings, session: requests.Session, ids: list[str], reason: str) 
         resp.raise_for_status()
 
 
+def unpublish(settings, session: requests.Session, rows: list[dict]) -> None:
+    """Move rows that now fail the gate back to pending, each with its reason."""
+    held: dict[str, list[str]] = {}
+    for row in rows:
+        held.setdefault(assess(row).reasons[0], []).append(row["id"])
+    for reason, ids in held.items():
+        for start in range(0, len(ids), 50):
+            quoted = ",".join(f'"{i}"' for i in ids[start : start + 50])
+            resp = session.patch(
+                f"{settings.rest_url}/tools",
+                params={"id": f"in.({quoted})", "status": "eq.published"},
+                headers={**_headers(settings.service_role_key),
+                         "Prefer": "return=minimal"},
+                json={"status": "pending", "hold_reason": reason},
+                timeout=REQUEST_TIMEOUT,
+            )
+            resp.raise_for_status()
+
+
+# The sources this gate governs. GitHub rows come from the fetch-tools Edge
+# Function, where the repository *is* the product, and curated rows were chosen
+# by hand; judging either by a rule written for launch links would pull a
+# hundred genuine open-source tools for "linking to GitHub".
+GATED_SOURCES = {"hackernews", "producthunt", "scraper"}
+
+
+def judge_published(rows: list[dict]) -> list[dict]:
+    """Published rows from gated sources that the current rule would hold."""
+    return [
+        r for r in rows
+        if r.get("source") in GATED_SOURCES and not assess(r).publish
+    ]
+
+
+def review_published(settings, session: requests.Session, apply: bool) -> dict:
+    rows = fetch_pending(settings, session, status="published")
+    failing = judge_published(rows)
+    if apply and failing:
+        unpublish(settings, session, failing)
+    return {
+        "published": len(rows),
+        "held_back" if apply else "would_hold_back": len(failing),
+        "rows": [
+            {"name": r["name"], "website_url": r["website_url"],
+             "reason": assess(r).reasons[0]}
+            for r in failing
+        ],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--apply",
         action="store_true",
         help="Actually publish. Without it, nothing is written.",
+    )
+    parser.add_argument(
+        "--published",
+        action="store_true",
+        help="Re-judge the live catalog instead of the pending backlog.",
     )
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
@@ -118,6 +181,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     session = requests.Session()
+    if args.published:
+        report = review_published(settings, session, args.apply)
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return 0
+
     rows = fetch_pending(settings, session)
     passing = [r for r in rows if assess(r).publish]
 

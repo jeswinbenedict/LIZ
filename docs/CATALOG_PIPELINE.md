@@ -18,6 +18,8 @@ source feed  →  enrich  →  quality gate  →  published
 2. **Enrich.** `enrich.resolve_and_enrich` follows a listing URL through to the
    product's own page, and reads the description, logo, category and pricing
    from there. A directory entry is where a tool was found, not where it lives.
+   When the home page says nothing about price, enrichment follows the page's
+   own "Pricing" link and reads that instead (see *Pricing* below).
 3. **Gate.** `quality.assess` decides whether the finished row is fit to show.
 4. **Write.** Rows that pass are written `published`. Rows that do not are
    written `pending` with `hold_reason` set to the first thing wrong.
@@ -36,6 +38,11 @@ It is deliberately about usefulness to a reader, not completeness.
   catalog.
 - A website that is someone's write-up rather than the product — Medium,
   Reddit, X, YouTube.
+- A website that is one person's shared chat, generated artifact or file —
+  `claude.ai/share/…`, a Gemini conversation, a PDF on
+  `raw.githubusercontent.com`. Launch posts link these often ("I built this with
+  Claude"). One was published as "Claude", next to the real Claude. The
+  assistants' own home pages still pass: the rule is about the path.
 - No tagline, or one too short to say anything.
 - No description.
 
@@ -58,9 +65,67 @@ python -m liz_scraper.review --apply    # publish what passes, record the rest
 Needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. It is idempotent: running
 it twice publishes nothing the second time.
 
+When the rule gets stricter, what it published under the old rule does not fail
+by itself:
+
+```bash
+python -m liz_scraper.review --published          # what the current rule would pull
+python -m liz_scraper.review --published --apply  # move those back to pending
+```
+
+It only judges the sources the gate governs — Hacker News and Product Hunt.
+GitHub rows come from the `fetch-tools` Edge Function, where the repository *is*
+the product, and curated rows were picked by hand; the first dry run without
+that limit would have pulled twenty genuine open-source tools for linking to
+GitHub. Rows it moves keep the reason and can be restored from the admin
+console.
+
 The admin console's **Content** tab is the human half — filter by status, search,
 page through, tick several rows and publish or hide them together. It opens on
 `pending` because that is the queue that needs a person.
+
+## Pricing
+
+`normalize.infer_pricing` reads a page's text and answers free, freemium, paid —
+or **unknown**, which it prefers to a guess: a wrong badge is worse than none,
+because a reader cannot tell it is wrong.
+
+Most products keep figures off the landing page and link a pricing page, so when
+the home page is silent enrichment follows that link — only one the page itself
+links, never a guessed `/pricing`, and only on the same site. When the tool is
+one page of a bigger site (a plugin in a community directory, an article on a
+company blog) only a pricing page under the tool's own path counts; otherwise an
+Obsidian plugin would be "$4 a month" because Obsidian Sync is.
+
+Tools published before this existed are filled in by:
+
+```bash
+python -m liz_scraper.backfill_pricing            # report, change nothing
+python -m liz_scraper.backfill_pricing --apply    # write what was learned
+```
+
+It only writes a known answer over `unknown`, and learning a price does not
+alert followers (migration `0021`) — the product did not change, the catalog
+caught up.
+
+Things that looked like prices and were not, each now covered by a test: "$2M
+raised", "1,000 free conversations · $30 value", "Free $0" beside a paid plan
+(that is freemium), a newsletter's "Subscribe" button, and a shopping agent's
+demo shop ("hoodie €42 each", "€180 per night").
+
+The dry run over the 134 unknown tools on 27 September learned 15: 7 from a
+linked pricing page, 8 from home pages that state it.
+
+Expect most of the remainder to stay unknown. The bulk are Hacker News side
+projects with no pricing at all, and unknown is the honest answer for them.
+
+## GitHub tools
+
+`fetch-tools` takes a repository's *homepage* field as the tool's website. That
+field is whatever the owner typed, and among the rows it wrote were an Amazon
+affiliate link, a Discord invite, a LinkedIn profile, a YouTube channel and an
+arXiv PDF. `websiteFor` now falls back to the repository for social, chat,
+shortener, affiliate and paper links, and strips `utm_` tags from the rest.
 
 ## Product Hunt is currently blocked
 
