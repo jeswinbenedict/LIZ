@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liz/app/theme.dart';
 import 'package:liz/features/discover/discover_screen.dart';
+import 'package:liz/features/ask_liz/ask_liz_screen.dart';
 import 'package:liz/features/news/news_screen.dart';
 import 'package:liz/features/tool_detail/tool_detail_screen.dart';
 
@@ -52,6 +53,18 @@ void main() {
 
     await expectLater(tester, meetsGuideline(textContrastGuideline));
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    handle.dispose();
+  });
+
+  testWidgets('Ask Liz names its send button', (tester) async {
+    // Its only control past the text field was an icon-only button, which a
+    // screen reader announced as "button" — found by a sweep, fixed with a
+    // tooltip, and kept here so it cannot quietly go back.
+    final handle = tester.ensureSemantics();
+    await _pump(tester, const AskLizScreen());
+
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
     handle.dispose();
   });
 

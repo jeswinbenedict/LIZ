@@ -6,6 +6,7 @@ import '../../app/responsive/adaptive_shell.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_card.dart';
@@ -15,6 +16,10 @@ import 'track_controller.dart';
 /// Tools selected for side-by-side comparison from the Saved screen.
 final compareSelectionProvider = StateProvider<Set<String>>((ref) => {});
 
+/// Price filter on the Saved list. Filtered in memory: the list is already
+/// loaded and short, so asking the server again would only be slower.
+final savedPricingProvider = StateProvider<PricingType?>((ref) => null);
+
 class SavedScreen extends ConsumerWidget {
   const SavedScreen({super.key});
 
@@ -23,6 +28,7 @@ class SavedScreen extends ConsumerWidget {
     final signedIn = ref.watch(isSignedInProvider);
     final saved = ref.watch(bookmarkedToolsProvider);
     final selection = ref.watch(compareSelectionProvider);
+    final pricing = ref.watch(savedPricingProvider);
     final columns = gridColumnsFor(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
@@ -68,36 +74,82 @@ class SavedScreen extends ConsumerWidget {
                       onRetry: () => ref.invalidate(bookmarkedToolsProvider),
                     ),
                   ),
-                  data: (tools) => tools.isEmpty
-                      ? const SliverToBoxAdapter(
-                          child: EmptyView(
-                            icon: Icons.bookmark_border,
-                            title: 'Nothing saved yet',
-                            message:
-                                'Tap the bookmark on any tool to save it here.',
-                          ),
-                        )
-                      : SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                          sliver: SliverGrid(
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: columns,
-                                  mainAxisSpacing: 14,
-                                  crossAxisSpacing: 14,
-                                  mainAxisExtent: toolCardExtent(context) + 28,
-                                ),
-                            delegate: SliverChildBuilderDelegate(
-                              (context, i) => _SelectableToolCard(
-                                tool: tools[i],
-                                selected: selection.contains(tools[i].id),
-                                onToggleSelect: () =>
-                                    _toggleSelect(ref, tools[i].id),
+                  data: (all) {
+                    if (all.isEmpty) {
+                      return const SliverToBoxAdapter(
+                        child: EmptyView(
+                          icon: Icons.bookmark_border,
+                          title: 'Nothing saved yet',
+                          message:
+                              'Tap the bookmark on any tool to save it here.',
+                        ),
+                      );
+                    }
+                    final tools = [
+                      for (final tool in all)
+                        if (PricingFilter.matches(tool, pricing)) tool,
+                    ];
+                    return SliverMainAxisGroup(
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: PricingFilter(
+                                selected: pricing,
+                                onChanged: (value) =>
+                                    ref
+                                            .read(savedPricingProvider.notifier)
+                                            .state =
+                                        value,
                               ),
-                              childCount: tools.length,
                             ),
                           ),
                         ),
+                        if (tools.isEmpty)
+                          SliverToBoxAdapter(
+                            child: EmptyView(
+                              icon: Icons.sell_outlined,
+                              title: 'Nothing saved at this price',
+                              message:
+                                  'You have ${all.length} saved — try any price.',
+                              action: TextButton(
+                                onPressed: () =>
+                                    ref
+                                            .read(savedPricingProvider.notifier)
+                                            .state =
+                                        null,
+                                child: const Text('Show all'),
+                              ),
+                            ),
+                          )
+                        else
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                            sliver: SliverGrid(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: columns,
+                                    mainAxisSpacing: 14,
+                                    crossAxisSpacing: 14,
+                                    mainAxisExtent:
+                                        toolCardExtent(context) + 28,
+                                  ),
+                              delegate: SliverChildBuilderDelegate(
+                                (context, i) => _SelectableToolCard(
+                                  tool: tools[i],
+                                  selected: selection.contains(tools[i].id),
+                                  onToggleSelect: () =>
+                                      _toggleSelect(ref, tools[i].id),
+                                ),
+                                childCount: tools.length,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
             ],
           ),

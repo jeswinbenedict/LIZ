@@ -372,14 +372,23 @@ class _InputBarState extends State<_InputBar> {
             ),
           ),
           const SizedBox(width: 8),
-          FilledButton(
-            onPressed: () => widget.onSubmit(widget.controller.text),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(52, 52),
-              padding: EdgeInsets.zero,
-              shape: const CircleBorder(),
+          // An icon-only button has no name of its own, so a screen reader
+          // announced this as just "button". The name has to sit on the icon:
+          // a button merges its children's semantics into its own node, while
+          // a wrapping Tooltip labels a separate node above it and leaves the
+          // tappable one nameless — which the accessibility test caught. The
+          // tooltip stays as the hover hint.
+          Tooltip(
+            message: 'Ask Liz',
+            child: FilledButton(
+              onPressed: () => widget.onSubmit(widget.controller.text),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(52, 52),
+                padding: EdgeInsets.zero,
+                shape: const CircleBorder(),
+              ),
+              child: const Icon(Icons.arrow_upward, semanticLabel: 'Ask Liz'),
             ),
-            child: const Icon(Icons.arrow_upward),
           ),
         ],
       ),

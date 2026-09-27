@@ -182,10 +182,12 @@ class MockContentRepository implements ContentRepository {
   }
 
   @override
-  Future<List<Tool>> searchTools(String query) async {
+  Future<List<Tool>> searchTools(String query, {PricingType? pricing}) async {
     final s = query.toLowerCase().trim();
     if (s.isEmpty) return [];
     return _store.tools.where((t) {
+      if (t.status != PublishStatus.published) return false;
+      if (pricing != null && t.pricingType != pricing) return false;
       return t.name.toLowerCase().contains(s) ||
           t.tagline.toLowerCase().contains(s) ||
           t.description.toLowerCase().contains(s) ||

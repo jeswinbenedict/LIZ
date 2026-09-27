@@ -131,15 +131,20 @@ class SupabaseContentRepository implements ContentRepository {
   }
 
   @override
-  Future<List<Tool>> searchTools(String query) async {
+  Future<List<Tool>> searchTools(String query, {PricingType? pricing}) async {
     final s = query.trim();
     if (s.isEmpty) return [];
-    final rows = await _client
+    var request = _client
         .from('tools')
         .select(_toolCols)
         .eq('status', 'published')
-        .or('name.ilike.%$s%,tagline.ilike.%$s%,description.ilike.%$s%')
-        .limit(30);
+        .or('name.ilike.%$s%,tagline.ilike.%$s%,description.ilike.%$s%');
+    if (pricing != null) {
+      // On the server, so thirty results are thirty matches rather than thirty
+      // results filtered down to however many happened to be free.
+      request = request.eq('pricing_type', pricing.name);
+    }
+    final rows = await request.limit(30);
     return (rows as List).map((e) => Tool.fromJson(e)).toList();
   }
 

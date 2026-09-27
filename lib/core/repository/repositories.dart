@@ -69,7 +69,7 @@ abstract interface class ContentRepository {
   Future<Paginated<NewsItem>> news({int limit = 20, String? cursor});
 
   /// Full-text-ish search across tools (name, tagline, tags).
-  Future<List<Tool>> searchTools(String query);
+  Future<List<Tool>> searchTools(String query, {PricingType? pricing});
 
   /// Tools close to this one by meaning, nearest first. May be empty when
   /// nothing in the catalog is genuinely close — see migration 0023.
