@@ -78,6 +78,9 @@ abstract interface class ContentRepository {
 
 /// Community: posts, reviews, comments, likes, reports.
 abstract interface class CommunityRepository {
+  /// One active post, or null if it does not exist or has been hidden.
+  Future<Post?> post(String id);
+
   Future<Paginated<Post>> feed({
     bool trending = false,
     String? toolId,

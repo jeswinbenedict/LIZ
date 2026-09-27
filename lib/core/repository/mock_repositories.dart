@@ -233,6 +233,14 @@ class MockCommunityRepository implements CommunityRepository {
   bool _liked(String type, String id) => _store.likes.contains('$type:$id');
 
   @override
+  Future<Post?> post(String id) async {
+    final match = _store.posts
+        .where((p) => p.id == id && p.status == 'active')
+        .firstOrNull;
+    return match?.copyWith(likedByMe: _liked('post', match.id));
+  }
+
+  @override
   Future<Paginated<Post>> feed({
     bool trending = false,
     String? toolId,

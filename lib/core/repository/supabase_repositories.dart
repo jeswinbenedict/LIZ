@@ -12,6 +12,7 @@ import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../auth/auth_repository.dart';
 import '../errors.dart';
+import 'keyset.dart';
 import 'repositories.dart';
 
 int _decodeCursor(String? cursor) =>
@@ -116,17 +117,18 @@ class SupabaseContentRepository implements ContentRepository {
 
   @override
   Future<Paginated<NewsItem>> news({int limit = 20, String? cursor}) async {
-    final offset = _decodeCursor(cursor);
-    final rows = await _client
-        .from('news')
-        .select()
-        .eq('status', 'published')
+    // Keyset, not offset: news arrives hourly, and an offset page read after
+    // an insert repeats the last item of the page before. See keyset.dart.
+    var query = _client.from('news').select().eq('status', 'published');
+    final after = Keyset.decode(cursor);
+    if (after != null) query = query.or(after.filter('published_at'));
+    final rows = await query
         .order('published_at', ascending: false)
-        .range(offset, offset + limit - 1);
-    final items = (rows as List).map((e) => NewsItem.fromJson(e)).toList();
+        .order('id', ascending: false)
+        .limit(limit);
     return Paginated(
-      items: items,
-      cursor: _nextCursor(offset, limit, items.length),
+      items: (rows as List).map((e) => NewsItem.fromJson(e)).toList(),
+      cursor: Keyset.after(rows, 'published_at', limit),
     );
   }
 
@@ -188,21 +190,46 @@ class SupabaseCommunityRepository implements CommunityRepository {
     int limit = 20,
     String? cursor,
   }) async {
-    final offset = _decodeCursor(cursor);
     var query = _client.from('posts').select(_postCols).eq('status', 'active');
     if (toolId != null) query = query.eq('tool_id', toolId);
     if (userId != null) query = query.eq('user_id', userId);
-    final ordered = trending
-        ? query.order('like_count', ascending: false)
-        : query.order('created_at', ascending: false);
-    final rows = await ordered.range(offset, offset + limit - 1);
-    final items = (rows as List)
+
+    List<dynamic> rows;
+    String? next;
+    if (trending) {
+      // Likes change while someone reads, so there is no stable "after this
+      // row" to page from; an offset is no worse here.
+      final offset = _decodeCursor(cursor);
+      rows = await query
+          .order('like_count', ascending: false)
+          .range(offset, offset + limit - 1);
+      next = _nextCursor(offset, limit, rows.length);
+    } else {
+      // Newest first grows at the top, like News: page by keyset.
+      final after = Keyset.decode(cursor);
+      if (after != null) query = query.or(after.filter('created_at'));
+      rows = await query
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .limit(limit);
+      next = Keyset.after(rows, 'created_at', limit);
+    }
+    final items = rows
         .map((e) => Post.fromJson({...e, 'author': e['profiles']}))
         .toList();
-    return Paginated(
-      items: items,
-      cursor: _nextCursor(offset, limit, items.length),
-    );
+    return Paginated(items: items, cursor: next);
+  }
+
+  @override
+  Future<Post?> post(String id) async {
+    final row = await _client
+        .from('posts')
+        .select(_postCols)
+        .eq('id', id)
+        .eq('status', 'active')
+        .maybeSingle();
+    if (row == null) return null;
+    return Post.fromJson({...row, 'author': row['profiles']});
   }
 
   @override

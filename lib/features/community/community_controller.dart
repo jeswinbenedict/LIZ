@@ -60,9 +60,9 @@ final postByIdProvider = FutureProvider.autoDispose.family<Post?, String>((
   ref,
   postId,
 ) async {
-  final page = await ref.watch(communityRepositoryProvider).feed(limit: 100);
-  final matches = page.items.where((p) => p.id == postId);
-  return matches.isEmpty ? null : matches.first;
+  // Asked for by id. It used to read the newest 100 posts and look through
+  // them, so a link to anything older opened as "not found".
+  return ref.watch(communityRepositoryProvider).post(postId);
 });
 
 /// Comments for a post.
