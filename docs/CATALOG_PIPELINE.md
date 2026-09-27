@@ -113,8 +113,8 @@ raised", "1,000 free conversations · $30 value", "Free $0" beside a paid plan
 (that is freemium), a newsletter's "Subscribe" button, and a shopping agent's
 demo shop ("hoodie €42 each", "€180 per night").
 
-The dry run over the 134 unknown tools on 27 September learned 15: 7 from a
-linked pricing page, 8 from home pages that state it.
+The dry run over the 134 unknown tools on 27 September learned 14: 7 from a
+linked pricing page, 7 from home pages that state it.
 
 Expect most of the remainder to stay unknown. The bulk are Hacker News side
 projects with no pricing at all, and unknown is the honest answer for them.
