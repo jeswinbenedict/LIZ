@@ -109,3 +109,61 @@ export function newestFirst(items: Item[]): Item[] {
     (b.published_at ?? '').localeCompare(a.published_at ?? '')
   );
 }
+
+/**
+ * Hacker News stories about a tool, from the Algolia HN search API.
+ *
+ * The fallback when Google News turns this address away. A search on the name
+ * matches plenty that is not about the tool, so only stories with the name as
+ * a whole word in the title count, and not Show/Ask/Tell HN posts, which are
+ * about someone else's project that mentions it.
+ */
+export function hackerNewsFrom(data: unknown, name: string, limit = 10): Item[] {
+  const hits = (data as { hits?: unknown })?.hits;
+  if (!Array.isArray(hits) || !name.trim()) return [];
+  const escaped = name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // A whole word, in any script: letters and digits either side mean it is
+  // part of a longer word ("Cursor" in "Cursors" or "RecursorAI").
+  const aboutIt = new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}($|[^\\p{L}\\p{N}])`, 'iu');
+  const items: Item[] = [];
+  for (const h of hits as Record<string, unknown>[]) {
+    const title = typeof h.title === 'string' ? h.title.trim() : '';
+    if (!title || !aboutIt.test(title) || /^(show|ask|tell) hn\b/i.test(title)) continue;
+    const id = String(h.objectID ?? '');
+    items.push({
+      title,
+      note: null,
+      url: typeof h.url === 'string' && h.url ? h.url : `https://news.ycombinator.com/item?id=${id}`,
+      source: 'Hacker News',
+      published_at: typeof h.created_at === 'string' ? h.created_at : null,
+    });
+    if (items.length >= limit) break;
+  }
+  return items;
+}
+
+/** Cache key for a tool's updates: its repository, or its name. */
+export function cacheKey(repo: { owner: string; repo: string } | null, name: string): string {
+  return repo
+    ? `gh:${repo.owner}/${repo.repo}`.toLowerCase()
+    : `news:${name.trim().toLowerCase()}`;
+}
+
+export const FRESH_FOR_MS = 12 * 60 * 60 * 1000;
+export const STALE_UP_TO_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * What to do with a cached answer: serve it as is, fetch a new one but keep
+ * this as a fallback, or ignore it.
+ */
+export function cacheUse(
+  fetchedAt: string | null | undefined,
+  now: number,
+): 'fresh' | 'fallback' | 'none' {
+  if (!fetchedAt) return 'none';
+  const age = now - new Date(fetchedAt).getTime();
+  if (!Number.isFinite(age) || age < 0) return 'none';
+  if (age < FRESH_FOR_MS) return 'fresh';
+  if (age < STALE_UP_TO_MS) return 'fallback';
+  return 'none';
+}
