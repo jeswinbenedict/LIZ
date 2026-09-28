@@ -59,7 +59,11 @@ Deno.test('a public address that merely looks private is still allowed', () => {
 
 Deno.test('only image responses are relayed', () => {
   assert(isAllowedImageType('image/png'));
-  assert(isAllowedImageType('image/svg+xml; charset=utf-8'));
+  // Flutter cannot draw SVG, and SVG can carry script: refused, so the proxy
+  // falls through to the site's raster favicon.
+  assertEquals(isAllowedImageType('image/svg+xml; charset=utf-8'), false);
+  assertEquals(isAllowedImageType('IMAGE/SVG+XML'), false);
+  assert(isAllowedImageType('image/x-icon'));
   // An HTML or JSON body means the caller is fetching something else.
   assertEquals(isAllowedImageType('text/html'), false);
   assertEquals(isAllowedImageType('application/json'), false);

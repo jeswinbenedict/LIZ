@@ -142,7 +142,9 @@ write anything.
 ## Other surfaces
 
 - **The logo proxy** refuses private address ranges, cloud metadata endpoints,
-  non-image content types and responses over 5 MB. Covered by
+  non-image content types, SVG and responses over 5 MB. SVG can carry script,
+  and the proxy serves with open CORS from Liz's own origin; Flutter cannot draw
+  it anyway. Covered by
   `tests/logo_logic_test.ts`.
 - **No secret appears** in the repository or the client bundle. `.gitignore`
   covers `.env` files, keystores and `key.properties`.

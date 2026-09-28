@@ -65,12 +65,19 @@ export function checkTargetUrl(raw: string): UrlCheck {
   return { ok: true, url };
 }
 
-/// The proxy returns images. Anything else — HTML, JSON, a download — means the
-/// caller is using it to reach something other than a logo.
+/// The proxy returns raster images. Anything else — HTML, JSON, a download —
+/// means the caller is using it to reach something other than a logo.
+///
+/// SVG is refused too, for two reasons. Flutter cannot draw it, so a stored
+/// SVG logo came back as an image the app could not decode and the card fell
+/// to its letter tile — 84 published tools, 15% of the catalog, looked
+/// logo-less for that alone, when refusing it lets the proxy move on to the
+/// site's raster favicon. And an SVG can carry script, which this endpoint
+/// would otherwise serve from Liz's own origin with open CORS.
 export function isAllowedImageType(contentType: string | null): boolean {
   if (!contentType) return false;
   const type = contentType.split(';')[0].trim().toLowerCase();
-  return type.startsWith('image/');
+  return type.startsWith('image/') && !type.startsWith('image/svg');
 }
 
 /// A logo is small. A cap stops the proxy being used to move large files, and

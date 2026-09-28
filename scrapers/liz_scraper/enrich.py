@@ -114,15 +114,32 @@ def extract_logo(soup: BeautifulSoup, base_url: str) -> str | None:
     for attrs in selectors:
         for link in soup.find_all("link", attrs=attrs):
             href = link.get("href")
-            # Inline data: icons are usually emoji placeholders, and storing one
-            # would bloat the row with something the app can't render well.
-            if href and not href.strip().lower().startswith("data:"):
+            if _usable_icon(href, link.get("type")):
                 return urljoin(base_url, href)
 
     og_image = _meta(soup, prop="og:image")
-    if og_image and not og_image.strip().lower().startswith("data:"):
+    if _usable_icon(og_image):
         return urljoin(base_url, og_image)
     return None
+
+
+def _usable_icon(href: str | None, declared_type: str | None = None) -> bool:
+    """Whether an icon reference is one the app can draw.
+
+    Not inline data: those are usually emoji placeholders, and would bloat the
+    row. Not SVG: Flutter cannot draw it, so a stored SVG left the card on its
+    letter tile — 84 published tools on 28 September. Skipping it lets the
+    search carry on to a raster icon, or to /favicon.ico.
+    """
+    if not href:
+        return False
+    ref = href.strip().lower()
+    if ref.startswith("data:"):
+        return False
+    path = urlsplit(ref).path
+    if path.endswith((".svg", ".svgz")) or "svg" in (declared_type or "").lower():
+        return False
+    return True
 
 
 def extract_platforms(soup: BeautifulSoup) -> list[str]:
@@ -250,7 +267,37 @@ def enrich_url(session: PoliteSession, url: str) -> PageFacts | None:
     from_pricing_page = pricing_from_linked_page(session, response.content, url)
     if from_pricing_page != "unknown":
         facts.pricing_type = from_pricing_page
+    if facts.logo_url is None and not is_aggregator(url):
+        facts.logo_url = favicon_at_root(session, url)
     return facts
+
+
+# What an icon file starts with, whatever the server calls it: ICO, PNG, GIF,
+# JPEG. Servers label favicon.ico every which way (image/x-icon,
+# image/vnd.microsoft.icon, application/octet-stream), so the bytes decide.
+_ICON_MAGIC = (b"\x00\x00\x01\x00", b"\x89PNG", b"GIF8", b"\xff\xd8\xff")
+_MAX_ICON_BYTES = 1_000_000
+
+
+def favicon_at_root(session: PoliteSession, url: str) -> str | None:
+    """The site's /favicon.ico, when it serves one without declaring it.
+
+    Browsers have looked there by convention since long before <link rel=icon>,
+    so plenty of sites never bother to declare it — four of the 41 published
+    tools with no logo served one. Only real image bytes count: a single-page
+    app answers every path, /favicon.ico included, with its HTML shell and a 200.
+    """
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        return None
+    candidate = f"{parts.scheme}://{parts.netloc}/favicon.ico"
+    response = session.get(candidate)
+    if response is None:
+        return None
+    body = response.content or b""
+    if not body or len(body) > _MAX_ICON_BYTES or not body.startswith(_ICON_MAGIC):
+        return None
+    return candidate
 
 
 def _html(session: PoliteSession, url: str):

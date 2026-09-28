@@ -123,6 +123,32 @@ from paid to freemium.
 Expect most of the remainder to stay unknown. The bulk are Hacker News side
 projects with no pricing at all, and unknown is the honest answer for them.
 
+## Logos
+
+A tool with no usable logo shows a letter tile, which is fine when there is
+nothing better and a waste when there is. Three things decide what is stored:
+
+- **Declared icons first** — apple-touch-icon, then `rel=icon`, then og:image.
+- **Never SVG.** Flutter cannot draw it. On 28 September 84 published tools,
+  15% of the catalog, showed letter tiles only because their stored logo was an
+  SVG. Enrichment now passes over an SVG for a raster icon, and the logo proxy
+  refuses to relay one, falling through to the site's raster favicon instead —
+  that alone restored 65 of the 84.
+- **An undeclared `/favicon.ico`.** Browsers have always looked there, so many
+  sites never declare it. Only real image bytes count: a single-page app
+  answers `/favicon.ico` with its HTML shell and a 200.
+
+For tools stored before these rules:
+
+```bash
+python -m liz_scraper.backfill_logos --apply        # tools with no logo
+python -m liz_scraper.backfill_logos --svg --apply  # tools whose logo is SVG
+```
+
+Run on 28 September: 14 of 41 missing logos found, 56 of 84 SVG logos replaced
+with the site's own raster icon. The app looks up a favicon by domain for
+whatever is left.
+
 ## GitHub tools
 
 `fetch-tools` takes a repository's *homepage* field as the tool's website. That
@@ -131,31 +157,33 @@ affiliate link, a Discord invite, a LinkedIn profile, a YouTube channel and an
 arXiv PDF. `websiteFor` now falls back to the repository for social, chat,
 shortener, affiliate and paper links, and strips `utm_` tags from the rest.
 
-## Product Hunt is currently blocked
+## Product Hunt runs from home
 
-Every Product Hunt row in the backlog is held with:
+Product Hunt's edge returns `403` to datacenter addresses, so from a GitHub
+Actions runner or a cloud function the enrichment step never reaches the
+product page and the row is held with:
 
 > website is still the producthunt.com listing, not the product
 
-Their `robots.txt` **allows** `/products/*`, so this is not a policy we are
-ignoring — their edge returns `403` to datacenter IPs, so the enrichment step
-cannot reach the product page from a GitHub Actions runner and falls back to the
-listing URL.
+Their `robots.txt` **allows** `/products/*`, so this is not a policy being
+ignored. And it is not worked around: rotating user agents or proxying to look
+like a browser would be evading a block the site clearly intends. The scraper
+is built the other way round — it reads `robots.txt`, honours crawl delay, and
+skips sources that disallow it.
 
-We do not work around it. Rotating user agents or proxying to look like a
-browser would be evading a block the site clearly intends, and the scraper is
-built the other way round: it reads `robots.txt`, honours crawl delay, and skips
-sources that disallow it.
+The honest fix is running from a connection that is not blocked. Since 27
+September 2026 that is how it works:
 
-Two honest ways forward:
+- **Product Hunt** is scraped by the n8n workflow on the machine at home, every
+  twelve hours, which also re-reads any listings still held from before
+  (`retry_held`). See [n8n/README.md](../n8n/README.md).
+- **Hacker News** is scraped daily by GitHub Actions (`scrape-tools.yml`,
+  `--source hackernews`) as well, so it keeps flowing when that machine is off.
+  The Actions job no longer tries Product Hunt: it only ever produced held
+  rows for n8n to fix later.
 
-- **Run the scrape from a different host.** The `n8n/` workflow is designed for
-  this, and a residential IP is not usually blocked. This is the existing plan.
-- **Use Product Hunt's official API,** which returns the product's real website
-  and needs a developer token.
-
-Until one of those happens, those rows stay pending with their reason recorded.
-They are not deleted, and they are not counted as an unreviewed backlog.
+Product Hunt's official API, which needs a developer token, would remove the
+dependency on the home machine if that ever matters.
 
 ## Why pending rows are retried
 

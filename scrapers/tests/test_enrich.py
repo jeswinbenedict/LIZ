@@ -241,7 +241,8 @@ def test_with_no_pricing_page_the_home_page_still_answers():
     session = _Session({"https://acme.ai": "Only $9 per month."})
     facts = enrich_module.enrich_url(session, "https://acme.ai")
     assert facts.pricing_type == "paid"
-    assert session.fetched == ["https://acme.ai"]
+    # No pricing link, so no pricing page is fetched (and none is guessed).
+    assert not any("pricing" in u for u in session.fetched)
 
 
 def test_an_unreadable_pricing_page_leaves_it_unknown():
@@ -265,3 +266,87 @@ def test_a_tool_inside_a_bigger_site_may_have_pricing_of_its_own():
     assert find_pricing_url(html, "https://host.dev/apps/acme") == (
         "https://host.dev/apps/acme/pricing"
     )
+
+
+# --- a favicon nobody declared ----------------------------------------------
+
+class _BytesResponse:
+    def __init__(self, body, content_type="image/x-icon"):
+        self.content = body
+        self.headers = {"Content-Type": content_type}
+
+
+class _MixedSession(_Session):
+    """Pages as HTML strings, anything else as raw responses."""
+
+    def __init__(self, pages, raw):
+        super().__init__(pages)
+        self.raw = raw
+
+    def get(self, url):
+        if url in self.raw:
+            self.fetched.append(url)
+            return self.raw[url]
+        return super().get(url)
+
+
+def test_an_undeclared_favicon_is_found_at_the_root():
+    session = _MixedSession(
+        {"https://acme.ai/app": "<title>Acme</title>"},
+        {"https://acme.ai/favicon.ico": _BytesResponse(b"\x00\x00\x01\x00rest",
+                                                        "application/octet-stream")},
+    )
+    facts = enrich_module.enrich_url(session, "https://acme.ai/app")
+    assert facts.logo_url == "https://acme.ai/favicon.ico"
+
+
+def test_a_single_page_apps_html_is_not_a_favicon():
+    # SPAs answer every path with their HTML shell and a 200.
+    session = _MixedSession(
+        {"https://acme.ai": "<title>Acme</title>"},
+        {"https://acme.ai/favicon.ico": _BytesResponse(b"<!doctype html>", "text/html")},
+    )
+    assert enrich_module.enrich_url(session, "https://acme.ai").logo_url is None
+
+
+def test_a_declared_logo_costs_no_favicon_request():
+    session = _MixedSession(
+        {"https://acme.ai": "<link rel='icon' href='/i.png'><title>Acme</title>"}, {}
+    )
+    facts = enrich_module.enrich_url(session, "https://acme.ai")
+    assert facts.logo_url == "https://acme.ai/i.png"
+    assert "https://acme.ai/favicon.ico" not in session.fetched
+
+
+def test_the_logo_backfill_prefers_a_declared_icon_and_skips_listings():
+    from liz_scraper.backfill_logos import logo_for
+
+    declared = _MixedSession(
+        {"https://acme.ai": "<link rel='apple-touch-icon' href='/t.png'>"}, {}
+    )
+    assert logo_for(declared, "https://acme.ai") == "https://acme.ai/t.png"
+
+    undeclared = _MixedSession(
+        {"https://acme.ai": "<title>Acme</title>"},
+        {"https://acme.ai/favicon.ico": _BytesResponse(b"\x89PNG....")},
+    )
+    assert logo_for(undeclared, "https://acme.ai") == "https://acme.ai/favicon.ico"
+
+    # A listing's icon is the directory's, never the product's.
+    listing = _MixedSession({}, {})
+    assert logo_for(listing, "https://www.producthunt.com/products/x") is None
+    assert listing.fetched == []
+
+
+def test_an_svg_icon_is_passed_over_for_a_raster_one():
+    # Flutter cannot draw SVG; 84 published tools showed a letter tile for it.
+    from bs4 import BeautifulSoup
+    from liz_scraper.enrich import extract_logo
+
+    html = """<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
+              <link rel="icon" href="/favicon-32.png">"""
+    assert extract_logo(BeautifulSoup(html, "lxml"), "https://acme.ai") == (
+        "https://acme.ai/favicon-32.png"
+    )
+    only_svg = """<link rel="icon" href="/logo" type="image/svg+xml">"""
+    assert extract_logo(BeautifulSoup(only_svg, "lxml"), "https://acme.ai") is None
