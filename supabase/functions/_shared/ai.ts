@@ -83,6 +83,12 @@ export async function completeText({
         ],
         max_tokens: maxTokens,
         temperature: 0.4,
+        // gpt-oss is a reasoning model: it spends tokens thinking before it
+        // answers, and on a harder input (Chinese text, a paper title, URLs)
+        // the thinking could use up the whole budget and leave no answer.
+        // Summaries and rankings need little of it. Only sent to the models
+        // that accept it; other providers reject unknown parameters.
+        ...(AI_MODEL.startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {}),
       }),
     });
 
@@ -102,8 +108,15 @@ export async function completeText({
   }
 
   const data = await res.json();
-  const content: string = data?.choices?.[0]?.message?.content ?? '';
-  return content.trim();
+  const choice = data?.choices?.[0];
+  const content: string = (choice?.message?.content ?? '').trim();
+  // Out of tokens before any answer is the budget's fault, not the input's.
+  // Thrown rather than returned empty, so a caller that counts empty answers
+  // against a row (summarize-tools, after three) does not write it off.
+  if (!content && choice?.finish_reason === 'length') {
+    throw new Error('the model ran out of tokens before answering');
+  }
+  return content;
 }
 
 /// Extracts a JSON value from a model response that may be wrapped in prose or
@@ -113,9 +126,17 @@ export function extractJson<T>(text: string, fallback: T): T {
   const candidate = fenced ? fenced[1] : text;
   const start = candidate.search(/[[{]/);
   if (start === -1) return fallback;
-  try {
-    return JSON.parse(candidate.slice(start)) as T;
-  } catch (_) {
-    return fallback;
+  // The JSON may be followed by a sentence of prose. Try the longest span that
+  // ends on a closing bracket first, then shorter ones.
+  const body = candidate.slice(start);
+  for (let end = body.length; end > 0; end--) {
+    const c = body[end - 1];
+    if (c !== '}' && c !== ']') continue;
+    try {
+      return JSON.parse(body.slice(0, end)) as T;
+    } catch (_) {
+      // Keep looking for an earlier closing bracket.
+    }
   }
+  return fallback;
 }

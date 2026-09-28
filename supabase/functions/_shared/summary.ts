@@ -39,7 +39,8 @@ export async function summarize(
 ): Promise<string[]> {
   const text = await completeText({
     system: SUMMARY_SYSTEM,
-    maxTokens: 400,
+    // Room for a reasoning model to think briefly and still answer.
+    maxTokens: 1000,
     user: `Kind: ${kind}\nTitle: ${title ?? ''}\nDescription: ${description ?? ''}`,
   });
   return parseBullets(text);

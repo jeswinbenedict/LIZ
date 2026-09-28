@@ -41,3 +41,20 @@ Deno.test('extractJson falls back rather than throwing on junk', () => {
   assertEquals(extractJson('not json at all', { fallback: true }), { fallback: true });
   assertEquals(extractJson('{"broken": ', { fallback: true }), { fallback: true });
 });
+
+Deno.test('extractJson reads JSON followed by prose', () => {
+  // The whole-remainder parse failed on this, the summary came back empty, and
+  // the row was counted as having nothing to summarise.
+  const out = extractJson<{ bullets: string[] }>(
+    '{"bullets": ["One", "Two", "Three"]}\n\nLet me know if you want more.',
+    { bullets: [] },
+  );
+  assertEquals(out.bullets, ['One', 'Two', 'Three']);
+});
+
+Deno.test('extractJson keeps nested brackets and ignores a trailing one', () => {
+  const out = extractJson<{ a: { b: number[] } }>('{"a": {"b": [1, 2]}} (see [1])', {
+    a: { b: [] },
+  });
+  assertEquals(out.a.b, [1, 2]);
+});
