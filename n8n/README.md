@@ -3,7 +3,8 @@
 Most of Liz's scheduled work runs inside Supabase and needs nothing from you:
 pg_cron fetches GitHub tools daily and news hourly, backfills embeddings and
 summaries every fifteen minutes, refreshes the rankings, and runs the health
-checks. A GitHub Actions workflow runs the scraper daily as well.
+checks. A GitHub Actions workflow scrapes Hacker News daily as well; it no
+longer tries Product Hunt, which this workflow now owns.
 
 This workflow exists for one thing those cannot do: **reach Product Hunt.**
 

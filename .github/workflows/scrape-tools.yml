@@ -1,7 +1,12 @@
-# Free scheduler for the BeautifulSoup tool scraper.
+# Free scheduler for the BeautifulSoup tool scraper — Hacker News only.
 #
-# Runs discovery + enrichment and upserts into `tools` with status='pending',
-# so nothing reaches Discover until an admin approves it.
+# Runs discovery + enrichment, and the quality gate (scrapers/liz_scraper/
+# quality.py) decides per row whether it is published or held with a reason.
+#
+# Product Hunt is left to the n8n workflow on the machine at home
+# (n8n/README.md). Its edge answers 403 to every GitHub Actions runner, so
+# scraping it here only wrote rows held as "still the listing" for n8n to
+# fix twelve hours later — two requests per launch for one result.
 #
 # Setup (one time): repo → Settings → Secrets and variables → Actions, add
 #   SUPABASE_URL                e.g. https://<ref>.supabase.co
@@ -38,16 +43,16 @@ jobs:
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
             echo "::warning::Supabase secrets not set — running dry."
-            python -m liz_scraper --dry-run --limit 20
+            python -m liz_scraper --source hackernews --dry-run --limit 20
             exit 0
           fi
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            python -m liz_scraper --dry-run --limit 20
+            python -m liz_scraper --source hackernews --dry-run --limit 20
           else
             # No --status: the quality gate decides per row. Passing
             # --status pending here forced every row into the review queue and
             # bypassed the gate entirely.
-            python -m liz_scraper --limit 20
+            python -m liz_scraper --source hackernews --limit 20
           fi
 
       # A tool without an embedding is invisible to Ask Liz, so backfill in the
