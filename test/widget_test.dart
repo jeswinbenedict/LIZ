@@ -6,7 +6,7 @@ import 'package:liz/app/theme.dart';
 import 'package:liz/features/discover/discover_screen.dart';
 
 void main() {
-  testWidgets('Discover screen renders the Rising Early section on mock data',
+  testWidgets('Discover screen renders the rising chart on mock data',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -21,6 +21,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('Rising Early'), findsOneWidget);
+    expect(find.text('Rising this week'), findsOneWidget);
   });
 }

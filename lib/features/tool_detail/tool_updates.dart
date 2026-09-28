@@ -77,18 +77,22 @@ class ToolUpdatesSection extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final scheme = Theme.of(context).colorScheme;
     final key = (name, sourceUrl, slug);
     final async = ref.watch(toolUpdatesProvider(key));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 36),
         Row(
           children: [
-            Icon(Icons.new_releases_outlined, size: 18, color: scheme.primary),
-            const SizedBox(width: 6),
-            Text("What's new", style: Theme.of(context).textTheme.titleMedium),
+            Semantics(
+              header: true,
+              child: Text(
+                "What's new",
+                style: LizText.title2.copyWith(color: context.liz.textPrimary),
+              ),
+            ),
             const Spacer(),
             IconButton(
               tooltip: 'Refresh',
@@ -98,7 +102,7 @@ class ToolUpdatesSection extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         async.when(
           loading: () => const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
@@ -125,7 +129,6 @@ class ToolUpdatesSection extends ConsumerWidget {
                   ],
                 ),
         ),
-        const SizedBox(height: 28),
       ],
     );
   }
@@ -144,7 +147,7 @@ class _UpdateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final isRelease = item.source == 'GitHub Releases';
     return InkWell(
       onTap: _open,
@@ -159,9 +162,9 @@ class _UpdateRow extends StatelessWidget {
                   ? Icons.rocket_launch_outlined
                   : Icons.campaign_outlined,
               size: 18,
-              color: scheme.primary,
+              color: p.accent,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,10 +173,7 @@ class _UpdateRow extends StatelessWidget {
                     item.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
-                    ),
+                    style: LizText.headline.copyWith(color: p.textPrimary),
                   ),
                   if (item.note != null) ...[
                     const SizedBox(height: 2),
@@ -181,11 +181,7 @@ class _UpdateRow extends StatelessWidget {
                       item.note!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: scheme.onSurfaceVariant,
-                        height: 1.3,
-                      ),
+                      style: LizText.callout.copyWith(color: p.textSecondary),
                     ),
                   ],
                   const SizedBox(height: 4),
@@ -193,16 +189,13 @@ class _UpdateRow extends StatelessWidget {
                     item.publishedAt != null
                         ? '${item.source} · ${timeAgo(item.publishedAt!)}'
                         : item.source,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: scheme.onSurfaceVariant,
-                    ),
+                    style: LizText.footnote.copyWith(color: p.textSecondary),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.open_in_new, size: 16, color: scheme.onSurfaceVariant),
+            Icon(Icons.north_east, size: 16, color: p.textTertiary),
           ],
         ),
       ),

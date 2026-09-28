@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 
@@ -28,7 +29,7 @@ class EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     return Center(
       // Scrollable so the illustration and its message survive a short box —
       // an empty state inside a filtered list can have very little height, and
@@ -39,30 +40,40 @@ class EmptyView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // docs/DESIGN.md §7, Empty state: an icon in a soft circle, a
+              // title, one sentence, at most one action.
               Container(
-                width: 72,
-                height: 72,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
+                  color: p.surfaceMuted,
                   shape: BoxShape.circle,
+                  border: Border.all(color: p.hairline),
                 ),
-                child: Icon(icon, size: 34, color: scheme.onSurfaceVariant),
+                child: Icon(icon, size: 26, color: p.textSecondary),
               ),
-              const SizedBox(height: 18),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (message != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  message!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: scheme.onSurfaceVariant),
+              const SizedBox(height: 16),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Column(
+                  children: [
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: LizText.title3.copyWith(color: p.textPrimary),
+                    ),
+                    if (message != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        message!,
+                        textAlign: TextAlign.center,
+                        style: LizText.callout.copyWith(color: p.textSecondary),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-              if (action != null) ...[const SizedBox(height: 18), action!],
+              ),
+              if (action != null) ...[const SizedBox(height: 20), action!],
             ],
           ),
         ),
@@ -82,9 +93,30 @@ class ErrorView extends StatelessWidget {
       icon: Icons.error_outline,
       title: 'Something went wrong',
       message: message ?? 'Please try again.',
-      action: FilledButton.tonal(
+      action: FilledButton(
+        style: LizButtons.tonal(context.liz),
         onPressed: onRetry,
-        child: const Text('Retry'),
+        child: const Text('Try again'),
+      ),
+    );
+  }
+}
+
+/// Shown for any address the app does not know.
+class NotFoundScreen extends StatelessWidget {
+  const NotFoundScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: EmptyView(
+        icon: Icons.explore_off_outlined,
+        title: 'This page is not here',
+        message: 'The link may be mistyped, or the page may have moved.',
+        action: FilledButton(
+          onPressed: () => context.go('/'),
+          child: const Text('Go to Discover'),
+        ),
       ),
     );
   }

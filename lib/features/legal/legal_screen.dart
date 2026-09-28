@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/responsive/breakpoints.dart';
+import '../../app/theme.dart';
 
 /// Where questions about these documents go. Set at build time with
 /// `--dart-define=LEGAL_CONTACT=...` once there is an address to publish; until
@@ -20,47 +21,55 @@ class LegalScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final p = context.liz;
+    final heading = LizText.title3.copyWith(color: p.textPrimary);
+    final paragraph = LizText.body.copyWith(
+      color: p.textPrimary,
+      height: 24 / 15,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(document.title)),
       body: MaxWidth(
-        maxWidth: 720,
+        maxWidth: 760,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 56),
           children: [
             Text(
               'Last updated ${document.updated}',
-              style: text.bodySmall?.copyWith(color: muted),
+              style: LizText.footnote.copyWith(color: p.textSecondary),
             ),
             const SizedBox(height: 12),
-            Text(document.summary, style: text.bodyLarge),
+            Text(
+              document.summary,
+              style: LizText.title3.copyWith(
+                color: p.textSecondary,
+                fontWeight: FontWeight.w400,
+                height: 27 / 18,
+              ),
+            ),
             for (final section in document.sections) ...[
               const SizedBox(height: 28),
               Semantics(
                 header: true,
-                child: Text(section.heading, style: text.titleMedium),
+                child: Text(section.heading, style: heading),
               ),
-              for (final paragraph in section.body) ...[
-                const SizedBox(height: 8),
-                Text(paragraph, style: text.bodyMedium?.copyWith(height: 1.5)),
+              for (final line in section.body) ...[
+                const SizedBox(height: 10),
+                Text(line, style: paragraph),
               ],
             ],
             const SizedBox(height: 28),
-            Semantics(
-              header: true,
-              child: Text('Questions', style: text.titleMedium),
-            ),
+            Semantics(header: true, child: Text('Questions', style: heading)),
             const SizedBox(height: 8),
             Text(
               legalContact.isEmpty
-                  ? 'To remove everything tied to you, use Settings → Delete '
+                  ? 'To remove everything tied to you, use Settings > Delete '
                         'account. To have a review, post or listing looked at, '
                         'use Report on it and a moderator will see it.'
                   : 'Write to $legalContact. To remove everything tied to you '
-                        'straight away, use Settings → Delete account.',
-              style: text.bodyMedium?.copyWith(height: 1.5),
+                        'straight away, use Settings > Delete account.',
+              style: paragraph,
             ),
           ],
         ),
@@ -135,7 +144,7 @@ class LegalDocument {
             'browse do not see your address.',
       ]),
       LegalSection('Deleting your account', [
-        'Settings → Delete account removes your account at once, together with '
+        'Settings > Delete account removes your account at once, together with '
             'your profile, saves, follows, reviews, posts, comments, likes, '
             'notifications and notification tokens.',
         'Two things are kept without your name on them: reports you filed, so '

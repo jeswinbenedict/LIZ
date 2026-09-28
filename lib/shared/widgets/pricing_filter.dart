@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/tool.dart';
+import 'page_header.dart';
 
 /// Filter a list by what a tool costs.
 ///
@@ -59,15 +60,16 @@ class PricingFilter extends StatelessWidget {
             ),
           ),
       ],
-      child: Chip(
-        label: Text(labels[selected]!),
-        avatar: Icon(
-          Icons.sell_outlined,
-          size: 17,
-          color: on ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+      // The menu button owns the tap; the pill is only its face.
+      child: IgnorePointer(
+        child: LizFilterPill(
+          label: labels[selected]!,
+          selected: on,
+          onTap: () {},
+          icon: Icons.sell_outlined,
+          trailingIcon: Icons.expand_more,
+          semanticLabel: 'Price: ${labels[selected]}',
         ),
-        backgroundColor: on ? scheme.secondaryContainer : null,
-        side: on ? BorderSide.none : null,
       ),
     );
   }

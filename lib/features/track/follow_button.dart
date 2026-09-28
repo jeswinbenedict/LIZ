@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme.dart';
 import '../auth/guard.dart';
 import 'track_controller.dart';
 
@@ -10,8 +11,11 @@ import 'track_controller.dart';
 /// climb into the top ten — so following something does not become a feed of
 /// noise. See migration 0021.
 class FollowButton extends ConsumerWidget {
-  const FollowButton({super.key, required this.toolId});
+  const FollowButton({super.key, required this.toolId, this.compact = false});
   final String toolId;
+
+  /// An icon-only tonal circle (phone action rows).
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,16 +47,27 @@ class FollowButton extends ConsumerWidget {
       },
     );
 
-    return following
-        ? OutlinedButton.icon(
-            onPressed: toggle,
-            icon: const Icon(Icons.notifications_active, size: 18),
-            label: const Text('Following'),
-          )
-        : OutlinedButton.icon(
-            onPressed: toggle,
-            icon: const Icon(Icons.notifications_none, size: 18),
-            label: const Text('Follow'),
-          );
+    if (compact) {
+      return IconButton.filled(
+        style: LizButtons.tonal(context.liz).merge(
+          const ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(44, 44))),
+        ),
+        tooltip: following ? 'Following — tap to unfollow' : 'Follow',
+        onPressed: toggle,
+        icon: Icon(
+          following ? Icons.notifications_active : Icons.notifications_none,
+          size: 20,
+        ),
+      );
+    }
+    return FilledButton.icon(
+      style: LizButtons.tonal(context.liz).merge(LizButtons.capsule),
+      onPressed: toggle,
+      icon: Icon(
+        following ? Icons.notifications_active : Icons.notifications_none,
+        size: 18,
+      ),
+      label: Text(following ? 'Following' : 'Follow'),
+    );
   }
 }

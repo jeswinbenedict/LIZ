@@ -6,11 +6,29 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../core/config/env.dart';
 import '../models/news_item.dart';
-import 'badges.dart';
 import 'time_ago.dart';
 
-/// A tech-news article card. Tapping the card or "Read" opens the original
-/// source (Liz shows snippet + link out only — never republishes full text).
+/// A news source as a reader would write it: `techcrunch` → "TechCrunch".
+String newsSourceLabel(String? source) {
+  const known = {
+    'hackernews': 'Hacker News',
+    'techcrunch': 'TechCrunch',
+    'theverge': 'The Verge',
+    'arstechnica': 'Ars Technica',
+    'wired': 'Wired',
+    'engadget': 'Engadget',
+    'techreview': 'MIT Technology Review',
+    'devto': 'DEV',
+  };
+  if (source == null || source.isEmpty) return 'News';
+  return known[source] ?? source[0].toUpperCase() + source.substring(1);
+}
+
+/// One article in the news list (docs/DESIGN.md §8, News): an editorial row
+/// — source and time as an eyebrow, the headline, two lines of summary, and
+/// the image beside it on wide screens or above it on phones. The AI "quick
+/// take" folds away so the list can be scanned; it used to be a tinted box
+/// inside every card, which tripled the height of the feed.
 class NewsCard extends StatelessWidget {
   const NewsCard({super.key, required this.item});
   final NewsItem item;
@@ -24,150 +42,105 @@ class NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      child: InkWell(
-        onTap: _open,
-        child: Column(
+    final p = context.liz;
+    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 560;
+
+        final text = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Decorative: the headline directly below carries the meaning, so
-            // announcing the press photo as well only adds noise.
-            if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
-              ExcludeSemantics(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(LizRadius.lg),
-                  ),
-                  child: CachedNetworkImage(
-                    imageUrl: Env.proxiedImage(item.imageUrl!),
-                    height: 168,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    // Press photos arrive at full editorial resolution — a
-                    // quarter-megabyte JPEG decoded for a 168-pixel strip.
-                    memCacheHeight: 336,
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
-                    placeholder: (_, _) => Container(
-                      height: 168,
-                      color: scheme.surfaceContainerHighest,
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    newsSourceLabel(item.source),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LizText.footnote.copyWith(
+                      color: LizColors.legibleOn(p.accent, p.canvas),
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
+                Text(
+                  '  ·  ${timeAgo(item.publishedAt)}',
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              item.title,
+              style: LizText.title3.copyWith(color: p.textPrimary),
+            ),
+            if (item.snippet.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                item.snippet,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: LizText.callout.copyWith(color: p.textSecondary),
               ),
-            Padding(
-              padding: const EdgeInsets.all(LizSpacing.md),
+            ],
+          ],
+        );
+
+        final image = hasImage
+            ? ExcludeSemantics(
+                child: ClipRSuperellipse(
+                  borderRadius: BorderRadius.circular(LizRadius.sm),
+                  child: CachedNetworkImage(
+                    imageUrl: Env.proxiedImage(item.imageUrl!),
+                    width: wide ? 168 : double.infinity,
+                    height: wide ? 112 : 180,
+                    fit: BoxFit.cover,
+                    memCacheHeight: 360,
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                    placeholder: (_, _) => Container(
+                      width: wide ? 168 : double.infinity,
+                      height: wide ? 112 : 180,
+                      color: p.surfaceMuted,
+                    ),
+                  ),
+                ),
+              )
+            : null;
+
+        return Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: _open,
+            customBorder: LizRadius.shape(LizRadius.md),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      if (item.source != null)
-                        LizPill(
-                          label: item.source!.toUpperCase(),
-                          color: LizColors.brand,
-                        ),
-                      const SizedBox(width: 8),
-                      Text(
-                        timeAgo(item.publishedAt),
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.open_in_new,
-                        size: 15,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    item.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      height: 1.25,
-                    ),
-                  ),
-                  if (item.snippet.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      item.snippet,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: scheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                  if (item.aiSummary.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(LizRadius.sm),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                size: 14,
-                                color: scheme.primary,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Quick take',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12.5,
-                                  color: scheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          for (final b in item.aiSummary.take(3))
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 3),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    '•  ',
-                                    style: TextStyle(height: 1.3),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      b,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                  if (wide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: text),
+                        if (image != null) ...[
+                          const SizedBox(width: 20),
+                          image,
                         ],
-                      ),
-                    ),
+                      ],
+                    )
+                  else ...[
+                    if (image != null) ...[image, const SizedBox(height: 14)],
+                    text,
                   ],
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      TextButton.icon(
-                        onPressed: _open,
-                        icon: const Icon(Icons.article_outlined, size: 18),
-                        label: const Text('Read'),
-                      ),
-                      const Spacer(),
+                      if (item.aiSummary.isNotEmpty)
+                        Expanded(child: _QuickTake(bullets: item.aiSummary))
+                      else
+                        const Spacer(),
                       IconButton(
                         tooltip: 'Share',
                         icon: const Icon(Icons.ios_share, size: 18),
@@ -180,9 +153,100 @@ class NewsCard extends StatelessWidget {
                 ],
               ),
             ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The AI summary of an article, folded until asked for.
+class _QuickTake extends StatefulWidget {
+  const _QuickTake({required this.bullets});
+  final List<String> bullets;
+
+  @override
+  State<_QuickTake> createState() => _QuickTakeState();
+}
+
+class _QuickTakeState extends State<_QuickTake> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final duration = LizMotion.of(context, LizMotion.standard);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          button: true,
+          expanded: _open,
+          child: TextButton.icon(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(48, 40),
+            ),
+            onPressed: () => setState(() => _open = !_open),
+            icon: const Icon(Icons.auto_awesome, size: 16),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Quick take'),
+                AnimatedRotation(
+                  turns: _open ? 0.5 : 0,
+                  duration: duration,
+                  child: const Icon(Icons.expand_more, size: 18),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+        AnimatedSize(
+          duration: duration,
+          curve: LizMotion.ease,
+          alignment: Alignment.topLeft,
+          child: !_open
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final b in widget.bullets.take(3))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                margin: const EdgeInsets.only(
+                                  top: 8,
+                                  right: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: p.accent,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  b,
+                                  style: LizText.callout.copyWith(
+                                    color: p.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }

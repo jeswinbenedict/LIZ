@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/states.dart';
+import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/tool_logo.dart';
 
 final _compareProvider = FutureProvider.autoDispose.family<List<Tool>, String>((
@@ -62,40 +64,113 @@ class CompareScreen extends ConsumerWidget {
   }
 }
 
+/// Tools side by side (docs/DESIGN.md §8, Compare). Rows have fixed
+/// heights so the attribute labels can stay pinned on a narrow screen while
+/// the tool columns scroll beside them — the old table scrolled the labels
+/// away with everything else.
 class _CompareTable extends StatelessWidget {
   const _CompareTable({required this.tools});
   final List<Tool> tools;
 
+  static const _labelWidth = 112.0;
+  static const _minColumn = 200.0;
+
   @override
   Widget build(BuildContext context) {
-    const colWidth = 220.0;
-    final rows = <(_String, Widget Function(Tool))>[
-      (const _String('Pricing'), (t) => PricingBadge(t.pricingType)),
-      (const _String('Price'), (t) => Text(t.priceNote ?? '—')),
-      (
-        const _String('Rating'),
+    final p = context.liz;
+    final scale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+
+    // The best value in a row is worth pointing out; that is what a
+    // comparison is for.
+    final bestRating = tools
+        .where((t) => t.ratingCount > 0)
+        .fold<double>(0, (m, t) => t.avgRating > m ? t.avgRating : m);
+    final bestTrend = tools.fold<double>(
+      0,
+      (m, t) => t.trendScore > m ? t.trendScore : m,
+    );
+
+    // A Wrap, not a Row: at the narrowest column, stars, the figure and the
+    // "Best" badge do not fit on one line.
+    Widget emphasis(String text, bool best) => Wrap(
+      spacing: 6,
+      runSpacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          text,
+          style: LizText.callout.copyWith(
+            color: p.textPrimary,
+            fontWeight: best ? FontWeight.w700 : FontWeight.w400,
+            fontFeatures: LizText.tabular,
+          ),
+        ),
+        if (best && tools.length > 1) LizPill(label: 'Best', color: p.positive),
+      ],
+    );
+
+    final rows = <_Row>[
+      _Row('Pricing', 52, (t) => PricingBadge(t.pricingType)),
+      _Row(
+        'Price',
+        52,
+        (t) => Text(
+          t.priceNote ?? '—',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: LizText.callout.copyWith(color: p.textPrimary),
+        ),
+      ),
+      _Row(
+        'Rating',
+        52,
         (t) => t.ratingCount == 0
-            ? const Text('—')
-            : Row(
-                mainAxisSize: MainAxisSize.min,
+            ? Text('—', style: LizText.callout.copyWith(color: p.textSecondary))
+            : Wrap(
+                spacing: 6,
+                runSpacing: 2,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   RatingStars(t.avgRating, size: 14),
-                  const SizedBox(width: 4),
-                  Text(t.avgRating.toStringAsFixed(1)),
+                  emphasis(
+                    t.avgRating.toStringAsFixed(1),
+                    t.avgRating == bestRating,
+                  ),
                 ],
               ),
       ),
-      (
-        const _String('Category'),
-        (t) => Text(t.category.replaceAll('ai-', '')),
+      _Row(
+        'Category',
+        52,
+        (t) => Text(
+          categoryLabel(t.category),
+          style: LizText.callout.copyWith(color: p.textPrimary),
+        ),
       ),
-      (
-        const _String('Platforms'),
-        (t) => Text(t.platforms.isEmpty ? '—' : t.platforms.join(', ')),
+      _Row(
+        'Platforms',
+        52,
+        (t) => Text(
+          t.platforms.isEmpty ? '—' : t.platforms.join(', '),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: LizText.callout.copyWith(color: p.textPrimary),
+        ),
       ),
-      (const _String('Rank'), (t) => TrendBadge(t)),
-      (
-        const _String('Key features'),
+      _Row(
+        'Trending',
+        52,
+        (t) => emphasis(
+          t.trendRank != null
+              ? '#${t.trendRank}'
+              : compactCount(t.trendScore.round()),
+          t.trendScore == bestTrend,
+        ),
+      ),
+      _Row(
+        'Tags',
+        84,
         (t) => Wrap(
           spacing: 4,
           runSpacing: 4,
@@ -104,93 +179,124 @@ class _CompareTable extends StatelessWidget {
       ),
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row: tool logos + names
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                const SizedBox(width: 120),
-                for (final t in tools)
-                  SizedBox(
-                    width: colWidth,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Column(
-                        children: [
-                          ToolLogo(tool: t, size: 48),
-                          const SizedBox(height: 8),
-                          Text(
-                            t.name,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            t.tagline,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+    const headerHeight = 188.0;
+
+    Widget cell(double height, Widget child, {bool first = false}) => Container(
+      height: height * scale,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.centerLeft,
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: p.hairline)),
+      ),
+      child: child,
+    );
+
+    final labels = SizedBox(
+      width: _labelWidth,
+      child: Column(
+        children: [
+          SizedBox(height: headerHeight * scale),
+          for (final row in rows)
+            cell(
+              row.height,
+              Text(
+                row.label,
+                style: LizText.subhead.copyWith(
+                  color: p.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    Widget column(Tool t, double width) => SizedBox(
+      width: width,
+      child: Column(
+        children: [
+          SizedBox(
+            height: headerHeight * scale,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ToolLogo(tool: t, size: 52),
+                  const SizedBox(height: 10),
+                  Text(
+                    t.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LizText.headline.copyWith(color: p.textPrimary),
+                  ),
+                  const SizedBox(height: 2),
+                  Expanded(
+                    child: Text(
+                      t.tagline,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: LizText.footnote.copyWith(
+                        color: p.textSecondary,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            for (final row in rows) ...[
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: Text(
-                        row.$1.value,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                  Transform.translate(
+                    offset: const Offset(-12, 0),
+                    child: TextButton(
+                      onPressed: () => context.push('/tool/${t.id}'),
+                      child: const Text('View tool'),
                     ),
-                    for (final t in tools)
-                      SizedBox(
-                        width: colWidth,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: row.$2(t),
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          for (final row in rows) cell(row.height, row.cell(t)),
+        ],
+      ),
+    );
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 40),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final room = constraints.maxWidth - _labelWidth;
+          final fits = room / tools.length >= _minColumn;
+          if (fits) {
+            final width = (room / tools.length).clamp(_minColumn, 300.0);
+            return Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [labels, for (final t in tools) column(t, width)],
+              ),
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              labels,
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [for (final t in tools) column(t, _minColumn)],
+                  ),
                 ),
               ),
             ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-/// Tiny wrapper so the row tuple has a const-constructible label.
-class _String {
-  const _String(this.value);
-  final String value;
+class _Row {
+  const _Row(this.label, this.height, this.cell);
+  final String label;
+  final double height;
+  final Widget Function(Tool) cell;
 }

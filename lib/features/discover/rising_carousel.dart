@@ -6,19 +6,20 @@ import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/models/tool.dart';
-import '../../shared/widgets/badges.dart';
+import '../../shared/widgets/page_header.dart';
+import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/tool_logo.dart';
 import 'discover_controller.dart';
 
-/// Horizontal "Rising Early" strip — the product's core differentiator:
-/// tools growing fast but not yet mainstream.
+/// "Rising this week" as a chart: rank numerals, logo, name, and how fast it
+/// is climbing — the App Store's Top Charts pattern (docs/DESIGN.md §7, Chart
+/// row). It replaced a strip of small tiles where the rank was a number in a
+/// pill and the list had no visible order.
 class RisingCarousel extends ConsumerWidget {
   const RisingCarousel({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // The strip honours the price filter too. Showing a Paid tool at the top
-    // of a feed someone has narrowed to Free reads as the filter not working.
     final key = FeedKey(
       sort: ToolSort.rising,
       pricing: ref.watch(discoverPricingProvider),
@@ -27,53 +28,64 @@ class RisingCarousel extends ConsumerWidget {
     if (state.loading || state.items.isEmpty) {
       return const SizedBox.shrink();
     }
-    final items = state.items.take(10).toList();
-    final scheme = Theme.of(context).colorScheme;
+    final width = MediaQuery.sizeOf(context).width;
+    final gutter = LizSpacing.gutter(width);
+    final twoColumns = !context.isPhone;
+    final items = state.items.take(twoColumns ? 6 : 5).toList();
+
+    final rows = [
+      for (var i = 0; i < items.length; i++)
+        _ChartRow(rank: i + 1, tool: items[i]),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.local_fire_department,
-                color: LizColors.rising,
-                size: 20,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Rising Early',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(width: 8),
-              // The heading names the section; this only elaborates, so it is
-              // what gets trimmed on a narrow phone.
-              Flexible(
-                child: Text(
-                  'growing fast, still under the radar',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 12.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        const SectionHeader(
+          title: 'Rising this week',
+          subtitle: 'Growing fastest, still under the radar.',
         ),
-        SizedBox(
-          height: risingCardExtent(context),
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, i) => _RisingCard(tool: items[i]),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: gutter),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              color: context.liz.surface,
+              shape: LizRadius.shape(
+                LizRadius.md,
+                side: BorderSide(color: context.liz.hairline),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: twoColumns
+                  // Intrinsic height so the divider between the columns
+                  // matches them at any text size.
+                  ? IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _Column(
+                              rows: rows.sublist(0, (rows.length + 1) ~/ 2),
+                            ),
+                          ),
+                          VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            indent: 6,
+                            endIndent: 6,
+                            color: context.liz.hairline,
+                          ),
+                          Expanded(
+                            child: _Column(
+                              rows: rows.sublist((rows.length + 1) ~/ 2),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _Column(rows: rows),
+            ),
           ),
         ),
       ],
@@ -81,53 +93,117 @@ class RisingCarousel extends ConsumerWidget {
   }
 }
 
-class _RisingCard extends StatelessWidget {
-  const _RisingCard({required this.tool});
+class _Column extends StatelessWidget {
+  const _Column({required this.rows});
+  final List<Widget> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          if (i > 0)
+            // Inset past the rank and logo, as grouped lists do.
+            Padding(
+              padding: const EdgeInsets.only(left: 108),
+              child: Divider(height: 1, color: context.liz.hairline),
+            ),
+          rows[i],
+        ],
+      ],
+    );
+  }
+}
+
+class _ChartRow extends StatelessWidget {
+  const _ChartRow({required this.rank, required this.tool});
+  final int rank;
   final Tool tool;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: 220,
-      child: Card(
-        child: InkWell(
-          onTap: () => context.push('/tool/${tool.id}'),
+    final p = context.liz;
+    final climb = tool.trendScore.round();
+    return Semantics(
+      button: true,
+      label: 'Number $rank, ${tool.name}. ${tool.tagline}',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => context.push('/tool/${tool.id}'),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 68),
           child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    ToolLogo(tool: tool, size: 40),
-                    const Spacer(),
-                    TrendBadge(tool),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  tool.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 2),
-                Expanded(
+                SizedBox(
+                  width: 28,
                   child: Text(
-                    tool.tagline,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 12.5,
-                      height: 1.2,
+                    '$rank',
+                    style: LizText.title3.copyWith(
+                      color: p.textSecondary,
+                      fontFeatures: LizText.tabular,
                     ),
                   ),
                 ),
-                PricingBadge(tool.pricingType),
+                const SizedBox(width: 8),
+                ToolLogo(tool: tool, size: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        tool.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LizText.headline.copyWith(color: p.textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        tool.tagline,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LizText.subhead.copyWith(
+                          color: p.textSecondary,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.trending_up, size: 15, color: p.rising),
+                        const SizedBox(width: 3),
+                        Text(
+                          compactCount(climb),
+                          style: LizText.subhead.copyWith(
+                            color: LizColors.legibleOn(p.rising, p.surface),
+                            fontWeight: FontWeight.w600,
+                            fontFeatures: LizText.tabular,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (tool.pricingType != PricingType.unknown) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        tool.pricingType.label,
+                        style: LizText.footnote.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
@@ -136,3 +212,4 @@ class _RisingCard extends StatelessWidget {
     );
   }
 }
+

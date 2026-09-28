@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
 import '../../core/config/env.dart';
 import '../models/tool.dart';
 
@@ -10,14 +11,26 @@ class ToolLogo extends StatelessWidget {
   final Tool tool;
   final double size;
 
-  static const _gradients = <List<Color>>[
-    [Color(0xFF5B5BF5), Color(0xFF8B5CF6)],
-    [Color(0xFFFF7A45), Color(0xFFF43F5E)],
-    [Color(0xFF12B76A), Color(0xFF0BA5EC)],
-    [Color(0xFFEE46BC), Color(0xFF7C3AED)],
-    [Color(0xFF0BA5EC), Color(0xFF06B6D4)],
-    [Color(0xFFF79009), Color(0xFFEF4444)],
+  // Hues for tools without a logo. Shown as a soft tint with a coloured
+  // initial rather than a saturated gradient, which used to be the loudest
+  // thing on a grid and pulled the eye away from the tools that had logos.
+  static const _hues = <Color>[
+    Color(0xFF5856D6),
+    Color(0xFFFF6B35),
+    Color(0xFF28A745),
+    Color(0xFFD63384),
+    Color(0xFF0A84FF),
+    Color(0xFFB8860B),
   ];
+
+  /// App-icon squircle: 22.5% of the side, like the icons it stands for.
+  ShapeBorder _shape(BuildContext context, {bool outlined = true}) =>
+      RoundedSuperellipseBorder(
+        borderRadius: BorderRadius.circular(size * 0.225),
+        side: outlined
+            ? BorderSide(color: context.liz.hairline)
+            : BorderSide.none,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +41,6 @@ class ToolLogo extends StatelessWidget {
   }
 
   Widget _buildMark(BuildContext context) {
-    final radius = size * 0.28;
     final stored = tool.logoUrl != null && tool.logoUrl!.isNotEmpty;
     // A tenth of the catalog was scraped without a logo, and every one showed
     // a letter tile even when its site has a perfectly good icon. Asking the
@@ -52,44 +64,41 @@ class ToolLogo extends StatelessWidget {
         // hold full-resolution bitmaps in memory to paint 48-pixel tiles.
         memCacheWidth: (size * 3).round(),
         memCacheHeight: (size * 3).round(),
+        // Marks are drawn on white in both themes: most logos are made for a
+        // light background, and a dark tile would swallow the dark ones.
         imageBuilder: (context, imageProvider) => Container(
           width: size,
           height: size,
           padding: EdgeInsets.all(size * 0.14),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: const Color(0x14000000)),
+            shape: _shape(context),
           ),
           child: Image(image: imageProvider, fit: BoxFit.contain),
         ),
-        placeholder: (c, _) => _fallback(radius),
-        errorWidget: (c, _, _) => _fallback(radius),
+        placeholder: (c, _) => _fallback(c),
+        errorWidget: (c, _, _) => _fallback(c),
       );
     }
-    return _fallback(radius);
+    return _fallback(context);
   }
 
-  Widget _fallback(double radius) {
-    final colors = _gradients[tool.id.hashCode.abs() % _gradients.length];
+  Widget _fallback(BuildContext context) {
+    final p = context.liz;
+    final hue = _hues[tool.id.hashCode.abs() % _hues.length];
+    final tile = Color.alphaBlend(hue.withValues(alpha: 0.14), p.surface);
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(radius),
-      ),
+      decoration: ShapeDecoration(color: tile, shape: _shape(context)),
       alignment: Alignment.center,
       child: Text(
         tool.name.isNotEmpty ? tool.name[0].toUpperCase() : '?',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: size * 0.45,
+        style: LizText.title2.copyWith(
+          color: LizColors.legibleOn(hue, tile, minimum: 3),
+          fontWeight: FontWeight.w700,
+          fontSize: size * 0.42,
+          height: 1,
         ),
       ),
     );

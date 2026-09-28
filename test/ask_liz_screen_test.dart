@@ -23,7 +23,7 @@ void main() {
   ) async {
     await _pump(tester);
 
-    expect(find.text('Describe what you need'), findsOneWidget);
+    expect(find.text('What do you want to do?'), findsOneWidget);
     expect(find.text('edit video by transcript'), findsOneWidget);
   });
 
@@ -35,7 +35,7 @@ void main() {
 
     // The asked question stays on screen above the answer.
     expect(find.text('edit video by transcript'), findsWidgets);
-    expect(find.text('Describe what you need'), findsNothing);
+    expect(find.text('What do you want to do?'), findsNothing);
   });
 
   testWidgets('says so plainly when nothing in the catalog fits', (
@@ -63,7 +63,7 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text("Here's what fits best:"), findsOneWidget);
+    expect(find.text("Here's what fits best"), findsOneWidget);
     // Every result explains itself rather than just appearing.
     expect(find.textContaining('Matches "video"'), findsWidgets);
   });
@@ -77,6 +77,6 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle(const Duration(seconds: 1));
 
-    expect(find.text('Describe what you need'), findsOneWidget);
+    expect(find.text('What do you want to do?'), findsOneWidget);
   });
 }

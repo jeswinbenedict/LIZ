@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/responsive/adaptive_shell.dart';
 import '../../app/responsive/breakpoints.dart';
+import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../alerts/alerts_screen.dart';
 import '../../shared/models/category.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/tool_grid_sliver.dart';
 import 'discover_controller.dart';
@@ -62,49 +63,66 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
     final pricing = ref.watch(discoverPricingProvider);
     final key = FeedKey(sort: sort, category: category, pricing: pricing);
 
+    final phone = context.isPhone;
     return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(toolFeedProvider);
-            await ref.read(toolFeedProvider(key).notifier).refresh();
-          },
-          child: MaxWidth(
-            child: CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  floating: true,
-                  titleSpacing: 20,
-                  title: context.isPhone
-                      ? const LizWordmark()
-                      : Text(
-                          'Discover',
-                          style: Theme.of(context).textTheme.headlineSmall,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(toolFeedProvider);
+          await ref.read(toolFeedProvider(key).notifier).refresh();
+        },
+        child: CustomScrollView(
+          slivers: [
+            if (phone)
+              PhoneTopBar(
+                actions: [
+                  const AlertsBell(),
+                  IconButton(
+                    tooltip: 'Ask Liz',
+                    icon: const Icon(Icons.auto_awesome_outlined),
+                    onPressed: () => context.go('/ask'),
+                  ),
+                ],
+              ),
+            SliverToBoxAdapter(
+              child: MaxWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    PageHeader(
+                      title: 'Discover',
+                      subtitle: phone
+                          ? null
+                          : 'New AI tools, ranked by how fast they are rising.',
+                      // Tablets have no sidebar to carry alerts.
+                      trailing: context.isTablet ? const AlertsBell() : null,
+                      bottom: 16,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: LizSpacing.gutter(
+                          MediaQuery.sizeOf(context).width,
                         ),
-                  actions: [
-                    const AlertsBell(),
-                    IconButton(
-                      tooltip: 'Search',
-                      icon: const Icon(Icons.search),
-                      onPressed: () => context.push('/search'),
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 640),
+                          child: SearchLauncher(large: !phone),
+                        ),
+                      ),
                     ),
-                    IconButton(
-                      tooltip: 'Ask Liz',
-                      icon: const Icon(Icons.auto_awesome_outlined),
-                      onPressed: () => context.go('/ask'),
-                    ),
-                    const SizedBox(width: 8),
+                    const WelcomeCard(),
+                    const RisingCarousel(),
+                    const SectionHeader(title: 'All tools'),
+                    const _CategoryChips(),
+                    const _SortBar(),
                   ],
                 ),
-                const SliverToBoxAdapter(child: WelcomeCard()),
-                const SliverToBoxAdapter(child: RisingCarousel()),
-                const SliverToBoxAdapter(child: _CategoryChips()),
-                const SliverToBoxAdapter(child: _SortBar()),
-                ToolGridSliver(feedKey: key),
-                LoadMoreFooter(feedKey: key),
-              ],
+              ),
             ),
-          ),
+            MaxWidthSliver(sliver: ToolGridSliver(feedKey: key)),
+            LoadMoreFooter(feedKey: key),
+          ],
         ),
       ),
     );
@@ -126,7 +144,9 @@ class _CategoryChips extends ConsumerWidget {
         height: 48,
         child: ListView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: LizSpacing.gutter(MediaQuery.sizeOf(context).width),
+          ),
           children: [
             _chip(
               context,
@@ -158,12 +178,10 @@ class _CategoryChips extends ConsumerWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
+      child: LizFilterPill(
+        label: label,
         selected: selected,
-        showCheckmark: false,
-        onSelected: (_) =>
-            ref.read(discoverCategoryProvider.notifier).set(slug),
+        onTap: () => ref.read(discoverCategoryProvider.notifier).set(slug),
       ),
     );
   }
@@ -182,33 +200,28 @@ class _SortBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sort = ref.watch(discoverSortProvider);
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+    // One toolbar: how to order, and what it may cost. The sort used to be a
+    // second row of chips that looked like more categories.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final entry in _labels.entries)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(entry.value),
-                  selected: sort == entry.key,
-                  // Matches the category row above. The checkmark also widened
-                  // the selected chip after its width had been measured, which
-                  // pushed labels past the border — "Trending" lost its 'g'.
-                  showCheckmark: false,
-                  onSelected: (_) =>
-                      ref.read(discoverSortProvider.notifier).set(entry.key),
-                ),
-              ),
-            PricingFilter(
-              selected: ref.watch(discoverPricingProvider),
-              onChanged: (value) =>
-                  ref.read(discoverPricingProvider.notifier).set(value),
-            ),
-          ],
-        ),
+      padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 8),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          LizSegmented<ToolSort>(
+            segments: _labels,
+            value: sort,
+            onChanged: (value) =>
+                ref.read(discoverSortProvider.notifier).set(value),
+          ),
+          PricingFilter(
+            selected: ref.watch(discoverPricingProvider),
+            onChanged: (value) =>
+                ref.read(discoverPricingProvider.notifier).set(value),
+          ),
+        ],
       ),
     );
   }

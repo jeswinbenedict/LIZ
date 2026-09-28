@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../shared/widgets/news_card.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/states.dart';
 import 'news_controller.dart';
@@ -18,69 +19,73 @@ class NewsScreen extends ConsumerWidget {
     final state = ref.watch(newsControllerProvider);
     final controller = ref.read(newsControllerProvider.notifier);
 
+    final phone = context.isPhone;
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+    const column = 760.0;
+
     return Scaffold(
-      body: SafeArea(
-        child: MaxWidth(
-          maxWidth: 760,
-          child: RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  floating: true,
-                  titleSpacing: 20,
-                  title: Row(
-                    children: [
-                      Text(
-                        'Tech News',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(width: 10),
-                      if (state.live) const _LiveBadge(),
-                    ],
+      body: RefreshIndicator(
+        onRefresh: controller.refresh,
+        child: CustomScrollView(
+          slivers: [
+            if (phone) const PhoneTopBar(),
+            SliverToBoxAdapter(
+              child: MaxWidth(
+                maxWidth: column + gutter * 2,
+                child: PageHeader(
+                  title: 'Tech News',
+                  subtitle: phone
+                      ? null
+                      : 'The day in technology, with a quick take on each '
+                            'story. Updated hourly.',
+                  trailing: state.live ? const _LiveBadge() : null,
+                  bottom: 4,
+                ),
+              ),
+            ),
+            if (state.loading)
+              const NewsListSkeletonSliver()
+            else if (state.error != null && state.items.isEmpty)
+              SliverToBoxAdapter(child: ErrorView(onRetry: controller.refresh))
+            else if (state.items.isEmpty)
+              const SliverToBoxAdapter(
+                child: EmptyView(
+                  icon: Icons.newspaper_outlined,
+                  title: 'No news yet',
+                  message:
+                      'The feed fills up as the ingestion job pulls the latest tech headlines.',
+                ),
+              )
+            else
+              MaxWidthSliver(
+                maxWidth: column + gutter * 2,
+                sliver: SliverPadding(
+                  padding: EdgeInsets.fromLTRB(gutter - 4, 0, gutter - 4, 32),
+                  sliver: SliverList.separated(
+                    itemCount: state.items.length,
+                    separatorBuilder: (_, _) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Divider(height: 1, color: context.liz.hairline),
+                    ),
+                    itemBuilder: (context, i) {
+                      if (i >= state.items.length - 3) {
+                        WidgetsBinding.instance.addPostFrameCallback(
+                          (_) => controller.loadMore(),
+                        );
+                      }
+                      return NewsCard(item: state.items[i]);
+                    },
                   ),
                 ),
-                if (state.loading)
-                  const NewsListSkeletonSliver()
-                else if (state.error != null && state.items.isEmpty)
-                  SliverToBoxAdapter(
-                    child: ErrorView(onRetry: controller.refresh),
-                  )
-                else if (state.items.isEmpty)
-                  const SliverToBoxAdapter(
-                    child: EmptyView(
-                      icon: Icons.newspaper_outlined,
-                      title: 'No news yet',
-                      message:
-                          'The feed fills up as the ingestion job pulls the latest tech headlines.',
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                    sliver: SliverList.separated(
-                      itemCount: state.items.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemBuilder: (context, i) {
-                        if (i >= state.items.length - 3) {
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (_) => controller.loadMore(),
-                          );
-                        }
-                        return NewsCard(item: state.items[i]);
-                      },
-                    ),
-                  ),
-                if (state.loadingMore)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: 24),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+              ),
+            if (state.loadingMore)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -91,34 +96,40 @@ class _LiveBadge extends StatelessWidget {
   const _LiveBadge();
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: LizColors.positive.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: const BoxDecoration(
-              color: LizColors.positive,
-              shape: BoxShape.circle,
+    final p = context.liz;
+    return Semantics(
+      label: 'Live: new stories appear as they arrive',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: ShapeDecoration(
+          color: p.positive.withValues(alpha: 0.12),
+          shape: const StadiumBorder(),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: p.positive,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-          const SizedBox(width: 5),
-          const Text(
-            'LIVE',
-            style: TextStyle(
-              color: LizColors.positive,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
+            const SizedBox(width: 6),
+            Text(
+              'Live',
+              style: LizText.footnote.copyWith(
+                color: LizColors.legibleOn(
+                  p.positive,
+                  Color.alphaBlend(p.positive.withValues(alpha: 0.12), p.canvas),
+                ),
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

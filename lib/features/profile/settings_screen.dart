@@ -4,10 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/settings_controller.dart';
+import '../../app/theme.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import '../../shared/widgets/grouped_list.dart';
+import '../../shared/widgets/page_header.dart';
 import '../auth/auth_controller.dart';
 
+/// Settings as grouped lists (docs/DESIGN.md §8, Profile & Settings).
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -16,81 +20,108 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final signedIn = ref.watch(isSignedInProvider);
     final isLive = ref.watch(isLiveBackendProvider);
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: MaxWidth(
-        maxWidth: 640,
+        maxWidth: 640 + gutter * 2,
         child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 40),
           children: [
-            const _SectionLabel('Appearance'),
-            RadioGroup<ThemeMode>(
-              groupValue: themeMode,
-              onChanged: (m) => ref.read(themeModeProvider.notifier).set(m!),
-              child: const Column(
+            LizGroup(
+              title: 'Appearance',
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Theme',
+                          style: LizText.body.copyWith(color: p.textPrimary),
+                        ),
+                      ),
+                      // Flexible gives the control a bounded width, so it
+                      // scrolls on a narrow phone instead of overflowing.
+                      Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: LizSegmented<ThemeMode>(
+                            segments: const {
+                              ThemeMode.system: 'System',
+                              ThemeMode.light: 'Light',
+                              ThemeMode.dark: 'Dark',
+                            },
+                            value: themeMode,
+                            onChanged: (m) =>
+                                ref.read(themeModeProvider.notifier).set(m),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
+            LizGroup(
+              title: 'About',
+              children: [
+                LizGroupRow(
+                  icon: Icons.privacy_tip_outlined,
+                  title: 'Privacy policy',
+                  onTap: () => context.push('/privacy'),
+                ),
+                LizGroupRow(
+                  icon: Icons.description_outlined,
+                  title: 'Terms of service',
+                  onTap: () => context.push('/terms'),
+                ),
+                LizGroupRow(
+                  icon: Icons.cloud_outlined,
+                  iconColor: isLive ? p.positive : p.caution,
+                  title: 'Backend',
+                  value: isLive ? 'Connected' : 'Demo data',
+                ),
+              ],
+            ),
+            if (signedIn) ...[
+              const SizedBox(height: 28),
+              LizGroup(
+                title: 'Account',
+                footer:
+                    'Deleting your account removes your profile, saves, '
+                    'follows, reviews and posts. It cannot be undone.',
                 children: [
-                  RadioListTile<ThemeMode>(
-                    title: Text('System'),
-                    value: ThemeMode.system,
+                  LizGroupRow(
+                    icon: Icons.logout,
+                    iconColor: p.textSecondary,
+                    title: 'Sign out',
+                    showChevron: false,
+                    onTap: () async {
+                      await ref.read(authControllerProvider.notifier).signOut();
+                      if (context.mounted) context.go('/');
+                    },
                   ),
-                  RadioListTile<ThemeMode>(
-                    title: Text('Light'),
-                    value: ThemeMode.light,
-                  ),
-                  RadioListTile<ThemeMode>(
-                    title: Text('Dark'),
-                    value: ThemeMode.dark,
+                  LizGroupRow(
+                    icon: Icons.delete_forever_outlined,
+                    title: 'Delete account',
+                    destructive: true,
+                    showChevron: false,
+                    onTap: () => _confirmDelete(context, ref),
                   ),
                 ],
               ),
-            ),
-            const Divider(),
-            const _SectionLabel('About'),
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title: const Text('Privacy policy'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/privacy'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: const Text('Terms of service'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/terms'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('Backend'),
-              subtitle: Text(isLive
-                  ? 'Connected to Supabase'
-                  : 'Demo mode (bundled sample data)'),
-            ),
-            if (signedIn) ...[
-              const Divider(),
-              const _SectionLabel('Account'),
-              ListTile(
-                leading: Icon(Icons.logout, color: scheme.error),
-                title: Text('Sign out', style: TextStyle(color: scheme.error)),
-                onTap: () async {
-                  await ref.read(authControllerProvider.notifier).signOut();
-                  if (context.mounted) context.go('/');
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_forever_outlined, color: scheme.error),
-                title: const Text('Delete account'),
-                subtitle: const Text('Permanently remove your account and data'),
-                onTap: () => _confirmDelete(context, ref),
-              ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Center(
-              child: Text('Liz v1.0.0',
-                  style: TextStyle(color: scheme.onSurfaceVariant)),
+              child: Text(
+                'Liz 1.0',
+                style: LizText.footnote.copyWith(color: p.textSecondary),
+              ),
             ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -103,14 +134,17 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Delete account?'),
         content: const Text(
-            'This permanently deletes your account, posts, and reviews. This cannot be undone.'),
+          'This permanently deletes your account, posts, and reviews. This cannot be undone.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(ctx).colorScheme.error),
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -135,24 +169,5 @@ class SettingsScreen extends ConsumerWidget {
       return;
     }
     if (context.mounted) context.go('/');
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-      child: Text(text.toUpperCase(),
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
-            color: Theme.of(context).colorScheme.primary,
-          )),
-    );
   }
 }

@@ -25,13 +25,12 @@ class SkeletonBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        color: scheme.onSurface.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(radius),
+      decoration: ShapeDecoration(
+        color: context.liz.surfaceMuted,
+        shape: LizRadius.shape(radius),
       ),
     );
   }
@@ -129,47 +128,41 @@ class _SkeletonScope extends StatelessWidget {
 class ToolCardSkeleton extends StatelessWidget {
   const ToolCardSkeleton({super.key});
 
+  /// The shape of [ToolCard]: logo, name, two tagline lines, one meta line.
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(LizSpacing.md),
+    final p = context.liz;
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: LizRadius.shape(LizRadius.md, side: BorderSide(color: p.hairline)),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                SkeletonBox(width: 52, height: 52, radius: LizRadius.md),
+              children: [
+                SkeletonBox(width: 44, height: 44, radius: 10),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SkeletonBox(width: 116, height: 15),
-                      SizedBox(height: 8),
+                      SkeletonBox(width: 110, height: 14),
+                      SizedBox(height: 9),
                       SkeletonBox(height: 11),
                       SizedBox(height: 6),
-                      SkeletonBox(width: 90, height: 11),
+                      SkeletonBox(width: 140, height: 11),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            const SkeletonBox(height: 11),
-            const SizedBox(height: 6),
-            const SkeletonBox(height: 11),
-            const Spacer(),
-            Row(
-              children: const [
-                SkeletonBox(width: 74, height: 20),
-                SizedBox(width: 8),
-                SkeletonBox(width: 54, height: 20),
-                Spacer(),
-                SkeletonBox(width: 28, height: 20),
-              ],
-            ),
+            Spacer(),
+            SkeletonBox(width: 150, height: 11),
           ],
         ),
       ),
@@ -177,8 +170,6 @@ class ToolCardSkeleton extends StatelessWidget {
   }
 }
 
-/// The grid of tool placeholders shown while the first page of a feed loads.
-/// Mirrors the geometry of the real grid so nothing shifts on arrival.
 class ToolGridSkeletonSliver extends StatelessWidget {
   const ToolGridSkeletonSliver({super.key, this.count = 6});
   final int count;
@@ -186,8 +177,9 @@ class ToolGridSkeletonSliver extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final columns = gridColumnsFor(MediaQuery.sizeOf(context).width);
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 32),
       sliver: SliverToBoxAdapter(
         child: _SkeletonScope(
           label: 'Loading tools',
@@ -197,8 +189,8 @@ class ToolGridSkeletonSliver extends StatelessWidget {
             padding: EdgeInsets.zero,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: columns,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
               mainAxisExtent: toolCardExtent(context),
             ),
             itemCount: count,
@@ -226,43 +218,41 @@ class NewsListSkeletonSliver extends StatelessWidget {
   const NewsListSkeletonSliver({super.key, this.count = 4});
   final int count;
 
+  /// The shape of the news list: eyebrow, headline, two summary lines.
   @override
   Widget build(BuildContext context) {
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 24),
       sliver: SliverToBoxAdapter(
-        child: _SkeletonScope(
-          label: 'Loading news',
-          child: Column(
-            children: [
-              for (var i = 0; i < count; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SkeletonBox(height: 168, radius: LizRadius.lg),
-                        Padding(
-                          padding: const EdgeInsets.all(LizSpacing.md),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              SkeletonBox(width: 96, height: 16),
-                              SizedBox(height: 12),
-                              SkeletonBox(height: 15),
-                              SizedBox(height: 8),
-                              SkeletonBox(height: 11),
-                              SizedBox(height: 6),
-                              SkeletonBox(width: 200, height: 11),
-                            ],
-                          ),
-                        ),
-                      ],
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: _SkeletonScope(
+              label: 'Loading news',
+              child: Column(
+                children: [
+                  for (var i = 0; i < count; i++)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SkeletonBox(width: 120, height: 11),
+                          SizedBox(height: 12),
+                          SkeletonBox(height: 16),
+                          SizedBox(height: 8),
+                          SkeletonBox(width: 280, height: 16),
+                          SizedBox(height: 12),
+                          SkeletonBox(height: 11),
+                          SizedBox(height: 6),
+                          SkeletonBox(width: 220, height: 11),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),

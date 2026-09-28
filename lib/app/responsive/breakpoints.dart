@@ -46,7 +46,9 @@ int gridColumnsFor(double width) {
 /// settings would otherwise leave a single card filling the screen.
 double toolCardExtent(BuildContext context) {
   final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-  return 222 * scale.clamp(1.0, 1.6);
+  // Sized to the card's content: logo row, two-line tagline, one metadata
+  // line. The old 222 left a band of empty card under every tool.
+  return 138 * scale.clamp(1.0, 1.6);
 }
 
 /// Height of the "Rising Early" carousel strip, which grows the same way.
@@ -75,6 +77,33 @@ class MaxWidth extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Padding(padding: padding, child: child),
       ),
+    );
+  }
+}
+
+/// [MaxWidth] for slivers: centres [sliver] and caps it at [maxWidth], so a
+/// grid lines up with the capped content above it on wide screens.
+class MaxWidthSliver extends StatelessWidget {
+  const MaxWidthSliver({
+    super.key,
+    required this.sliver,
+    this.maxWidth = Breakpoints.contentMax,
+  });
+
+  final Widget sliver;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final extra = constraints.crossAxisExtent - maxWidth;
+        final side = extra > 0 ? extra / 2 : 0.0;
+        return SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: side),
+          sliver: sliver,
+        );
+      },
     );
   }
 }

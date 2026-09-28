@@ -198,14 +198,14 @@ class _Expired extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: LizColors.rising.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(LizRadius.md),
+          decoration: ShapeDecoration(
+            color: context.liz.caution.withValues(alpha: 0.10),
+            shape: LizRadius.shape(LizRadius.md),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.link_off, color: LizColors.rising),
+              Icon(Icons.link_off, color: context.liz.caution),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -219,7 +219,7 @@ class _Expired extends StatelessWidget {
                     Text(
                       'Reset links last an hour and work once. Ask for a new '
                       'one and it will arrive in a moment.',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
+                      style: TextStyle(color: context.liz.textPrimary),
                     ),
                   ],
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/settings_controller.dart';
+import '../../app/theme.dart';
 import '../../core/providers.dart';
 
 /// Whether this browser has put the welcome card away. Kept in the browser
@@ -44,31 +45,31 @@ class WelcomeCard extends ConsumerWidget {
     if (ref.watch(isSignedInProvider) || ref.watch(welcomeDismissedProvider)) {
       return const SizedBox.shrink();
     }
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-
+    final p = context.liz;
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: Card(
-        elevation: 0,
-        color: scheme.primaryContainer.withValues(alpha: 0.45),
+      padding: EdgeInsets.fromLTRB(gutter, 20, gutter, 0),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: p.surface,
+          shape: LizRadius.shape(
+            LizRadius.lg,
+            side: BorderSide(color: p.hairline),
+          ),
+        ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
+          padding: const EdgeInsets.fromLTRB(20, 12, 8, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          'Find AI tools while they are still rising',
-                          style: text.titleMedium,
-                        ),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        'Find AI tools while they are still rising',
+                        style: LizText.title3.copyWith(color: p.textPrimary),
                       ),
                     ),
                   ),
@@ -80,24 +81,35 @@ class WelcomeCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              const _Point(
-                icon: Icons.trending_up,
-                text:
-                    'New launches from Product Hunt, Hacker News and GitHub, '
-                    'checked and summarised every day.',
-              ),
-              const _Point(
-                icon: Icons.auto_awesome_outlined,
-                text:
-                    'Ask Liz in plain words — "free tool to transcribe '
-                    'meetings" — and get tools that fit.',
-              ),
-              const _Point(
-                icon: Icons.notifications_none,
-                text:
-                    'Sign in and follow a tool to hear when its price changes '
-                    'or it breaks into the top ten.',
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Three across when there is room; stacked on a phone.
+                    if (constraints.maxWidth < 640) {
+                      return const Column(
+                        children: [
+                          _PointHolder(0),
+                          SizedBox(height: 14),
+                          _PointHolder(1),
+                          SizedBox(height: 14),
+                          _PointHolder(2),
+                        ],
+                      );
+                    }
+                    return const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _PointHolder(0)),
+                        SizedBox(width: 20),
+                        Expanded(child: _PointHolder(1)),
+                        SizedBox(width: 20),
+                        Expanded(child: _PointHolder(2)),
+                      ],
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -107,25 +119,78 @@ class WelcomeCard extends ConsumerWidget {
   }
 }
 
+/// The three points, by position, so both layouts above can be const.
+class _PointHolder extends StatelessWidget {
+  const _PointHolder(this.index);
+  final int index;
+
+  static const _points = [
+    _Point(
+      icon: Icons.trending_up,
+      title: 'Early',
+      text:
+          'New launches from Product Hunt, Hacker News and GitHub, '
+          'checked and summarised every day.',
+    ),
+    _Point(
+      icon: Icons.auto_awesome_outlined,
+      title: 'Plain words',
+      text:
+          'Ask Liz — "free tool to transcribe meetings" — and get tools '
+          'that fit, with the reason why.',
+    ),
+    _Point(
+      icon: Icons.notifications_none,
+      title: 'Followed',
+      text:
+          'Sign in and follow a tool to hear when its price changes or it '
+          'breaks into the top ten.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => _points[index];
+}
+
 class _Point extends StatelessWidget {
-  const _Point({required this.icon, required this.text});
+  const _Point({required this.icon, required this.title, required this.text});
   final IconData icon;
+  final String title;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12, bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+    final p = context.liz;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: ShapeDecoration(
+            color: p.accentSoft,
+            shape: LizRadius.shape(9),
           ),
-        ],
-      ),
+          child: Icon(icon, size: 18, color: p.accent),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: LizText.headline.copyWith(color: p.textPrimary),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                text,
+                style: LizText.callout.copyWith(color: p.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

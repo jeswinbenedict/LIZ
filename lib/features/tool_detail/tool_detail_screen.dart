@@ -12,6 +12,7 @@ import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/states.dart';
+import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/tool_logo.dart';
 import '../community/community_controller.dart';
 import '../community/community_widgets.dart';
@@ -83,129 +84,136 @@ class ToolDetailScreen extends ConsumerWidget {
   }
 }
 
+/// A tool's page, laid out like an App Store product page (docs/DESIGN.md
+/// §8): the icon, name and one call to action first; the facts a visitor
+/// checks in a strip under it; then titled sections in a reading column.
 class _ToolBody extends ConsumerWidget {
   const _ToolBody({required this.tool});
   final Tool tool;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final reviewsAsync = ref.watch(reviewsForToolProvider(tool.id));
     final postsAsync = ref.watch(
       postFeedProvider(PostFeedKey(toolId: tool.id)),
     );
+    final phone = context.isPhone;
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
     return MaxWidth(
-      maxWidth: 860,
+      maxWidth: 760 + gutter * 2,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+        padding: EdgeInsets.fromLTRB(gutter, phone ? 8 : 24, gutter, 48),
         children: [
-          // Header
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ToolLogo(tool: tool, size: 72),
-              const SizedBox(width: 16),
+              ToolLogo(tool: tool, size: phone ? 76 : 96),
+              SizedBox(width: phone ? 16 : 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      tool.name,
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            tool.name,
+                            style: LizText.title1.copyWith(
+                              color: p.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (tool.isNew) LizPill(label: 'New', color: p.accent),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       tool.tagline,
-                      style: TextStyle(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 15,
-                        height: 1.3,
-                      ),
+                      style: LizText.body.copyWith(color: p.textSecondary),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              PricingBadge(tool.pricingType),
-              if (tool.priceNote != null)
-                LizPill(label: tool.priceNote!, color: scheme.onSurfaceVariant),
-              TrendBadge(tool),
-              if (tool.isNew)
-                const LizPill(
-                  label: 'NEW',
-                  color: LizColors.positive,
-                  filled: true,
-                ),
-              for (final p in tool.platforms)
-                LizPill(label: p, color: scheme.onSurfaceVariant),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Actions
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              BookmarkButton(toolId: tool.id, filledStyle: true),
-              FollowButton(toolId: tool.id),
-              if (tool.websiteUrl != null)
-                FilledButton.icon(
-                  onPressed: () => _launch(tool.websiteUrl!),
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('Visit'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // AI summary
-          if (tool.aiSummary.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(LizRadius.md),
-                border: Border.all(
-                  color: scheme.primary.withValues(alpha: 0.15),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.auto_awesome, size: 16, color: scheme.primary),
-                      const SizedBox(width: 6),
-                      Text(
-                        'AI summary',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: scheme.primary,
-                        ),
-                      ),
-                    ],
+          const SizedBox(height: 20),
+          if (phone)
+            // One row on a phone: the call to action takes the width, and
+            // save and follow sit beside it as icons, rather than wrapping
+            // Follow onto a line of its own.
+            Row(
+              children: [
+                if (tool.websiteUrl != null)
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: LizButtons.capsule,
+                      onPressed: () => _launch(tool.websiteUrl!),
+                      icon: const Icon(Icons.north_east, size: 18),
+                      label: const Text('Visit website'),
+                    ),
                   ),
-                  const SizedBox(height: 10),
+                const SizedBox(width: 10),
+                BookmarkButton(
+                  toolId: tool.id,
+                  filledStyle: true,
+                  compact: true,
+                ),
+                const SizedBox(width: 10),
+                FollowButton(toolId: tool.id, compact: true),
+              ],
+            )
+          else
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (tool.websiteUrl != null)
+                  FilledButton.icon(
+                    style: LizButtons.capsule,
+                    onPressed: () => _launch(tool.websiteUrl!),
+                    icon: const Icon(Icons.north_east, size: 18),
+                    label: const Text('Visit website'),
+                  ),
+                BookmarkButton(toolId: tool.id, filledStyle: true),
+                FollowButton(toolId: tool.id),
+              ],
+            ),
+          const SizedBox(height: 24),
+          _InfoStrip(tool: tool),
+
+          if (tool.aiSummary.isNotEmpty)
+            _Section(
+              title: 'Summary',
+              badge: 'AI',
+              child: Column(
+                children: [
                   for (final bullet in tool.aiSummary)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.only(bottom: 10),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('•  '),
+                          Container(
+                            width: 6,
+                            height: 6,
+                            margin: const EdgeInsets.only(top: 8, right: 12),
+                            decoration: BoxDecoration(
+                              color: p.accent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                           Expanded(
                             child: Text(
                               bullet,
-                              style: const TextStyle(height: 1.35),
+                              style: LizText.body.copyWith(
+                                color: p.textPrimary,
+                              ),
                             ),
                           ),
                         ],
@@ -214,14 +222,17 @@ class _ToolBody extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-          ],
 
-          // Description
-          Text('About', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(tool.description, style: const TextStyle(height: 1.5)),
-          const SizedBox(height: 28),
+          _Section(
+            title: 'About',
+            child: Text(
+              tool.description,
+              style: LizText.body.copyWith(
+                color: p.textPrimary,
+                height: 24 / 15,
+              ),
+            ),
+          ),
 
           // Related products, matched on the embeddings already in the table.
           SimilarToolsSection(toolId: tool.id),
@@ -233,8 +244,7 @@ class _ToolBody extends ConsumerWidget {
             sourceUrl: tool.sourceUrl,
           ),
 
-          // Ratings
-          _SectionHeader(
+          _Section(
             title: 'Ratings & reviews',
             trailing: TextButton.icon(
               onPressed: () => showReviewComposer(
@@ -243,39 +253,43 @@ class _ToolBody extends ConsumerWidget {
                 toolId: tool.id,
                 toolName: tool.name,
               ),
-              icon: const Icon(Icons.rate_review_outlined, size: 18),
-              label: const Text('Write'),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Write a review'),
             ),
-          ),
-          const SizedBox(height: 8),
-          _RatingSummary(tool: tool),
-          reviewsAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(20),
-              child: LoadingView(),
-            ),
-            error: (_, _) => const SizedBox.shrink(),
-            data: (List<Review> reviews) => reviews.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text(
-                      'No reviews yet — be the first.',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
-                  )
-                : Column(
-                    children: [
-                      for (var i = 0; i < reviews.length; i++) ...[
-                        if (i > 0) const Divider(height: 1),
-                        ReviewTile(review: reviews[i]),
-                      ],
-                    ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _RatingSummary(tool: tool),
+                reviewsAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: LoadingView(),
                   ),
+                  error: (_, _) => const SizedBox.shrink(),
+                  data: (List<Review> reviews) => reviews.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            'No reviews yet — be the first.',
+                            style: LizText.callout.copyWith(
+                              color: p.textSecondary,
+                            ),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            for (var i = 0; i < reviews.length; i++) ...[
+                              if (i > 0) const Divider(height: 1),
+                              ReviewTile(review: reviews[i]),
+                            ],
+                          ],
+                        ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 28),
 
-          // Community posts
-          _SectionHeader(
+          _Section(
             title: 'From the community',
             trailing: TextButton.icon(
               onPressed: () => showPostComposer(
@@ -287,30 +301,26 @@ class _ToolBody extends ConsumerWidget {
               icon: const Icon(Icons.edit_outlined, size: 18),
               label: const Text('Post'),
             ),
-          ),
-          const SizedBox(height: 8),
-          postsAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(20),
-              child: LoadingView(),
-            ),
-            error: (_, _) => const SizedBox.shrink(),
-            data: (posts) => posts.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text(
+            child: postsAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(20),
+                child: LoadingView(),
+              ),
+              error: (_, _) => const SizedBox.shrink(),
+              data: (posts) => posts.isEmpty
+                  ? Text(
                       'No posts about this tool yet.',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
-                  )
-                : Column(
-                    children: [
-                      for (final p in posts) ...[
-                        PostCard(post: p),
-                        const SizedBox(height: 12),
+                      style: LizText.callout.copyWith(color: p.textSecondary),
+                    )
+                  : Column(
+                      children: [
+                        for (final post in posts) ...[
+                          PostCard(post: post),
+                          const SizedBox(height: 12),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
+            ),
           ),
         ],
       ),
@@ -325,54 +335,254 @@ class _ToolBody extends ConsumerWidget {
   }
 }
 
+/// The facts a visitor checks before anything else, in one strip between
+/// hairlines: rating, price, category, standing — the App Store's info row.
+class _InfoStrip extends StatelessWidget {
+  const _InfoStrip({required this.tool});
+  final Tool tool;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final rated = tool.ratingCount > 0;
+    final ranked = tool.trendRank != null;
+    final cells = <Widget>[
+      _InfoCell(
+        label: 'Rating',
+        value: rated ? tool.avgRating.toStringAsFixed(1) : '—',
+        detail: rated
+            ? '${compactCount(tool.ratingCount)} ratings'
+            : 'No ratings yet',
+        icon: rated ? Icons.star_rounded : null,
+      ),
+      _InfoCell(
+        label: 'Price',
+        value: tool.pricingType == PricingType.unknown
+            ? 'Unknown'
+            : tool.pricingType.label,
+        detail: tool.priceNote ?? '',
+        dot: pricingColor(context, tool.pricingType),
+      ),
+      _InfoCell(
+        label: 'Category',
+        value: categoryLabel(tool.category),
+        detail: tool.platforms.join(', '),
+      ),
+      _InfoCell(
+        label: 'Trending',
+        value: ranked
+            ? '#${tool.trendRank}'
+            : compactCount(tool.trendScore.round()),
+        detail: ranked ? 'in the catalog' : 'trend score',
+      ),
+    ];
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.symmetric(horizontal: BorderSide(color: p.hairline)),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Four across when they fit; on a phone, two by two.
+          final perRow = constraints.maxWidth >= 520 ? 4 : 2;
+          final rows = <Widget>[];
+          for (var i = 0; i < cells.length; i += perRow) {
+            if (i > 0) rows.add(Divider(height: 1, color: p.hairline));
+            rows.add(
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (
+                      var j = i;
+                      j < i + perRow && j < cells.length;
+                      j++
+                    ) ...[
+                      if (j > i)
+                        VerticalDivider(
+                          width: 1,
+                          indent: 12,
+                          endIndent: 12,
+                          color: p.hairline,
+                        ),
+                      Expanded(child: cells[j]),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }
+          return Column(children: rows);
+        },
+      ),
+    );
+  }
+}
+
+class _InfoCell extends StatelessWidget {
+  const _InfoCell({
+    required this.label,
+    required this.value,
+    required this.detail,
+    this.icon,
+    this.dot,
+  });
+
+  final String label;
+  final String value;
+  final String detail;
+  final IconData? icon;
+  final Color? dot;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Semantics(
+      label: detail.isEmpty ? '$label: $value' : '$label: $value, $detail',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        child: Column(
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: LizText.caption.copyWith(color: p.textSecondary),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (dot != null) ...[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: dot,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LizText.title3.copyWith(
+                      color: p.textPrimary,
+                      fontFeatures: LizText.tabular,
+                    ),
+                  ),
+                ),
+                if (icon != null) ...[
+                  const SizedBox(width: 3),
+                  Icon(icon, size: 18, color: p.textPrimary),
+                ],
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              detail.isEmpty ? ' ' : detail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: LizText.footnote.copyWith(color: p.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A titled section of the tool page.
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.title,
+    required this.child,
+    this.trailing,
+    this.badge,
+  });
+
+  final String title;
+  final Widget child;
+  final Widget? trailing;
+  final String? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Padding(
+      padding: const EdgeInsets.only(top: 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  title,
+                  style: LizText.title2.copyWith(color: p.textPrimary),
+                ),
+              ),
+              if (badge != null) ...[
+                const SizedBox(width: 8),
+                LizPill(
+                  label: badge!,
+                  color: p.accent,
+                  icon: Icons.auto_awesome,
+                ),
+              ],
+              const Spacer(),
+              ?trailing,
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
 class _RatingSummary extends StatelessWidget {
   const _RatingSummary({required this.tool});
   final Tool tool;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     if (tool.ratingCount == 0) {
       return const SizedBox.shrink();
     }
-    return Row(
-      children: [
-        Text(
-          tool.avgRating.toStringAsFixed(1),
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            RatingStars(tool.avgRating, size: 18),
-            const SizedBox(height: 2),
-            Text(
-              '${tool.ratingCount} rating${tool.ratingCount == 1 ? '' : 's'}',
-              style: TextStyle(color: scheme.onSurfaceVariant),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Text(
+            tool.avgRating.toStringAsFixed(1),
+            style: LizText.largeTitle.copyWith(
+              color: p.textPrimary,
+              fontSize: 44,
+              fontFeatures: LizText.tabular,
             ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.trailing});
-  final String title;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const Spacer(),
-        ?trailing,
-      ],
+          ),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RatingStars(tool.avgRating, size: 18),
+              const SizedBox(height: 4),
+              Text(
+                'out of 5 · ${compactCount(tool.ratingCount)} '
+                'rating${tool.ratingCount == 1 ? '' : 's'}',
+                style: LizText.subhead.copyWith(color: p.textSecondary),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

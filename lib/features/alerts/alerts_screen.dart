@@ -6,6 +6,7 @@ import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/app_notification.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
 import '../auth/sign_in_view.dart';
@@ -21,63 +22,99 @@ class AlertsScreen extends ConsumerWidget {
     final state = ref.watch(alertsControllerProvider);
     final controller = ref.read(alertsControllerProvider.notifier);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alerts'),
-        actions: [
-          if (signedIn && state.unread > 0)
-            TextButton(
-              onPressed: controller.markAllRead,
-              child: const Text('Mark all read'),
-            ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: MaxWidth(
-        maxWidth: 760,
-        child: !signedIn
-            ? EmptyView(
-                icon: Icons.notifications_none,
-                title: 'Sign in to get alerts',
-                message:
-                    'Follow a tool and Liz tells you when its pricing changes '
-                    'or it starts climbing.',
-                action: FilledButton(
-                  onPressed: () => _promptSignIn(context),
-                  child: const Text('Sign in'),
-                ),
-              )
-            : state.loading
-            ? const LoadingView()
-            : state.error != null && state.items.isEmpty
-            ? ErrorView(onRetry: controller.refresh)
-            : state.items.isEmpty
-            ? const EmptyView(
-                icon: Icons.notifications_none,
-                title: 'Nothing yet',
-                message:
-                    'Follow a tool from its page. When its pricing changes or '
-                    'it breaks into the top ten, it shows up here.',
-              )
-            : RefreshIndicator(
-                onRefresh: controller.refresh,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: state.items.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, i) => _AlertTile(
-                    alert: state.items[i],
-                    onTap: () {
-                      final alert = state.items[i];
-                      controller.markRead(alert);
-                      final route = alert.route;
-                      if (route != null && route.isNotEmpty) {
-                        context.push(route);
-                      }
-                    },
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+    final p = context.liz;
+
+    Widget body;
+    if (!signedIn) {
+      body = EmptyView(
+        icon: Icons.notifications_none,
+        title: 'Sign in to get alerts',
+        message:
+            'Follow a tool and Liz tells you when its pricing changes '
+            'or it starts climbing.',
+        action: FilledButton(
+          onPressed: () => _promptSignIn(context),
+          child: const Text('Sign in'),
+        ),
+      );
+    } else if (state.loading) {
+      body = const LoadingView();
+    } else if (state.error != null && state.items.isEmpty) {
+      body = ErrorView(onRetry: controller.refresh);
+    } else if (state.items.isEmpty) {
+      body = const EmptyView(
+        icon: Icons.notifications_none,
+        title: 'Nothing yet',
+        message:
+            'Follow a tool from its page. When its pricing changes or '
+            'it breaks into the top ten, it shows up here.',
+      );
+    } else {
+      body = DecoratedBox(
+        decoration: ShapeDecoration(
+          color: p.surface,
+          shape: LizRadius.shape(
+            LizRadius.md,
+            side: BorderSide(color: p.hairline),
+          ),
+        ),
+        child: ClipRSuperellipse(
+          borderRadius: BorderRadius.circular(LizRadius.md),
+          child: Column(
+            children: [
+              for (var i = 0; i < state.items.length; i++) ...[
+                if (i > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 68),
+                    child: Divider(height: 1, color: p.hairline),
                   ),
+                _AlertTile(
+                  alert: state.items[i],
+                  onTap: () {
+                    final alert = state.items[i];
+                    controller.markRead(alert);
+                    final route = alert.route;
+                    if (route != null && route.isNotEmpty) {
+                      context.push(route);
+                    }
+                  },
                 ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(),
+      body: RefreshIndicator(
+        onRefresh: controller.refresh,
+        child: MaxWidth(
+          maxWidth: 760 + gutter * 2,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(0, 0, 0, 40),
+            children: [
+              PageHeader(
+                title: 'Alerts',
+                subtitle: signedIn
+                    ? 'Price changes and climbs, for the tools you follow.'
+                    : null,
+                trailing: signedIn && state.unread > 0
+                    ? TextButton(
+                        onPressed: controller.markAllRead,
+                        child: const Text('Mark all read'),
+                      )
+                    : null,
               ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: gutter),
+                child: body,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -110,48 +147,93 @@ class _AlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final icon = _icons[alert.type] ?? Icons.notifications_none;
+    final unread = !alert.read;
 
-    return ListTile(
-      onTap: onTap,
-      // An unread alert is tinted rather than badged: the whole row reads as
-      // new, which survives being glanced at on a phone.
-      tileColor: alert.read ? null : scheme.primary.withValues(alpha: 0.05),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: LizSpacing.md,
-        vertical: 6,
-      ),
-      leading: CircleAvatar(
-        backgroundColor: alert.read
-            ? scheme.surfaceContainerHighest
-            : scheme.primary.withValues(alpha: 0.14),
-        child: Icon(
-          icon,
-          size: 20,
-          color: alert.read ? scheme.onSurfaceVariant : scheme.primary,
-        ),
-      ),
-      title: Text(
-        alert.title,
-        style: TextStyle(
-          fontWeight: alert.read ? FontWeight.w500 : FontWeight.w700,
-        ),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (alert.body.isNotEmpty) Text(alert.body),
-          const SizedBox(height: 2),
-          Text(
-            timeAgo(alert.createdAt),
-            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+    return Semantics(
+      button: true,
+      label:
+          '${unread ? 'Unread. ' : ''}${alert.title}. ${alert.body}. '
+          '${timeAgo(alert.createdAt)} ago',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: ShapeDecoration(
+                  color: unread ? p.accentSoft : p.surfaceMuted,
+                  shape: LizRadius.shape(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 19,
+                  color: unread ? p.accent : p.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            alert.title,
+                            style: LizText.headline.copyWith(
+                              color: p.textPrimary,
+                              fontWeight: unread
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          timeAgo(alert.createdAt),
+                          style: LizText.footnote.copyWith(
+                            color: p.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (alert.body.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        alert.body,
+                        style: LizText.callout.copyWith(color: p.textSecondary),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Unread is a dot, like Mail: the row stays quiet, the dot
+              // says what is new.
+              SizedBox(
+                width: 10,
+                child: unread
+                    ? Container(
+                        width: 9,
+                        height: 9,
+                        margin: const EdgeInsets.only(top: 6),
+                        decoration: BoxDecoration(
+                          color: p.accent,
+                          shape: BoxShape.circle,
+                        ),
+                      )
+                    : null,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      trailing: alert.route == null
-          ? null
-          : Icon(Icons.chevron_right, color: scheme.onSurfaceVariant, size: 20),
     );
   }
 }

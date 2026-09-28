@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
+import '../../shared/widgets/liz_card.dart';
 import '../../shared/widgets/tool_logo.dart';
 
 /// Tools close to this one by meaning.
@@ -32,35 +33,32 @@ class SimilarToolsSection extends ConsumerWidget {
     final tools = similar.value ?? const <Tool>[];
     if (tools.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
+    final p = context.liz;
+    return Padding(
+      padding: const EdgeInsets.only(top: 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
               'Similar tools',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: LizText.title2.copyWith(color: p.textPrimary),
             ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.auto_awesome,
-              size: 15,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 128,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: tools.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 10),
-            itemBuilder: (context, i) => _SimilarCard(tool: tools[i]),
           ),
-        ),
-        const SizedBox(height: 28),
-      ],
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 132 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: tools.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) => _SimilarCard(tool: tools[i]),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -71,54 +69,45 @@ class _SimilarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     return SizedBox(
-      width: 196,
-      child: Card(
-        margin: EdgeInsets.zero,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(LizRadius.lg),
-          // Replace rather than push: hopping between related tools should not
-          // build a back stack ten deep to escape from.
-          onTap: () => context.replace('/tool/${tool.id}'),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      width: 232,
+      child: LizCard(
+        padding: const EdgeInsets.all(14),
+        // Replace rather than push: hopping between related tools should not
+        // build a back stack ten deep to escape from.
+        onTap: () => context.replace('/tool/${tool.id}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                ToolLogo(tool: tool, size: 34),
+                ToolLogo(tool: tool, size: 36),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tool.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 3),
-                      Expanded(
-                        child: Text(
-                          tool.tagline,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            height: 1.25,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      PricingBadge(tool.pricingType),
-                    ],
+                  child: Text(
+                    tool.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LizText.headline.copyWith(color: p.textPrimary),
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Text(
+                tool.tagline,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: LizText.subhead.copyWith(
+                  color: p.textSecondary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            ToolMeta(tool, showCategory: false),
+          ],
         ),
       ),
     );

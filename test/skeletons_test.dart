@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:liz/app/responsive/breakpoints.dart';
 import 'package:liz/app/theme.dart';
 import 'package:liz/shared/widgets/skeletons.dart';
 
@@ -63,9 +64,11 @@ void main() {
       (tester) async {
     await _pump(tester, const ToolGridSkeletonSliver(count: 4));
 
-    // 222 is the mainAxisExtent the real grid uses; a shorter placeholder
-    // would make the page jump when the tools arrive.
-    final card = tester.getSize(find.byType(ToolCardSkeleton).first);
-    expect(card.height, 222);
+    // The placeholder must be exactly as tall as the real card, or the page
+    // jumps when the tools arrive. Measured against the grid's own extent, so
+    // resizing the card cannot leave the skeleton behind (it did: 222 → 138).
+    final skeleton = find.byType(ToolCardSkeleton).first;
+    final card = tester.getSize(skeleton);
+    expect(card.height, toolCardExtent(tester.element(skeleton)));
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/responsive/breakpoints.dart';
+import '../../app/theme.dart';
 import '../../features/discover/discover_controller.dart';
 import 'skeletons.dart';
 import 'states.dart';
@@ -18,6 +19,7 @@ class ToolGridSliver extends ConsumerWidget {
     final state = ref.watch(toolFeedProvider(feedKey));
     final width = MediaQuery.sizeOf(context).width;
     final columns = gridColumnsFor(width);
+    final gutter = LizSpacing.gutter(width);
 
     if (state.loading) {
       return const ToolGridSkeletonSliver();
@@ -40,12 +42,12 @@ class ToolGridSliver extends ConsumerWidget {
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 32),
       sliver: SliverGrid(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: columns,
-          mainAxisSpacing: 14,
-          crossAxisSpacing: 14,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
           mainAxisExtent: toolCardExtent(context),
         ),
         delegate: SliverChildBuilderDelegate((context, index) {

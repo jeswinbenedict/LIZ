@@ -14,6 +14,7 @@ import '../features/compare/compare_screen.dart';
 import '../features/discover/discover_screen.dart';
 import '../features/discover/search_screen.dart';
 import '../features/legal/legal_screen.dart';
+import '../shared/widgets/states.dart';
 import '../features/news/news_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/profile/settings_screen.dart';
@@ -42,6 +43,10 @@ GoRouter buildRouter() {
       CrashReporter.currentRoute = state.uri.toString();
       return null;
     },
+    // A mistyped or stale link used to land on go_router's bare debug page:
+    // unstyled text and nothing to do. This is a page of the app, with a way
+    // back into it.
+    errorBuilder: (context, state) => const NotFoundScreen(),
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) =>

@@ -111,15 +111,18 @@ class _SignInViewState extends ConsumerState<SignInView> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            _isSignUp ? 'Create your account' : 'Welcome to Liz',
-            style: Theme.of(context).textTheme.headlineSmall,
+          Semantics(
+            header: true,
+            child: Text(
+              _isSignUp ? 'Create your account' : 'Welcome to Liz',
+              style: LizText.title1.copyWith(color: context.liz.textPrimary),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             widget.prompt ??
                 'Sign in to save tools, post, and follow what you love.',
-            style: TextStyle(color: scheme.onSurfaceVariant),
+            style: LizText.body.copyWith(color: context.liz.textSecondary),
           ),
           const SizedBox(height: LizSpacing.lg),
 
@@ -192,15 +195,18 @@ class _SignInViewState extends ConsumerState<SignInView> {
 
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: scheme.error)),
+            _Message(text: _error!, color: context.liz.danger),
           ],
           if (_info != null) ...[
             const SizedBox(height: 12),
-            Text(_info!, style: const TextStyle(color: LizColors.positive)),
+            _Message(text: _info!, color: context.liz.positive),
           ],
 
           const SizedBox(height: LizSpacing.md),
           FilledButton(
+            style: const ButtonStyle(
+              minimumSize: WidgetStatePropertyAll(Size.fromHeight(48)),
+            ),
             onPressed: busy
                 ? null
                 : () {
@@ -315,6 +321,33 @@ class _SignInViewState extends ConsumerState<SignInView> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A form message — an error or a confirmation — as a tinted panel, so it
+/// reads as the form's answer rather than as stray coloured text.
+class _Message extends StatelessWidget {
+  const _Message({required this.text, required this.color});
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final fill = Color.alphaBlend(color.withValues(alpha: 0.10), p.surface);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: ShapeDecoration(
+        color: fill,
+        shape: LizRadius.shape(LizRadius.sm),
+      ),
+      child: Text(
+        text,
+        style: LizText.callout.copyWith(
+          color: LizColors.legibleOn(color, fill),
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/responsive/breakpoints.dart';
+import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/skeletons.dart';
@@ -67,30 +68,42 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final key = (query: _query, pricing: _pricing);
     final results = ref.watch(searchResultsProvider(key));
-    final columns = gridColumnsFor(MediaQuery.sizeOf(context).width);
+    final width = MediaQuery.sizeOf(context).width;
+    final columns = gridColumnsFor(width);
+    final gutter = LizSpacing.gutter(width);
+    final p = context.liz;
+    final count = _query.trim().length < 2 ? null : results.value?.length;
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: TextField(
-          controller: _controller,
-          autofocus: true,
-          textInputAction: TextInputAction.search,
-          onChanged: _onChanged,
-          decoration: InputDecoration(
-            hintText: 'Search tools, tags, categories…',
-            filled: false,
-            border: InputBorder.none,
-            suffixIcon: _controller.text.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: 'Clear search',
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _controller.clear();
-                      setState(() => _query = '');
-                    },
-                  ),
+        toolbarHeight: 64,
+        // The field is the title: this screen exists to be typed into.
+        title: Padding(
+          padding: EdgeInsets.only(right: gutter),
+          child: MaxWidth(
+            maxWidth: 720,
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              onChanged: _onChanged,
+              style: LizText.body.copyWith(color: p.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Search tools, tags, categories…',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _controller.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.cancel, size: 18),
+                        onPressed: () {
+                          _controller.clear();
+                          setState(() => _query = '');
+                        },
+                      ),
+              ),
+            ),
           ),
         ),
       ),
@@ -99,20 +112,34 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: PricingFilter(
-                selected: _pricing,
-                onChanged: (value) => setState(() => _pricing = value),
+              padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      count == null
+                          ? ''
+                          : count == 1
+                          ? '1 tool'
+                          : '$count tools',
+                      style: LizText.subhead.copyWith(color: p.textSecondary),
+                    ),
+                  ),
+                  PricingFilter(
+                    selected: _pricing,
+                    onChanged: (value) => setState(() => _pricing = value),
+                  ),
+                ],
               ),
             ),
-            Expanded(child: _results(results, columns)),
+            Expanded(child: _results(results, columns, gutter)),
           ],
         ),
       ),
     );
   }
 
-  Widget _results(AsyncValue<List<Tool>> results, int columns) {
+  Widget _results(AsyncValue<List<Tool>> results, int columns, double gutter) {
     final key = (query: _query, pricing: _pricing);
     return _query.trim().length < 2
         ? const EmptyView(
@@ -136,11 +163,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         : 'Try a broader term, or any price.',
                   )
                 : GridView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 32),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
                       mainAxisExtent: toolCardExtent(context),
                     ),
                     itemCount: tools.length,

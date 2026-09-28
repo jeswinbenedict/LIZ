@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme.dart';
 import '../auth/guard.dart';
 import 'track_controller.dart';
 
@@ -10,12 +11,16 @@ class BookmarkButton extends ConsumerWidget {
     super.key,
     required this.toolId,
     this.filledStyle = false,
+    this.compact = false,
   });
 
   final String toolId;
 
   /// When true renders as a labelled button (tool detail); otherwise an icon.
   final bool filledStyle;
+
+  /// With [filledStyle], an icon-only tonal circle (phone action rows).
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,25 +47,31 @@ class BookmarkButton extends ConsumerWidget {
       },
     );
 
+    if (filledStyle && compact) {
+      return IconButton.filled(
+        style: LizButtons.tonal(context.liz).merge(
+          const ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(44, 44))),
+        ),
+        tooltip: saved ? 'Remove from saved' : 'Save',
+        onPressed: toggle,
+        icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border, size: 20),
+      );
+    }
     if (filledStyle) {
-      return saved
-          ? OutlinedButton.icon(
-              onPressed: toggle,
-              icon: const Icon(Icons.bookmark),
-              label: const Text('Saved'),
-            )
-          : FilledButton.tonalIcon(
-              onPressed: toggle,
-              icon: const Icon(Icons.bookmark_border),
-              label: const Text('Save'),
-            );
+      final style = LizButtons.tonal(context.liz).merge(LizButtons.capsule);
+      return FilledButton.icon(
+        style: style,
+        onPressed: toggle,
+        icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border, size: 18),
+        label: Text(saved ? 'Saved' : 'Save'),
+      );
     }
 
     return IconButton(
       onPressed: toggle,
       tooltip: saved ? 'Remove from saved' : 'Save',
       icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
-      color: saved ? Theme.of(context).colorScheme.primary : null,
+      color: saved ? context.liz.accent : null,
     );
   }
 }

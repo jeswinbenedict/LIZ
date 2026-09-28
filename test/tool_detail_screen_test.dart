@@ -34,7 +34,7 @@ void main() {
     await _pump(tester, 't-1');
 
     expect(find.text('Save'), findsOneWidget);
-    expect(find.text('Visit'), findsOneWidget);
+    expect(find.text('Visit website'), findsOneWidget);
   });
 
   testWidgets('an unknown id fails visibly rather than hanging', (tester) async {
