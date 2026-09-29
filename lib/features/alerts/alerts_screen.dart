@@ -12,7 +12,7 @@ import '../../shared/widgets/time_ago.dart';
 import '../auth/sign_in_view.dart';
 import 'alerts_controller.dart';
 
-/// What happened while you were away, for the tools you follow.
+/// What happened while you were away, for the tools you saved.
 class AlertsScreen extends ConsumerWidget {
   const AlertsScreen({super.key});
 
@@ -31,8 +31,8 @@ class AlertsScreen extends ConsumerWidget {
         icon: Icons.notifications_none,
         title: 'Sign in to get alerts',
         message:
-            'Follow a tool and Liz tells you when its pricing changes '
-            'or it starts climbing.',
+            'Save a tool and Liz tells you when its pricing changes '
+            'or it starts rising.',
         action: FilledButton(
           onPressed: () => _promptSignIn(context),
           child: const Text('Sign in'),
@@ -47,7 +47,7 @@ class AlertsScreen extends ConsumerWidget {
         icon: Icons.notifications_none,
         title: 'Nothing yet',
         message:
-            'Follow a tool from its page. When its pricing changes or '
+            'Save a tool from its page. When its pricing changes or '
             'it breaks into the top ten, it shows up here.',
       );
     } else {
@@ -99,7 +99,7 @@ class AlertsScreen extends ConsumerWidget {
               PageHeader(
                 title: 'Alerts',
                 subtitle: signedIn
-                    ? 'Price changes and climbs, for the tools you follow.'
+                    ? 'Price changes and rises, for the tools you saved.'
                     : null,
                 trailing: signedIn && state.unread > 0
                     ? TextButton(

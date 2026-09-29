@@ -350,3 +350,21 @@ def test_an_svg_icon_is_passed_over_for_a_raster_one():
     )
     only_svg = """<link rel="icon" href="/logo" type="image/svg+xml">"""
     assert extract_logo(BeautifulSoup(only_svg, "lxml"), "https://acme.ai") is None
+
+
+def test_preview_image_is_absolute_and_never_svg():
+    from bs4 import BeautifulSoup
+    from liz_scraper.enrich import extract_preview_image
+
+    def image(head: str) -> str | None:
+        return extract_preview_image(
+            BeautifulSoup(f"<html><head>{head}</head></html>", "lxml"),
+            "https://tool.app/start",
+        )
+
+    assert image('<meta property="og:image" content="/og.png">') == "https://tool.app/og.png"
+    assert image('<meta property="og:image" content="/og.svg">') is None
+    assert image('<meta property="og:image" content="data:image/png;base64,xx">') is None
+    assert image('<meta name="twitter:image" content="https://cdn.tool.app/t.jpg">') == (
+        "https://cdn.tool.app/t.jpg")
+    assert image("") is None

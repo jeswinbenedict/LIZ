@@ -7,6 +7,7 @@ import '../../shared/models/post.dart';
 import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/models/tool_history.dart';
 
 /// How a tool feed is ordered. `rising` implements the "rising early" idea:
 /// high velocity but still low absolute popularity.
@@ -93,6 +94,19 @@ abstract interface class ContentRepository {
   /// Tools close to this one by meaning, nearest first. May be empty when
   /// nothing in the catalog is genuinely close — see migration 0023.
   Future<List<Tool>> similarTools(String toolId);
+
+  /// One point per day for the last [days] days, oldest first
+  /// (tool_signal_snapshots). History starts on 29 September 2026.
+  Future<List<SignalPoint>> signalHistory(String toolId, {int days = 30});
+
+  /// The same for several tools in one request, keyed by tool id.
+  Future<Map<String, List<SignalPoint>>> signalHistories(
+    List<String> toolIds, {
+    int days = 14,
+  });
+
+  /// Price changes, newest first (migration 0044).
+  Future<List<ToolChange>> toolChanges(String toolId);
 }
 
 /// Community: posts, reviews, comments, likes, reports.

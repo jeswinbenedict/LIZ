@@ -10,6 +10,7 @@ import '../../shared/models/post.dart';
 import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/models/tool_history.dart';
 import '../auth/auth_repository.dart';
 import '../errors.dart';
 import 'keyset.dart';
@@ -42,7 +43,7 @@ class SupabaseContentRepository implements ContentRepository {
       'category,tags,platforms,pricing_type,price_note,source,source_url,'
       'launched_at,trend_score,view_count,save_count,avg_rating,rating_count,'
       'status,created_at,trend_rank,momentum,trend_reason,gh_repo,gh_stars,'
-      'hn_id,hn_points,hn_comments';
+      'hn_id,hn_points,hn_comments,hn_posted_at,image_url';
 
   /// Everything a feed card draws, and nothing more. Dropping the description
   /// and the AI summary halves a page of the grid on the wire, and the model
@@ -166,6 +167,61 @@ class SupabaseContentRepository implements ContentRepository {
         )
         .select(_toolCols);
     return (rows as List).map((e) => Tool.fromJson(e)).toList();
+  }
+
+  static const _snapshotCols =
+      'tool_id,day,gh_stars,hn_points,views,clicks,saves';
+
+  static String _since(int days) => DateTime.now()
+      .toUtc()
+      .subtract(Duration(days: days))
+      .toIso8601String()
+      .substring(0, 10);
+
+  @override
+  Future<List<SignalPoint>> signalHistory(
+    String toolId, {
+    int days = 30,
+  }) async {
+    final rows = await _client
+        .from('tool_signal_snapshots')
+        .select(_snapshotCols)
+        .eq('tool_id', toolId)
+        .gte('day', _since(days))
+        .order('day');
+    return (rows as List).map((e) => SignalPoint.fromJson(e)).toList();
+  }
+
+  @override
+  Future<Map<String, List<SignalPoint>>> signalHistories(
+    List<String> toolIds, {
+    int days = 14,
+  }) async {
+    if (toolIds.isEmpty) return const {};
+    final rows = await _client
+        .from('tool_signal_snapshots')
+        .select(_snapshotCols)
+        .inFilter('tool_id', toolIds)
+        .gte('day', _since(days))
+        .order('day');
+    final out = <String, List<SignalPoint>>{};
+    for (final r in (rows as List).whereType<Map<String, dynamic>>()) {
+      out
+          .putIfAbsent(asString(r['tool_id']), () => [])
+          .add(SignalPoint.fromJson(r));
+    }
+    return out;
+  }
+
+  @override
+  Future<List<ToolChange>> toolChanges(String toolId) async {
+    final rows = await _client
+        .from('tool_changes')
+        .select('field,old_value,new_value,changed_at')
+        .eq('tool_id', toolId)
+        .order('changed_at', ascending: false)
+        .limit(20);
+    return (rows as List).map((e) => ToolChange.fromJson(e)).toList();
   }
 
   @override

@@ -85,6 +85,19 @@ estimated or seeded.
 
 → [docs/RANKING.md](docs/RANKING.md)
 
+Each tool page shows that history as a signal line, and a timeline of what
+happened to the tool: when Liz first saw it, its Hacker News launch, and every
+price change since 29 September 2026. Saving a tool is also watching it — its
+price changes and rises arrive in Alerts.
+
+## Found by search engines
+
+The app is drawn on a canvas, so the deploy also writes one HTML page per tool
+and category — own title, description, structured data and text — plus a
+sitemap, so search engines and link previews see real content.
+
+→ [docs/SEO.md](docs/SEO.md)
+
 ## Knowing it still works
 
 `system_health()` reports twelve signals derived from the data itself — catalog

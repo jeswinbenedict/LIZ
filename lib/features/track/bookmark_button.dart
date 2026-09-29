@@ -7,8 +7,10 @@ import '../auth/guard.dart';
 import '../auth/sign_in_view.dart';
 import 'track_controller.dart';
 
-/// Save/bookmark toggle. Works before signing in: a visitor's saves stay in
-/// the browser and move into their account when they sign in.
+/// Save/bookmark toggle. Saving is also watching: a saved tool's price
+/// changes and rises reach Alerts (migration 0044). Works before signing in:
+/// a visitor's saves stay in the browser and move into their account when
+/// they sign in.
 class BookmarkButton extends ConsumerWidget {
   const BookmarkButton({
     super.key,
@@ -58,7 +60,8 @@ class BookmarkButton extends ConsumerWidget {
                       onPressed: () => showSignInSheet(
                         context,
                         prompt:
-                            'Sign in to keep your saved tools on every device.',
+                            'Sign in to keep your saved tools on every device '
+                            'and hear when they change.',
                       ),
                     )
                   : null,
@@ -72,7 +75,7 @@ class BookmarkButton extends ConsumerWidget {
         style: LizButtons.tonal(context.liz).merge(
           const ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(44, 44))),
         ),
-        tooltip: saved ? 'Remove from saved' : 'Save',
+        tooltip: saved ? 'Remove from saved' : 'Save and watch for changes',
         onPressed: toggle,
         icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border, size: 20),
       );
@@ -89,7 +92,7 @@ class BookmarkButton extends ConsumerWidget {
 
     return IconButton(
       onPressed: toggle,
-      tooltip: saved ? 'Remove from saved' : 'Save',
+      tooltip: saved ? 'Remove from saved' : 'Save and watch for changes',
       icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
       color: saved ? context.liz.accent : null,
     );

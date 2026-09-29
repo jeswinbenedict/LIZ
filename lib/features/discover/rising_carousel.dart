@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
-import '../../core/repository/repositories.dart';
+import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/models/tool_history.dart';
 import '../../shared/widgets/page_header.dart';
+import '../../shared/widgets/signal_sparkline.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 import 'discover_controller.dart';
@@ -35,10 +37,20 @@ class RisingCarousel extends ConsumerWidget {
     final gutter = LizSpacing.gutter(width);
     final twoColumns = !context.isPhone;
     final items = state.items.take(twoColumns ? 6 : 5).toList();
+    // The lines arrive after the rows; the chart never waits for them.
+    final histories =
+        ref
+            .watch(_chartHistoryProvider(items.map((t) => t.id).join(',')))
+            .value ??
+        const <String, List<SignalPoint>>{};
 
     final rows = [
       for (var i = 0; i < items.length; i++)
-        _ChartRow(rank: i + 1, tool: items[i]),
+        _ChartRow(
+          rank: i + 1,
+          tool: items[i],
+          history: histories[items[i].id] ?? const [],
+        ),
     ];
 
     return Column(
@@ -120,10 +132,23 @@ class _Column extends StatelessWidget {
   }
 }
 
+/// Two weeks of history for every row of the chart, in one request.
+final _chartHistoryProvider = FutureProvider.autoDispose
+    .family<Map<String, List<SignalPoint>>, String>(
+      (ref, idsCsv) => ref
+          .watch(contentRepositoryProvider)
+          .signalHistories(idsCsv.split(',')),
+    );
+
 class _ChartRow extends StatelessWidget {
-  const _ChartRow({required this.rank, required this.tool});
+  const _ChartRow({
+    required this.rank,
+    required this.tool,
+    required this.history,
+  });
   final int rank;
   final Tool tool;
+  final List<SignalPoint> history;
 
   @override
   Widget build(BuildContext context) => ToolLink(tool: tool, builder: _row);
@@ -206,6 +231,13 @@ class _ChartRow extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (SignalSeries.pick(history) case final series?) ...[
+                  const SizedBox(width: 12),
+                  SignalSparkline(
+                    values: series.values,
+                    semanticLabel: '${series.label}, last two weeks',
+                  ),
+                ],
                 if (tool.pricingType != PricingType.unknown) ...[
                   const SizedBox(width: 12),
                   Text(

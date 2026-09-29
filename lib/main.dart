@@ -12,6 +12,7 @@ import 'core/notifications/push_service.dart';
 import 'core/telemetry/analytics.dart';
 import 'core/telemetry/crash_reporter.dart';
 import 'core/providers.dart';
+import 'shared/widgets/page_title.dart';
 
 Future<void> main() async {
   // Everything runs inside the guard so a failure during startup is recorded
@@ -90,7 +91,7 @@ class _LizAppState extends ConsumerState<LizApp> {
     });
 
     return MaterialApp.router(
-      title: 'Liz',
+      title: PageTitle.defaultTitle,
       debugShowCheckedModeBanner: false,
       theme: LizTheme.light(),
       darkTheme: LizTheme.dark(),

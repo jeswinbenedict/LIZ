@@ -104,20 +104,6 @@ class BookmarkController extends _IdSetController {
 final bookmarkControllerProvider =
     NotifierProvider<BookmarkController, Set<String>>(BookmarkController.new);
 
-/// Which tool ids the current user follows.
-class FollowController extends _IdSetController {
-  @override
-  Future<Set<String>> fetch() =>
-      ref.read(trackRepositoryProvider).followedToolIds();
-
-  @override
-  Future<bool> write(String id) =>
-      ref.read(trackRepositoryProvider).toggleFollowTool(id);
-}
-
-final followControllerProvider =
-    NotifierProvider<FollowController, Set<String>>(FollowController.new);
-
 /// Which user ids the current user follows.
 class FollowUserController extends _IdSetController {
   @override

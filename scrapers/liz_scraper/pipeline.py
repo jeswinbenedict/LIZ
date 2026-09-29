@@ -109,6 +109,8 @@ def run(
         # rejects a batch whose rows have different columns.
         row["hn_id"] = getattr(candidate, "external_id", None)
         row["hn_points"] = getattr(candidate, "points", None)
+        # The product's preview image for its page (migration 0045).
+        row["image_url"] = facts.image_url if facts else None
 
         # The gate reads the finished row rather than the candidate, so it
         # judges what a reader would actually get — including whether

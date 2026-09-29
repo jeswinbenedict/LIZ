@@ -120,9 +120,9 @@ class SignalReader:
                 stars[item["full_name"].lower()] = int(item.get("stargazers_count") or 0)
         return stars
 
-    def hn_points(self, story_ids: list[str]) -> dict[str, tuple[int, int]]:
-        """(points, comments) by story id."""
-        found: dict[str, tuple[int, int]] = {}
+    def hn_points(self, story_ids: list[str]) -> dict[str, tuple]:
+        """(points, comments, posted_at) by story id."""
+        found: dict[str, tuple] = {}
         for start in range(0, len(story_ids), 50):
             chunk = story_ids[start : start + 50]
             tags = "(" + ",".join(f"story_{sid}" for sid in chunk) + ")"
@@ -140,6 +140,7 @@ class SignalReader:
                 found[str(hit["objectID"])] = (
                     int(hit.get("points") or 0),
                     int(hit.get("num_comments") or 0),
+                    hit.get("created_at"),
                 )
         return found
 
@@ -220,7 +221,10 @@ def plan_updates(
             continue
         row = updates.setdefault(tool_id, {"id": tool_id})
         row["hn_id"] = hn_ids[tool_id]
-        row["hn_points"], row["hn_comments"] = got
+        row["hn_points"], row["hn_comments"] = got[0], got[1]
+        # When the story went up, for the tool's timeline (migration 0044).
+        if len(got) > 2 and got[2]:
+            row["hn_posted_at"] = got[2]
     log.info("HN: points for %d stories", len(points))
 
     return list(updates.values())

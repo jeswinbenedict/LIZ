@@ -9,6 +9,7 @@ import '../../shared/models/post.dart';
 import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/models/tool_history.dart';
 import '../auth/auth_repository.dart';
 import '../data/mock_data.dart';
 import '../errors.dart';
@@ -204,6 +205,22 @@ class MockContentRepository implements ContentRepository {
           t.category.contains(s);
     }).toList();
   }
+
+  // Demo mode has no history: the sections that draw it stay out of the way.
+  @override
+  Future<List<SignalPoint>> signalHistory(
+    String toolId, {
+    int days = 30,
+  }) async => const [];
+
+  @override
+  Future<Map<String, List<SignalPoint>>> signalHistories(
+    List<String> toolIds, {
+    int days = 14,
+  }) async => const {};
+
+  @override
+  Future<List<ToolChange>> toolChanges(String toolId) async => const [];
 
   @override
   Future<List<Tool>> similarTools(String toolId) async {

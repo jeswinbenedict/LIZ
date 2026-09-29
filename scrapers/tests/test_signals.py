@@ -130,3 +130,11 @@ def test_a_tagline_does_not_repeat_the_name_printed_above_it():
     assert strip_name_prefix("Watch fish with Koi.rest", "Koi.rest") == "Watch fish with Koi.rest"
     assert strip_name_prefix("Koi.rest \u2013 fish", "Koi.rest") == "Koi.rest \u2013 fish"
     assert strip_name_prefix("Kobrand makes logos", "Kobra") == "Kobrand makes logos"
+
+
+def test_the_hn_posting_time_is_kept_for_the_timeline():
+    tools = [{"id": "t1", "source": "hackernews", "created_at": NOW.isoformat(),
+              "hn_id": "7", "hn_points": None}]
+    reader = FakeReader(points={"7": (10, 2, "2026-09-25T14:03:00Z")})
+    [row] = plan_updates(tools, reader, now=NOW)
+    assert row["hn_posted_at"] == "2026-09-25T14:03:00Z"

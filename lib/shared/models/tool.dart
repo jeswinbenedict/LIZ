@@ -76,6 +76,8 @@ class Tool {
     this.hnId,
     this.hnPoints,
     this.hnComments,
+    this.hnPostedAt,
+    this.imageUrl,
   });
 
   final String id;
@@ -128,6 +130,10 @@ class Tool {
   final String? hnId;
   final int? hnPoints;
   final int? hnComments;
+  final DateTime? hnPostedAt;
+
+  /// The product's own preview image (og:image), when its site declares one.
+  final String? imageUrl;
 
   bool get isRising => momentum > 0 && trendReason != null;
 
@@ -187,6 +193,8 @@ class Tool {
       hnId: asStringOrNull(j['hn_id']),
       hnPoints: j['hn_points'] == null ? null : asInt(j['hn_points']),
       hnComments: j['hn_comments'] == null ? null : asInt(j['hn_comments']),
+      hnPostedAt: asDateOrNull(j['hn_posted_at']),
+      imageUrl: asStringOrNull(j['image_url']),
     );
   }
 
@@ -222,6 +230,8 @@ class Tool {
     'hn_id': hnId,
     'hn_points': hnPoints,
     'hn_comments': hnComments,
+    'hn_posted_at': hnPostedAt?.toIso8601String(),
+    'image_url': imageUrl,
   };
 
   Tool copyWith({
@@ -263,5 +273,7 @@ class Tool {
     hnId: hnId,
     hnPoints: hnPoints,
     hnComments: hnComments,
+    hnPostedAt: hnPostedAt,
+    imageUrl: imageUrl,
   );
 }

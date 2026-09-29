@@ -16,6 +16,7 @@ Tool sampleTool({
   String? hnId,
   int? hnPoints,
   int? hnComments,
+  DateTime? hnPostedAt,
   int ratingCount = 0,
   double avgRating = 0,
   DateTime? createdAt,
@@ -52,5 +53,6 @@ Tool sampleTool({
     hnId: hnId,
     hnPoints: hnPoints,
     hnComments: hnComments,
+    hnPostedAt: hnPostedAt,
   );
 }

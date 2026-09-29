@@ -17,6 +17,10 @@
 # Until the Cloudflare secrets exist the job builds and stops, with a warning,
 # so the build itself stays checked on every push.
 #
+# The catalog changes daily but a deploy only happens on push, so the
+# pre-rendered pages would go stale; the schedule below rebuilds once a day,
+# after the scraper and the nightly ranking have run.
+#
 # Path URLs (/tools/elevenlabs) need the host to serve index.html for any path
 # that is not a file. Pages does that for a site with no top-level 404.html,
 # which a Flutter build does not have. Security headers come from
@@ -27,6 +31,8 @@ name: deploy-web
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '30 5 * * *' # after scrape-tools (03:30) and snapshot-and-rank (04:50)
   workflow_dispatch:
 
 concurrency:
@@ -63,6 +69,28 @@ jobs:
             --dart-define=FCM_VAPID_KEY="$FCM_VAPID_KEY" \
             --dart-define=SITE_URL="$SITE_URL"
           test -f build/web/_headers
+
+      # One HTML page per tool and category, with its own title, description,
+      # structured data and text, plus sitemap.xml and robots.txt — so search
+      # engines and link previews see more than an empty app shell. Reads
+      # published rows with the public anon key. docs/SEO.md.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Pre-render pages for search engines
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        working-directory: scrapers
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::warning::Supabase secrets not set — skipping pre-rendering."
+            exit 0
+          fi
+          pip install -r requirements.txt
+          python -m liz_scraper.prerender --build ../build/web --site "$SITE_URL"
 
       - name: Check Cloudflare secrets
         id: cf

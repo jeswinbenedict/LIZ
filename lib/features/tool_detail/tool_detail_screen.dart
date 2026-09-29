@@ -12,6 +12,7 @@ import '../../core/telemetry/analytics.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
+import '../../shared/widgets/page_title.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
@@ -21,8 +22,8 @@ import '../community/community_controller.dart';
 import '../community/community_widgets.dart';
 import '../community/composers.dart';
 import '../track/bookmark_button.dart';
-import '../track/follow_button.dart';
 import 'similar_tools.dart';
+import 'tool_history.dart';
 import 'tool_updates.dart';
 
 class ToolDetailScreen extends ConsumerWidget {
@@ -75,9 +76,13 @@ class ToolDetailScreen extends ConsumerWidget {
                 title: 'Tool not found',
                 message: 'It may have been removed.',
               )
-            : _ViewRecorder(
-                toolId: tool.id,
-                child: _ToolBody(tool: tool),
+            : PageTitle(
+                // The same title the prerendered page carries.
+                title: PageTitle.forTool(tool.name, tool.tagline),
+                child: _ViewRecorder(
+                  toolId: tool.id,
+                  child: _ToolBody(tool: tool),
+                ),
               ),
       ),
     );
@@ -216,20 +221,19 @@ class _ToolBody extends ConsumerWidget {
             const SizedBox(height: 20),
             if (phone)
               // One row on a phone: the call to action takes the width, and
-              // save and follow sit beside it as icons, rather than wrapping
-              // Follow onto a line of its own.
+              // save sits beside it as an icon.
               Row(
                 children: [
                   if (tool.websiteUrl != null)
                     _VisitButton(tool: tool, expand: true),
                   const SizedBox(width: 10),
+                  // Saving is watching: saved tools get change alerts
+                  // (migration 0044), so there is no separate Follow.
                   BookmarkButton(
                     toolId: tool.id,
                     filledStyle: true,
                     compact: true,
                   ),
-                  const SizedBox(width: 10),
-                  FollowButton(toolId: tool.id, compact: true),
                 ],
               )
             else
@@ -239,12 +243,12 @@ class _ToolBody extends ConsumerWidget {
                 children: [
                   if (tool.websiteUrl != null) _VisitButton(tool: tool),
                   BookmarkButton(toolId: tool.id, filledStyle: true),
-                  FollowButton(toolId: tool.id),
                 ],
               ),
             const SizedBox(height: 24),
             _InfoStrip(tool: tool),
             _SignalLinks(tool: tool),
+            if (tool.imageUrl != null) _Preview(tool: tool),
 
             if (tool.aiSummary.isNotEmpty)
               _Section(
@@ -292,6 +296,10 @@ class _ToolBody extends ConsumerWidget {
                 ),
               ),
             ),
+
+            // How it is moving, and what has happened to it.
+            ToolSignalsSection(tool: tool),
+            ToolTimelineSection(tool: tool),
 
             // Related products, matched on the embeddings already in the table.
             SimilarToolsSection(toolId: tool.id),
@@ -705,6 +713,58 @@ class _SourceLink extends StatelessWidget {
         onPressed: follow,
         icon: Icon(icon, size: 18),
         label: Text(label),
+      ),
+    );
+  }
+}
+
+/// What the product looks like, from the image its own site declares for
+/// link previews. Only the picture: if it will not load, the page closes up
+/// rather than showing a broken frame.
+class _Preview extends StatefulWidget {
+  const _Preview({required this.tool});
+  final Tool tool;
+
+  @override
+  State<_Preview> createState() => _PreviewState();
+}
+
+class _PreviewState extends State<_Preview> {
+  bool _failed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) return const SizedBox.shrink();
+    final p = context.liz;
+    final shape = LizRadius.shape(
+      LizRadius.md,
+      side: BorderSide(color: p.hairline),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Semantics(
+        image: true,
+        label: 'Preview of ${widget.tool.name}',
+        child: AspectRatio(
+          // The shape link previews are made for (1200 x 630).
+          aspectRatio: 1.91,
+          child: DecoratedBox(
+            decoration: ShapeDecoration(color: p.surfaceMuted, shape: shape),
+            child: ClipRSuperellipse(
+              borderRadius: BorderRadius.circular(LizRadius.md),
+              child: Image.network(
+                Env.proxiedImage(widget.tool.imageUrl!),
+                fit: BoxFit.cover,
+                errorBuilder: (context, _, _) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _failed = true);
+                  });
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

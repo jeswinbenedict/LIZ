@@ -123,6 +123,23 @@ def extract_logo(soup: BeautifulSoup, base_url: str) -> str | None:
     return None
 
 
+def extract_preview_image(soup: BeautifulSoup, base_url: str) -> str | None:
+    """The product's own preview image (og:image, then twitter:image), as an
+    absolute URL. SVG and inline data are refused: the image proxy serves
+    neither (supabase/functions/logo), and Flutter cannot draw SVG."""
+    for raw in (_meta(soup, prop="og:image"), _meta(soup, name="twitter:image"),
+                _meta(soup, prop="twitter:image")):
+        if not raw or raw.startswith("data:"):
+            continue
+        url = urljoin(base_url, raw)
+        if not url.startswith(("http://", "https://")):
+            continue
+        if urlsplit(url).path.lower().endswith((".svg", ".svgz")):
+            continue
+        return url
+    return None
+
+
 def _usable_icon(href: str | None, declared_type: str | None = None) -> bool:
     """Whether an icon reference is one the app can draw.
 
@@ -183,7 +200,8 @@ def parse_page(html: str | bytes, base_url: str) -> PageFacts:
         title=title,
         description=description,
         logo_url=logo_url,
-        image_url=_meta(soup, prop="og:image") or None,
+        # A directory's preview image is the directory's, like its logo.
+        image_url=None if host in AGGREGATOR_HOSTS else extract_preview_image(soup, base_url),
         pricing_type=infer_pricing(body_text),
         platforms=extract_platforms(soup),
         category=category,
