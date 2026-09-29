@@ -31,6 +31,9 @@ class Candidate:
     tagline: str
     published_at: str | None
     source: str = "producthunt"
+    # The source's own id and score, where it has them (Hacker News).
+    external_id: str | None = None
+    points: int | None = None
 
 
 def discover(session: PoliteSession, *, limit: int = 30) -> list[Candidate]:

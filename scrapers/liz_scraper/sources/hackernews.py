@@ -74,6 +74,8 @@ def discover(session: PoliteSession, *, limit: int = 30) -> list[Candidate]:
                 tagline=clean_text(stripped),
                 published_at=hit.get("created_at"),
                 source="hackernews",
+                external_id=str(hit["objectID"]) if hit.get("objectID") else None,
+                points=hit.get("points"),
             )
         )
 

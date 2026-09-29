@@ -10,11 +10,13 @@ import '../../shared/models/tool.dart';
 @immutable
 class FeedKey {
   const FeedKey({
-    this.sort = ToolSort.trending,
+    this.sort = ToolSort.rising,
     this.category,
     this.tag,
     this.search,
     this.pricing,
+    this.movingOnly = false,
+    this.newWithinDays,
   });
   final ToolSort sort;
   final String? category;
@@ -24,6 +26,10 @@ class FeedKey {
   /// Null means any price.
   final PricingType? pricing;
 
+  /// See [ToolQuery.movingOnly] and [ToolQuery.newWithinDays].
+  final bool movingOnly;
+  final int? newWithinDays;
+
   ToolQuery toQuery({String? cursor}) => ToolQuery(
     sort: sort,
     categorySlug: category,
@@ -31,6 +37,8 @@ class FeedKey {
     search: search,
     cursor: cursor,
     pricing: pricing,
+    movingOnly: movingOnly,
+    newWithinDays: newWithinDays,
   );
 
   @override
@@ -40,10 +48,20 @@ class FeedKey {
       other.category == category &&
       other.tag == tag &&
       other.search == search &&
-      other.pricing == pricing;
+      other.pricing == pricing &&
+      other.movingOnly == movingOnly &&
+      other.newWithinDays == newWithinDays;
 
   @override
-  int get hashCode => Object.hash(sort, category, tag, search, pricing);
+  int get hashCode => Object.hash(
+    sort,
+    category,
+    tag,
+    search,
+    pricing,
+    movingOnly,
+    newWithinDays,
+  );
 }
 
 @immutable
@@ -162,7 +180,7 @@ final toolFeedProvider = NotifierProvider.autoDispose
 final discoverPricingProvider = uiStateProvider<PricingType?>(null);
 
 /// The currently selected sort on the Discover screen.
-final discoverSortProvider = uiStateProvider<ToolSort>(ToolSort.trending);
+final discoverSortProvider = uiStateProvider<ToolSort>(ToolSort.rising);
 
 /// The currently selected category slug (null = All).
 final discoverCategoryProvider = uiStateProvider<String?>(null);

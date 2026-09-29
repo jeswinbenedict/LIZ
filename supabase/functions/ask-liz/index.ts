@@ -17,6 +17,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, json } from '../_shared/cors.ts';
+import { presentsEvalKey } from '../_shared/auth.ts';
 import { callerKey, tooManyRequests, withinRateLimit } from '../_shared/rate_limit.ts';
 import { embed } from '../_shared/embed.ts';
 import { MIN_SIMILARITY, type Match, reasonFor } from './logic.ts';
@@ -37,7 +38,12 @@ Deno.serve(async (req) => {
     // Anonymous on purpose — asking a question should not need an account —
     // but every call runs an embedding model, so it cannot also be unlimited.
     // Thirty an hour is far above what a person browsing will ever reach.
-    if (!(await withinRateLimit(callerKey(req, 'ask-liz'), ASK_LIMIT_PER_HOUR))) {
+    // The evaluation run is exempt, so the question set
+    // (scrapers/eval/ask_liz_questions.json) can run in one go.
+    if (
+      !presentsEvalKey(req) &&
+      !(await withinRateLimit(callerKey(req, 'ask-liz'), ASK_LIMIT_PER_HOUR))
+    ) {
       return tooManyRequests(600);
     }
 
@@ -49,6 +55,10 @@ Deno.serve(async (req) => {
 
     const queryEmbedding = await embed(query);
 
+    // Meaning alone decides. A keyword match was tried as a second opinion
+    // for close calls just under the floor (September 2026) and made answers
+    // worse: common words like "post" and "play" admitted wrong tools to
+    // questions whose honest answer is none. See scrapers/eval.
     const { data: matches, error } = await supabase.rpc('match_tools', {
       query_embedding: queryEmbedding,
       match_count: Math.min(Number(limit) || 5, 20),

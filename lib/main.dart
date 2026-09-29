@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +9,7 @@ import 'app/settings_controller.dart';
 import 'app/theme.dart';
 import 'core/config/env.dart';
 import 'core/notifications/push_service.dart';
+import 'core/telemetry/analytics.dart';
 import 'core/telemetry/crash_reporter.dart';
 import 'core/providers.dart';
 
@@ -16,6 +18,10 @@ Future<void> main() async {
   // too — those are the ones a user is most likely to hit and least likely to
   // report.
   await CrashReporter.guard(() async {
+    // Real paths (/tools/elevenlabs) rather than /#/tool/<id>: addresses a
+    // person can read, and the precondition for pages a search engine can
+    // index. The host must serve index.html for unknown paths.
+    usePathUrlStrategy();
     WidgetsFlutterBinding.ensureInitialized();
 
     // Initialize the live backend only when credentials are supplied via
@@ -29,6 +35,7 @@ Future<void> main() async {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    Analytics.init(prefs);
 
     runApp(
       ProviderScope(
@@ -37,9 +44,7 @@ Future<void> main() async {
         // security refusal, an expired session — and every screen already
         // shows its error with a Retry button, so errors surface at once.
         retry: (retryCount, error) => null,
-        overrides: [
-          sharedPreferencesProvider.overrideWith((ref) => prefs),
-        ],
+        overrides: [sharedPreferencesProvider.overrideWith((ref) => prefs)],
         child: const LizApp(),
       ),
     );
@@ -60,10 +65,7 @@ class _LizAppState extends ConsumerState<LizApp> {
     // Kick off push registration after first frame. Fully guarded: if Firebase
     // isn't configured on this platform/build, it silently no-ops.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      PushService.instance.init(
-        onToken: _persistToken,
-        onOpen: _openRoute,
-      );
+      PushService.instance.init(onToken: _persistToken, onOpen: _openRoute);
     });
   }
 

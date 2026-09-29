@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/telemetry/analytics.dart';
 import '../core/telemetry/crash_reporter.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/alerts/alerts_screen.dart';
@@ -38,9 +39,11 @@ GoRouter buildRouter() {
     initialLocation: '/',
     // Not a redirect in the usual sense — it never returns a destination. It
     // is the one place every navigation passes through, which makes it where
-    // the crash reporter learns which screen a later error came from.
+    // the crash reporter learns which screen a later error came from, and
+    // where a page view is counted.
     redirect: (context, state) {
       CrashReporter.currentRoute = state.uri.toString();
+      Analytics.pageView(state.uri);
       return null;
     },
     // A mistyped or stale link used to land on go_router's bare debug page:
@@ -85,8 +88,11 @@ GoRouter buildRouter() {
             routes: [
               GoRoute(
                 path: '/ask',
-                pageBuilder: (c, s) =>
-                    const NoTransitionPage(child: AskLizScreen()),
+                // ?q= arrives from the search box, when what was typed
+                // reads as a question rather than a name.
+                pageBuilder: (c, s) => NoTransitionPage(
+                  child: AskLizScreen(initialQuery: s.uri.queryParameters['q']),
+                ),
               ),
             ],
           ),
@@ -118,6 +124,13 @@ GoRouter buildRouter() {
             ],
           ),
         ],
+      ),
+      // A tool's page, by name: /tools/elevenlabs. The id form still resolves
+      // for links shared before slugs, and for notifications carrying an id.
+      GoRoute(
+        path: '/tools/:slug',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => ToolDetailScreen(slug: s.pathParameters['slug']!),
       ),
       GoRoute(
         path: '/tool/:id',

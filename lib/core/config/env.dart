@@ -52,25 +52,25 @@ class Env {
       ? _normalizeBase(siteUrl)
       : (kIsWeb ? Uri.base.origin : '');
 
-  /// A link to a tool's page on Liz, or null when Liz has no public address —
-  /// better to share nothing than a link that goes nowhere.
-  static String? toolPermalink(String toolId) =>
-      permalinkFrom(resolvedSiteUrl, toolId);
+  /// A link to one of Liz's pages, such as `/tools/elevenlabs`, or null when
+  /// Liz has no public address — better to share nothing than a link that
+  /// goes nowhere.
+  static String? permalink(String path) => permalinkFrom(resolvedSiteUrl, path);
 
   /// Split out from the platform lookup so the rules can be checked without a
   /// browser: no origin means no link, and a trailing slash never survives
   /// into one (two slashes look broken even when they resolve).
   ///
-  /// The `#` is not decoration. The app routes on the URL fragment, so
-  /// `<origin>/tool/<id>` loads the home screen and quietly drops the tool —
-  /// a shared link that goes to the wrong place is worse than none. Moving to
-  /// clean paths means teaching whatever serves the build to fall back to
-  /// index.html, which is a deployment change, not a client one.
+  /// Clean paths, not `/#/…`: the app uses the path URL strategy, and the
+  /// host serves index.html for any path that is not a file (Cloudflare Pages
+  /// does this for a site with no 404.html). Old `/#/` links are rewritten to
+  /// paths by a line in web/index.html before the app starts.
   @visibleForTesting
-  static String? permalinkFrom(String base, String toolId) {
+  static String? permalinkFrom(String base, String path) {
     final clean = _normalizeBase(base);
-    if (clean.isEmpty || toolId.trim().isEmpty) return null;
-    return '$clean/#/tool/$toolId';
+    final trimmed = path.trim();
+    if (clean.isEmpty || trimmed.isEmpty || trimmed == '/') return null;
+    return '$clean${trimmed.startsWith('/') ? trimmed : '/$trimmed'}';
   }
 
   static String _normalizeBase(String raw) =>
@@ -114,9 +114,9 @@ class Env {
     if (resetRedirectOverride.isNotEmpty) return resetRedirectOverride;
     final origin = currentOrigin;
     if (origin.isEmpty) return '';
-    // Hash routing: the app reads /#/reset-password, and the token Supabase
-    // appends survives in the query string ahead of it.
-    return '$origin/#/reset-password';
+    // Path routing (main.dart): Supabase appends ?code=… to this address,
+    // and supabase_flutter exchanges it on load before the page reads it.
+    return '$origin/reset-password';
   }
 
   static const resetRedirectOverride = String.fromEnvironment(

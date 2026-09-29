@@ -105,20 +105,21 @@ jobs:
             [ -z "$remaining" ] && sleep 5
           done
 
-      # Scores and leaderboard positions are derived from the whole catalog, so
-      # they are only correct once the new rows are in.
-      - name: Refresh trend scores and ranks
+      # GitHub stars and Hacker News points, read every day: Rising is growth
+      # between daily snapshots, so a skipped day is history lost for good.
+      # apply_signals() then takes today's snapshot and re-ranks, which is why
+      # this runs last, once the new rows are in. GITHUB_TOKEN raises GitHub's
+      # search allowance from 10 to 30 requests a minute.
+      - name: Read signals, snapshot and rank
         if: ${{ inputs.dry_run != true }}
+        working-directory: scrapers
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "::warning::Supabase secrets not set — skipping refresh."
+            echo "::warning::Supabase secrets not set — skipping signals."
             exit 0
           fi
-          curl -sS -X POST "$SUPABASE_URL/rest/v1/rpc/refresh_trend_scores" \
-            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{}' --fail-with-body
+          python -m liz_scraper.signals

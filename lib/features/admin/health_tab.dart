@@ -19,6 +19,10 @@ final recentErrorsProvider = FutureProvider.autoDispose<List<ErrorGroup>>(
   (ref) => ref.watch(adminRepositoryProvider).recentErrors(),
 );
 
+final usageProvider = FutureProvider.autoDispose<Map<String, int>>(
+  (ref) => ref.watch(adminRepositoryProvider).usageSummary(),
+);
+
 /// Whether the parts of Liz that run unattended are still working.
 ///
 /// Everything here is derived from the data rather than from job logs. The
@@ -37,6 +41,7 @@ class HealthTab extends ConsumerWidget {
       onRefresh: () async {
         ref
           ..invalidate(healthProvider)
+          ..invalidate(usageProvider)
           ..invalidate(jobRunsProvider)
           ..invalidate(recentErrorsProvider);
       },
@@ -62,6 +67,8 @@ class HealthTab extends ConsumerWidget {
           const _JobRuns(),
           const SizedBox(height: 24),
           const _RecentErrors(),
+          const SizedBox(height: 24),
+          const _Usage(),
         ],
       ),
     );
@@ -162,6 +169,67 @@ class _SignalTile extends StatelessWidget {
         value,
         style: TextStyle(fontWeight: FontWeight.w700, color: colour),
       ),
+    );
+  }
+}
+
+/// The last week in numbers, from Liz's own event log — the first place to
+/// look for whether anyone is using it, and where they stop.
+class _Usage extends ConsumerWidget {
+  const _Usage();
+
+  static const _rows = [
+    ('visitors', 'Visitors'),
+    ('returning_visitors', 'Came back on another day'),
+    ('page_views', 'Pages viewed'),
+    ('tool_views', 'Tool pages viewed'),
+    ('website_visits', 'Sent to a tool\'s website'),
+    ('searches', 'Searches and questions'),
+    ('saves', 'Saves'),
+    ('visitors_who_saved', 'Visitors who saved something'),
+    ('sign_ups', 'Sign-ups'),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final usage = ref.watch(usageProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Last 7 days', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          'Counted by Liz itself: a random id per browser, no cookies, no IP '
+          'addresses kept.',
+          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 8),
+        usage.when(
+          loading: () => const LoadingView(),
+          error: (_, _) => const SizedBox.shrink(),
+          data: (m) => Column(
+            children: [
+              for (final (key, label) in _rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(label)),
+                      Text(
+                        compactCount(m[key] ?? 0),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: LizText.tabular,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

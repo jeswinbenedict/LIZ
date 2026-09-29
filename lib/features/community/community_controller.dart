@@ -44,6 +44,13 @@ final toolByIdProvider = FutureProvider.autoDispose.family<Tool?, String>((
   return ref.watch(contentRepositoryProvider).toolById(id);
 });
 
+final toolBySlugProvider = FutureProvider.autoDispose.family<Tool?, String>((
+  ref,
+  slug,
+) async {
+  return ref.watch(contentRepositoryProvider).toolBySlug(slug);
+});
+
 final reviewsForToolProvider = FutureProvider.autoDispose
     .family<List<Review>, String>((ref, toolId) async {
       return ref.watch(communityRepositoryProvider).reviewsForTool(toolId);

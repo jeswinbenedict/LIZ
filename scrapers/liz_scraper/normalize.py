@@ -251,6 +251,46 @@ def choose_name(source_title: str, site_title: str = "", url: str = "") -> str:
     return candidate
 
 
+# A Show HN title is written by the founder about themselves ("I built…",
+# "We made…", "I couldn't deal with another tab"). It says who made the thing
+# and why, not what it is, so it makes a poor tagline next to other tools.
+# Case-sensitive on purpose: "Instant", "Webflow" and "Ours" are not the maker.
+_FIRST_PERSON = re.compile(r"^\s*(?:I|We|My|Our)\b")
+
+
+def is_first_person(text: str | None) -> bool:
+    """True for launch-post copy that describes the maker, not the product."""
+    return bool(text and _FIRST_PERSON.match(text))
+
+
+# "Koi.rest – watch some fish": a launch title names the product and then
+# describes it. On a card the name is already printed above the tagline.
+_NAME_SEPARATOR = re.compile(r"^\s*[\u2013\u2014:|,\u00b7-]+\s*")
+
+
+def strip_name_prefix(tagline: str, name: str) -> str:
+    """The tagline without a leading repeat of the tool's name, when what is
+    left still says something."""
+    if not tagline or not name or not tagline.lower().startswith(name.lower()):
+        return tagline
+    rest = tagline[len(name):]
+    match = _NAME_SEPARATOR.match(rest)
+    if not match:
+        return tagline
+    rest = rest[match.end():].strip()
+    if len(rest) < 12:
+        return tagline
+    return rest[0].upper() + rest[1:]
+
+
+def choose_tagline(listing: str, site_description: str = "") -> str:
+    """The listing's one-liner, unless it is about the maker and the site says
+    what the product is instead."""
+    if is_first_person(listing) and site_description and not is_first_person(site_description):
+        return site_description
+    return listing
+
+
 def clean_text(value: str | None, *, limit: int | None = None) -> str:
     if not value:
         return ""

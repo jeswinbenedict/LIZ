@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/liz_card.dart';
+import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 
 /// Tools close to this one by meaning.
@@ -48,7 +48,8 @@ class SimilarToolsSection extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           SizedBox(
-            height: 132 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
+            height:
+                132 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               clipBehavior: Clip.none,
@@ -69,46 +70,54 @@ class _SimilarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.liz;
     return SizedBox(
       width: 232,
-      child: LizCard(
-        padding: const EdgeInsets.all(14),
-        // Replace rather than push: hopping between related tools should not
-        // build a back stack ten deep to escape from.
-        onTap: () => context.replace('/tool/${tool.id}'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                ToolLogo(tool: tool, size: 36),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    tool.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LizText.headline.copyWith(color: p.textPrimary),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Text(
-                tool.tagline,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: LizText.subhead.copyWith(
-                  color: p.textSecondary,
-                  fontWeight: FontWeight.w400,
+      // Replace rather than push: hopping between related tools should not
+      // build a back stack ten deep to escape from.
+      child: ToolLink(
+        tool: tool,
+        replace: true,
+        builder: (context, open) => _card(context, open),
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context, VoidCallback open) {
+    final p = context.liz;
+    return LizCard(
+      padding: const EdgeInsets.all(14),
+      onTap: open,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ToolLogo(tool: tool, size: 36),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  tool.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LizText.headline.copyWith(color: p.textPrimary),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Text(
+              tool.tagline,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: LizText.subhead.copyWith(
+                color: p.textSecondary,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-            ToolMeta(tool, showCategory: false),
-          ],
-        ),
+          ),
+          ToolMeta(tool, showCategory: false),
+        ],
       ),
     );
   }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../features/track/bookmark_button.dart';
 import '../models/tool.dart';
 import 'badges.dart';
 import 'liz_card.dart';
+import 'tool_link.dart';
 import 'tool_logo.dart';
 
 /// A tool in a grid (docs/DESIGN.md §7, Tool card): squircle logo, name,
@@ -29,10 +29,21 @@ class ToolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selecting = onSelect != null;
+    if (!selecting) {
+      return ToolLink(
+        tool: tool,
+        builder: (context, open) => _build(context, open),
+      );
+    }
+    return _build(context, onSelect);
+  }
+
+  Widget _build(BuildContext context, VoidCallback? onTap) {
     final p = context.liz;
     final selecting = onSelect != null;
     final card = LizCard(
-      onTap: selecting ? onSelect : () => context.push('/tool/${tool.id}'),
+      onTap: onTap,
       semanticLabel: selecting
           ? '${tool.name}, ${selected ? 'selected' : 'not selected'} for comparison'
           : null,

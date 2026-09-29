@@ -123,13 +123,13 @@ Deno.serve(async (req) => {
           source_url: r.html_url,
           content_hash: hash,
           launched_at: (r.pushed_at ?? new Date().toISOString()).slice(0, 10),
-          // trend_score is deliberately not set here. refresh_trend_scores()
-          // owns it, normalising every tool onto one 0-100 scale from the
-          // engagement signals below. Writing a raw log10(stars) figure here
-          // overwrote that with a different scale that ran past 100, which put
-          // trending repos above ChatGPT on Discover while their rank badges
-          // still read #41.
-          view_count: r.stargazers_count,
+          // trend_score is deliberately not set here: refresh_trend_scores()
+          // owns it, from growth in the daily snapshots. Stars go in their own
+          // column. They used to be written into view_count, which made a star
+          // count read as page views on Liz (migration 0037).
+          gh_repo: r.full_name,
+          gh_stars: r.stargazers_count,
+          signals_at: new Date().toISOString(),
           status: 'published',
           updated_at: new Date().toISOString(),
         });

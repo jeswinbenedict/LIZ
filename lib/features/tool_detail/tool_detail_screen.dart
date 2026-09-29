@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/link.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/config/env.dart';
+import '../../core/telemetry/analytics.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
+import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 import '../community/community_controller.dart';
 import '../community/community_widgets.dart';
@@ -23,12 +26,20 @@ import 'similar_tools.dart';
 import 'tool_updates.dart';
 
 class ToolDetailScreen extends ConsumerWidget {
-  const ToolDetailScreen({super.key, required this.toolId});
-  final String toolId;
+  const ToolDetailScreen({super.key, this.toolId, this.slug})
+    : assert(toolId != null || slug != null);
+
+  /// One of the two: `/tools/<slug>` for links people read, `/tool/<id>` for
+  /// older links and notifications.
+  final String? toolId;
+  final String? slug;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final toolAsync = ref.watch(toolByIdProvider(toolId));
+    final provider = slug != null
+        ? toolBySlugProvider(slug!)
+        : toolByIdProvider(toolId!);
+    final toolAsync = ref.watch(provider);
 
     return Scaffold(
       appBar: AppBar(
@@ -57,15 +68,17 @@ class ToolDetailScreen extends ConsumerWidget {
       ),
       body: toolAsync.when(
         loading: () => const LoadingView(),
-        error: (_, _) =>
-            ErrorView(onRetry: () => ref.invalidate(toolByIdProvider(toolId))),
+        error: (_, _) => ErrorView(onRetry: () => ref.invalidate(provider)),
         data: (tool) => tool == null
             ? const EmptyView(
                 icon: Icons.help_outline,
                 title: 'Tool not found',
                 message: 'It may have been removed.',
               )
-            : _ToolBody(tool: tool),
+            : _ViewRecorder(
+                toolId: tool.id,
+                child: _ToolBody(tool: tool),
+              ),
       ),
     );
   }
@@ -76,11 +89,65 @@ class ToolDetailScreen extends ConsumerWidget {
     // fell back to liz.app, a domain nobody owns. Share Liz's own page for the
     // tool, and only fall back to the product's site if Liz has no address to
     // give (a native build with no SITE_URL).
-    final link = Env.toolPermalink(tool.id) ?? tool.websiteUrl;
+    final link = Env.permalink(toolPath(tool)) ?? tool.websiteUrl;
     final text = 'Check out ${tool.name} on Liz — ${tool.tagline}';
+    Analytics.track('share', toolId: tool.id);
     SharePlus.instance.share(
       ShareParams(text: link == null ? text : '$text\n$link'),
     );
+  }
+}
+
+/// Records one view of the tool when its page opens — not on every rebuild.
+/// Views are one of the signals Rising ranks by, and the server counts a
+/// visitor at most once per tool per half hour.
+class _ViewRecorder extends StatefulWidget {
+  const _ViewRecorder({required this.toolId, required this.child});
+  final String toolId;
+  final Widget child;
+
+  @override
+  State<_ViewRecorder> createState() => _ViewRecorderState();
+}
+
+class _ViewRecorderState extends State<_ViewRecorder> {
+  @override
+  void initState() {
+    super.initState();
+    Analytics.track('tool_view', toolId: widget.toolId);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+/// "Visit website" as a real link: it opens in a new tab, can be
+/// middle-clicked or copied, and shows its address on hover — and the visit
+/// is counted, since sending someone to a tool is the strongest interest Liz
+/// sees.
+class _VisitButton extends StatelessWidget {
+  const _VisitButton({required this.tool, this.expand = false});
+  final Tool tool;
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(tool.websiteUrl ?? '');
+    if (uri == null) return const SizedBox.shrink();
+    final button = Link(
+      uri: uri,
+      target: LinkTarget.blank,
+      builder: (context, follow) => FilledButton.icon(
+        style: LizButtons.capsule,
+        onPressed: () {
+          Analytics.track('outbound_click', toolId: tool.id);
+          follow?.call();
+        },
+        icon: const Icon(Icons.north_east, size: 18),
+        label: const Text('Visit website'),
+      ),
+    );
+    return expand ? Expanded(child: button) : button;
   }
 }
 
@@ -101,242 +168,229 @@ class _ToolBody extends ConsumerWidget {
     final phone = context.isPhone;
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
+    // Selectable, so a name, a price note or a paragraph can be copied — which
+    // the canvas-drawn page otherwise does not allow.
     return MaxWidth(
       maxWidth: 760 + gutter * 2,
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(gutter, phone ? 8 : 24, gutter, 48),
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ToolLogo(tool: tool, size: phone ? 76 : 96),
-              SizedBox(width: phone ? 16 : 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Semantics(
-                          header: true,
-                          child: Text(
-                            tool.name,
-                            style: LizText.title1.copyWith(
-                              color: p.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (tool.isNew) LizPill(label: 'New', color: p.accent),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tool.tagline,
-                      style: LizText.body.copyWith(color: p.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          if (phone)
-            // One row on a phone: the call to action takes the width, and
-            // save and follow sit beside it as icons, rather than wrapping
-            // Follow onto a line of its own.
+      child: SelectionArea(
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(gutter, phone ? 8 : 24, gutter, 48),
+          children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (tool.websiteUrl != null)
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: LizButtons.capsule,
-                      onPressed: () => _launch(tool.websiteUrl!),
-                      icon: const Icon(Icons.north_east, size: 18),
-                      label: const Text('Visit website'),
-                    ),
-                  ),
-                const SizedBox(width: 10),
-                BookmarkButton(
-                  toolId: tool.id,
-                  filledStyle: true,
-                  compact: true,
-                ),
-                const SizedBox(width: 10),
-                FollowButton(toolId: tool.id, compact: true),
-              ],
-            )
-          else
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (tool.websiteUrl != null)
-                  FilledButton.icon(
-                    style: LizButtons.capsule,
-                    onPressed: () => _launch(tool.websiteUrl!),
-                    icon: const Icon(Icons.north_east, size: 18),
-                    label: const Text('Visit website'),
-                  ),
-                BookmarkButton(toolId: tool.id, filledStyle: true),
-                FollowButton(toolId: tool.id),
-              ],
-            ),
-          const SizedBox(height: 24),
-          _InfoStrip(tool: tool),
-
-          if (tool.aiSummary.isNotEmpty)
-            _Section(
-              title: 'Summary',
-              badge: 'AI',
-              child: Column(
-                children: [
-                  for (final bullet in tool.aiSummary)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ToolLogo(tool: tool, size: phone ? 76 : 96),
+                SizedBox(width: phone ? 16 : 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            margin: const EdgeInsets.only(top: 8, right: 12),
-                            decoration: BoxDecoration(
-                              color: p.accent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          Expanded(
+                          Semantics(
+                            header: true,
                             child: Text(
-                              bullet,
-                              style: LizText.body.copyWith(
+                              tool.name,
+                              style: LizText.title1.copyWith(
                                 color: p.textPrimary,
                               ),
                             ),
                           ),
+                          if (tool.isNew)
+                            LizPill(label: 'New', color: p.accent),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        tool.tagline,
+                        style: LizText.body.copyWith(color: p.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            if (phone)
+              // One row on a phone: the call to action takes the width, and
+              // save and follow sit beside it as icons, rather than wrapping
+              // Follow onto a line of its own.
+              Row(
+                children: [
+                  if (tool.websiteUrl != null)
+                    _VisitButton(tool: tool, expand: true),
+                  const SizedBox(width: 10),
+                  BookmarkButton(
+                    toolId: tool.id,
+                    filledStyle: true,
+                    compact: true,
+                  ),
+                  const SizedBox(width: 10),
+                  FollowButton(toolId: tool.id, compact: true),
+                ],
+              )
+            else
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  if (tool.websiteUrl != null) _VisitButton(tool: tool),
+                  BookmarkButton(toolId: tool.id, filledStyle: true),
+                  FollowButton(toolId: tool.id),
+                ],
+              ),
+            const SizedBox(height: 24),
+            _InfoStrip(tool: tool),
+            _SignalLinks(tool: tool),
+
+            if (tool.aiSummary.isNotEmpty)
+              _Section(
+                title: 'Summary',
+                badge: 'AI',
+                child: Column(
+                  children: [
+                    for (final bullet in tool.aiSummary)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              margin: const EdgeInsets.only(top: 8, right: 12),
+                              decoration: BoxDecoration(
+                                color: p.accent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                bullet,
+                                style: LizText.body.copyWith(
+                                  color: p.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+            _Section(
+              title: 'About',
+              child: Text(
+                tool.description,
+                style: LizText.body.copyWith(
+                  color: p.textPrimary,
+                  height: 24 / 15,
+                ),
+              ),
+            ),
+
+            // Related products, matched on the embeddings already in the table.
+            SimilarToolsSection(toolId: tool.id),
+
+            // Live "what's new" for this tool — real releases / feature updates.
+            ToolUpdatesSection(
+              name: tool.name,
+              slug: tool.slug,
+              sourceUrl: tool.sourceUrl,
+            ),
+
+            _Section(
+              title: 'Ratings & reviews',
+              trailing: TextButton.icon(
+                onPressed: () => showReviewComposer(
+                  context,
+                  ref,
+                  toolId: tool.id,
+                  toolName: tool.name,
+                ),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Write a review'),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _RatingSummary(tool: tool),
+                  reviewsAsync.when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: LoadingView(),
                     ),
+                    error: (_, _) => const SizedBox.shrink(),
+                    data: (List<Review> reviews) => reviews.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              'No reviews yet — be the first.',
+                              style: LizText.callout.copyWith(
+                                color: p.textSecondary,
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: [
+                              for (var i = 0; i < reviews.length; i++) ...[
+                                if (i > 0) const Divider(height: 1),
+                                ReviewTile(review: reviews[i]),
+                              ],
+                            ],
+                          ),
+                  ),
                 ],
               ),
             ),
 
-          _Section(
-            title: 'About',
-            child: Text(
-              tool.description,
-              style: LizText.body.copyWith(
-                color: p.textPrimary,
-                height: 24 / 15,
-              ),
-            ),
-          ),
-
-          // Related products, matched on the embeddings already in the table.
-          SimilarToolsSection(toolId: tool.id),
-
-          // Live "what's new" for this tool — real releases / feature updates.
-          ToolUpdatesSection(
-            name: tool.name,
-            slug: tool.slug,
-            sourceUrl: tool.sourceUrl,
-          ),
-
-          _Section(
-            title: 'Ratings & reviews',
-            trailing: TextButton.icon(
-              onPressed: () => showReviewComposer(
-                context,
-                ref,
-                toolId: tool.id,
-                toolName: tool.name,
-              ),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('Write a review'),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _RatingSummary(tool: tool),
-                reviewsAsync.when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: LoadingView(),
-                  ),
-                  error: (_, _) => const SizedBox.shrink(),
-                  data: (List<Review> reviews) => reviews.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Text(
-                            'No reviews yet — be the first.',
-                            style: LizText.callout.copyWith(
-                              color: p.textSecondary,
-                            ),
-                          ),
-                        )
-                      : Column(
-                          children: [
-                            for (var i = 0; i < reviews.length; i++) ...[
-                              if (i > 0) const Divider(height: 1),
-                              ReviewTile(review: reviews[i]),
-                            ],
-                          ],
-                        ),
+            _Section(
+              title: 'From the community',
+              trailing: TextButton.icon(
+                onPressed: () => showPostComposer(
+                  context,
+                  ref,
+                  toolId: tool.id,
+                  toolName: tool.name,
                 ),
-              ],
-            ),
-          ),
-
-          _Section(
-            title: 'From the community',
-            trailing: TextButton.icon(
-              onPressed: () => showPostComposer(
-                context,
-                ref,
-                toolId: tool.id,
-                toolName: tool.name,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Post'),
               ),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('Post'),
-            ),
-            child: postsAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(20),
-                child: LoadingView(),
-              ),
-              error: (_, _) => const SizedBox.shrink(),
-              data: (posts) => posts.isEmpty
-                  ? Text(
-                      'No posts about this tool yet.',
-                      style: LizText.callout.copyWith(color: p.textSecondary),
-                    )
-                  : Column(
-                      children: [
-                        for (final post in posts) ...[
-                          PostCard(post: post),
-                          const SizedBox(height: 12),
+              child: postsAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: LoadingView(),
+                ),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (posts) => posts.isEmpty
+                    ? Text(
+                        'No posts about this tool yet.',
+                        style: LizText.callout.copyWith(color: p.textSecondary),
+                      )
+                    : Column(
+                        children: [
+                          for (final post in posts) ...[
+                            PostCard(post: post),
+                            const SizedBox(height: 12),
+                          ],
                         ],
-                      ],
-                    ),
+                      ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
-  }
-
-  Future<void> _launch(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }
 
 /// The facts a visitor checks before anything else, in one strip between
-/// hairlines: rating, price, category, standing — the App Store's info row.
+/// hairlines: rating, price, category, and either what is moving this week or
+/// when Liz first saw the tool — the App Store's info row.
 class _InfoStrip extends StatelessWidget {
   const _InfoStrip({required this.tool});
   final Tool tool;
@@ -345,7 +399,6 @@ class _InfoStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.liz;
     final rated = tool.ratingCount > 0;
-    final ranked = tool.trendRank != null;
     final cells = <Widget>[
       _InfoCell(
         label: 'Rating',
@@ -368,13 +421,21 @@ class _InfoStrip extends StatelessWidget {
         value: categoryLabel(tool.category),
         detail: tool.platforms.join(', '),
       ),
-      _InfoCell(
-        label: 'Trending',
-        value: ranked
-            ? '#${tool.trendRank}'
-            : compactCount(tool.trendScore.round()),
-        detail: ranked ? 'in the catalog' : 'trend score',
-      ),
+      // A rank only when something measurable moved, and always with what
+      // moved. It used to be a position computed from invented totals.
+      if (tool.isRising)
+        _InfoCell(
+          label: 'Rising',
+          value: tool.trendRank != null ? '#${tool.trendRank}' : 'This week',
+          detail: tool.trendReason!,
+          icon: Icons.trending_up,
+        )
+      else
+        _InfoCell(
+          label: 'First seen',
+          value: DateFormat('d MMM').format(tool.createdAt.toLocal()),
+          detail: DateFormat('y').format(tool.createdAt.toLocal()),
+        ),
     ];
 
     return DecoratedBox(
@@ -582,6 +643,68 @@ class _RatingSummary extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Where the numbers come from, as links: the repository and its stars, the
+/// Hacker News thread and its points. A figure a reader can check.
+class _SignalLinks extends StatelessWidget {
+  const _SignalLinks({required this.tool});
+  final Tool tool;
+
+  @override
+  Widget build(BuildContext context) {
+    final github = tool.githubUri;
+    final hn = tool.hackerNewsUri;
+    final links = <Widget>[
+      if (github != null)
+        _SourceLink(
+          uri: github,
+          icon: Icons.star_outline_rounded,
+          label: tool.ghStars == null
+              ? 'On GitHub'
+              : '${compactCount(tool.ghStars!)} stars on GitHub',
+        ),
+      if (hn != null)
+        _SourceLink(
+          uri: hn,
+          icon: Icons.forum_outlined,
+          label: tool.hnPoints == null
+              ? 'Discussed on Hacker News'
+              : '${compactCount(tool.hnPoints!)} points'
+                    '${(tool.hnComments ?? 0) > 0 ? ' · ${compactCount(tool.hnComments!)} comments' : ''}'
+                    ' on Hacker News',
+        ),
+    ];
+    if (links.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(spacing: 4, runSpacing: 0, children: links),
+    );
+  }
+}
+
+class _SourceLink extends StatelessWidget {
+  const _SourceLink({
+    required this.uri,
+    required this.icon,
+    required this.label,
+  });
+  final Uri uri;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Link(
+      uri: uri,
+      target: LinkTarget.blank,
+      builder: (context, follow) => TextButton.icon(
+        onPressed: follow,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
       ),
     );
   }

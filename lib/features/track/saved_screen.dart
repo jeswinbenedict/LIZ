@@ -45,7 +45,7 @@ class SavedScreen extends ConsumerWidget {
     final columns = gridColumnsFor(width);
     final gutter = LizSpacing.gutter(width);
     final phone = context.isPhone;
-    final hasTools = signedIn && (saved.value?.isNotEmpty ?? false);
+    final hasTools = saved.value?.isNotEmpty ?? false;
 
     void setSelecting(bool on) {
       ref.read(savedSelectingProvider.notifier).set(on);
@@ -86,106 +86,110 @@ class SavedScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (!signedIn)
+          if (!signedIn && hasTools)
             SliverToBoxAdapter(
-              child: EmptyView(
-                icon: Icons.bookmark_border,
-                title: 'Save tools to revisit them',
-                message: 'Sign in to build your list and compare tools.',
-                action: FilledButton(
-                  onPressed: () => _promptSignIn(context),
-                  child: const Text('Sign in'),
+              child: MaxWidth(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 8),
+                  child: _GuestNotice(onSignIn: () => _promptSignIn(context)),
                 ),
               ),
-            )
-          else
-            saved.when(
-              loading: () => const ToolGridSkeletonSliver(count: 4),
-              error: (_, _) => SliverToBoxAdapter(
-                child: ErrorView(
-                  onRetry: () => ref.invalidate(bookmarkedToolsProvider),
-                ),
-              ),
-              data: (all) {
-                if (all.isEmpty) {
-                  return const SliverToBoxAdapter(
-                    child: EmptyView(
-                      icon: Icons.bookmark_border,
-                      title: 'Nothing saved yet',
-                      message: 'Tap the bookmark on any tool to save it here.',
-                    ),
-                  );
-                }
-                final tools = [
-                  for (final tool in all)
-                    if (PricingFilter.matches(tool, pricing)) tool,
-                ];
-                return SliverMainAxisGroup(
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: MaxWidth(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 4),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: PricingFilter(
-                              selected: pricing,
-                              onChanged: (value) => ref
-                                  .read(savedPricingProvider.notifier)
-                                  .set(value),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (tools.isEmpty)
-                      SliverToBoxAdapter(
-                        child: EmptyView(
-                          icon: Icons.sell_outlined,
-                          title: 'Nothing saved at this price',
-                          message:
-                              'You have ${all.length} saved — try any price.',
-                          action: TextButton(
-                            onPressed: () => ref
-                                .read(savedPricingProvider.notifier)
-                                .set(null),
-                            child: const Text('Show all'),
-                          ),
-                        ),
-                      )
-                    else
-                      MaxWidthSliver(
-                        sliver: SliverPadding(
-                          padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 96),
-                          sliver: SliverGrid(
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: columns,
-                                  mainAxisSpacing: 16,
-                                  crossAxisSpacing: 16,
-                                  mainAxisExtent: toolCardExtent(context),
-                                ),
-                            delegate: SliverChildBuilderDelegate(
-                              (context, i) => ToolCard(
-                                tool: tools[i],
-                                selected: selection.contains(tools[i].id),
-                                onSelect: selecting
-                                    ? () => _toggleSelect(
-                                        context,
-                                        ref,
-                                        tools[i].id,
-                                      )
-                                    : null,
-                              ),
-                              childCount: tools.length,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
             ),
+          saved.when(
+            loading: () => const ToolGridSkeletonSliver(count: 4),
+            error: (_, _) => SliverToBoxAdapter(
+              child: ErrorView(
+                onRetry: () => ref.invalidate(bookmarkedToolsProvider),
+              ),
+            ),
+            data: (all) {
+              if (all.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: EmptyView(
+                    icon: Icons.bookmark_border,
+                    title: signedIn
+                        ? 'Nothing saved yet'
+                        : 'Save tools to revisit them',
+                    message: signedIn
+                        ? 'Tap the bookmark on any tool to save it here.'
+                        : 'Tap the bookmark on any tool — no account '
+                              'needed. Sign in to keep your list on every '
+                              'device.',
+                    action: signedIn
+                        ? null
+                        : OutlinedButton(
+                            onPressed: () => _promptSignIn(context),
+                            child: const Text('Sign in'),
+                          ),
+                  ),
+                );
+              }
+              final tools = [
+                for (final tool in all)
+                  if (PricingFilter.matches(tool, pricing)) tool,
+              ];
+              return SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: MaxWidth(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: PricingFilter(
+                            selected: pricing,
+                            onChanged: (value) => ref
+                                .read(savedPricingProvider.notifier)
+                                .set(value),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (tools.isEmpty)
+                    SliverToBoxAdapter(
+                      child: EmptyView(
+                        icon: Icons.sell_outlined,
+                        title: 'Nothing saved at this price',
+                        message:
+                            'You have ${all.length} saved — try any price.',
+                        action: TextButton(
+                          onPressed: () =>
+                              ref.read(savedPricingProvider.notifier).set(null),
+                          child: const Text('Show all'),
+                        ),
+                      ),
+                    )
+                  else
+                    MaxWidthSliver(
+                      sliver: SliverPadding(
+                        padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 96),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                mainAxisExtent: toolCardExtent(context),
+                              ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, i) => ToolCard(
+                              tool: tools[i],
+                              selected: selection.contains(tools[i].id),
+                              onSelect: selecting
+                                  ? () =>
+                                        _toggleSelect(context, ref, tools[i].id)
+                                  : null,
+                            ),
+                            childCount: tools.length,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -220,6 +224,43 @@ class SavedScreen extends ConsumerWidget {
       builder: (ctx) => ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
         child: SignInView(onSignedIn: () => Navigator.of(ctx).pop()),
+      ),
+    );
+  }
+}
+
+/// A reminder, not a wall: the list works without an account, and signing in
+/// only moves it somewhere it cannot be lost.
+class _GuestNotice extends StatelessWidget {
+  const _GuestNotice({required this.onSignIn});
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.accentSoft,
+        shape: LizRadius.shape(LizRadius.md),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(
+          children: [
+            Icon(Icons.devices_outlined, size: 20, color: p.textPrimary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Saved in this browser only.',
+                style: LizText.callout.copyWith(color: p.textPrimary),
+              ),
+            ),
+            TextButton(
+              onPressed: onSignIn,
+              child: const Text('Keep everywhere'),
+            ),
+          ],
+        ),
       ),
     );
   }

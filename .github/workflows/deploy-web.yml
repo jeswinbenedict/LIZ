@@ -1,0 +1,86 @@
+# Builds the web app and publishes it to Cloudflare Pages on every push to
+# main. Free tier: unlimited static requests, served from Cloudflare's edge.
+#
+# Setup (one time):
+#   1. Cloudflare dashboard → Workers & Pages → Create → Pages → "Direct
+#      upload", project name `liz` (or set CLOUDFLARE_PROJECT below).
+#   2. My Profile → API Tokens → Create token → "Edit Cloudflare Workers"
+#      template (it covers Pages). Copy it.
+#   3. Repo → Settings → Secrets and variables → Actions, add:
+#        CLOUDFLARE_API_TOKEN     the token from step 2
+#        CLOUDFLARE_ACCOUNT_ID    Workers & Pages → right-hand sidebar
+#        SUPABASE_URL             same as the scraper uses
+#        SUPABASE_ANON_KEY        the public key (safe in the client)
+#        FCM_VAPID_KEY            optional; browser notifications
+#        SITE_URL                 e.g. https://liz.pages.dev — used for share links
+#
+# Until the Cloudflare secrets exist the job builds and stops, with a warning,
+# so the build itself stays checked on every push.
+#
+# Path URLs (/tools/elevenlabs) need the host to serve index.html for any path
+# that is not a file. Pages does that for a site with no top-level 404.html,
+# which a Flutter build does not have. Security headers come from
+# web/_headers, which Flutter copies into build/web.
+
+name: deploy-web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+env:
+  CLOUDFLARE_PROJECT: liz
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - run: flutter pub get
+
+      # WebAssembly with a JavaScript fallback: about 30% smaller for browsers
+      # that support it (docs/WEB_BUILD.md).
+      - name: Build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          FCM_VAPID_KEY: ${{ secrets.FCM_VAPID_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          flutter build web --release --wasm \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=FCM_VAPID_KEY="$FCM_VAPID_KEY" \
+            --dart-define=SITE_URL="$SITE_URL"
+          test -f build/web/_headers
+
+      - name: Check Cloudflare secrets
+        id: cf
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
+            echo "::warning::Cloudflare secrets not set — built but not deployed."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        if: steps.cf.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build/web --project-name=${{ env.CLOUDFLARE_PROJECT }} --branch=main

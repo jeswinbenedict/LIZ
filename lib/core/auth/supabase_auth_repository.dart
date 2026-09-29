@@ -36,6 +36,62 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Stream<Profile?> authStateChanges() => _out.stream;
 
+  @override
+  Future<TwoStep> twoStep() async {
+    final mfa = _client.auth.mfa;
+    if (mfa.getAuthenticatorAssuranceLevel().currentLevel ==
+        AuthenticatorAssuranceLevels.aal2) {
+      return const TwoStep(TwoStepStatus.verified);
+    }
+    final factors = await mfa.listFactors();
+    if (factors.totp.isNotEmpty) {
+      return TwoStep(TwoStepStatus.needsCode, factorId: factors.totp.first.id);
+    }
+    return const TwoStep(TwoStepStatus.needsSetup);
+  }
+
+  @override
+  Future<TotpSetup> startTwoStepSetup() async {
+    final mfa = _client.auth.mfa;
+    // A setup abandoned before its first code leaves an unverified factor
+    // behind, and a second one cannot be created beside it.
+    final factors = await mfa.listFactors();
+    for (final f in factors.all) {
+      if (f.status == FactorStatus.unverified) {
+        await mfa.unenroll(f.id);
+      }
+    }
+    final res = await mfa.enroll(
+      factorType: FactorType.totp,
+      issuer: 'Liz',
+      friendlyName: 'Liz authenticator',
+    );
+    final totp = res.totp;
+    if (totp == null) {
+      throw const LizException('Could not start two-step verification.');
+    }
+    return TotpSetup(factorId: res.id, uri: totp.uri, secret: totp.secret);
+  }
+
+  @override
+  Future<void> verifyTwoStep(String factorId, String code) async {
+    try {
+      await _client.auth.mfa.challengeAndVerify(
+        factorId: factorId,
+        code: code.trim(),
+      );
+    } on AuthException {
+      throw const LizException(
+        "That code didn't work. Codes change every 30 seconds — try the "
+        'current one.',
+      );
+    }
+    // Idempotent, and only effective for an aal2 moderator.
+    try {
+      await _client.rpc<dynamic>('require_moderator_mfa');
+    } catch (_) {}
+  }
+
   Profile _fallbackProfile(User user) => Profile(
     id: user.id,
     username: user.email?.split('@').first ?? 'user',

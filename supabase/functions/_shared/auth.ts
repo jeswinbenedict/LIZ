@@ -79,6 +79,19 @@ export function isServiceRole(req: Request): boolean {
   return jwtRole(presented) === 'service_role';
 }
 
+/// Whether the caller presented the evaluation key (secret `ASK_EVAL_KEY`)
+/// in an `x-liz-eval` header.
+///
+/// A separate random secret rather than the service key or a JWT role claim:
+/// it is safe in a function deployed with `verify_jwt = false`, where nobody
+/// has checked a claim's signature, and it grants nothing but skipping the
+/// public rate limit on ask-liz so the evaluation set can run in one go.
+export function presentsEvalKey(req: Request): boolean {
+  const presented = req.headers.get('x-liz-eval') ?? '';
+  const expected = Deno.env.get('ASK_EVAL_KEY') ?? '';
+  return expected.length >= 32 && constantTimeEquals(presented, expected);
+}
+
 /// Guard for a function that only cron and CI may run.
 ///
 /// Returns a response to send back when the caller is not allowed, or null to

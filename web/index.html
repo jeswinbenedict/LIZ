@@ -137,6 +137,13 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <script>
+    // Links shared before Liz used real paths look like /#/tool/<id>. The app
+    // now routes on the path, so move the fragment into it before it starts.
+    if (location.hash.indexOf('#/') === 0) {
+      history.replaceState(null, '', location.hash.slice(1));
+    }
+  </script>
   <script src="flutter_bootstrap.js" async=""></script>
 
 

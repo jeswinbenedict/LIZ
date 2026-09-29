@@ -11,6 +11,7 @@ import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/tool_grid_sliver.dart';
 import 'discover_controller.dart';
+import 'new_this_week.dart';
 import 'rising_carousel.dart';
 import 'welcome_card.dart';
 
@@ -92,7 +93,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                       title: 'Discover',
                       subtitle: phone
                           ? null
-                          : 'New AI tools, ranked by how fast they are rising.',
+                          : 'New AI tools, ranked by how fast they are growing.',
                       // Tablets have no sidebar to carry alerts.
                       trailing: context.isTablet ? const AlertsBell() : null,
                       bottom: 16,
@@ -113,6 +114,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                     ),
                     const WelcomeCard(),
                     const RisingCarousel(),
+                    NewThisWeek(
+                      onSeeAll: () => ref
+                          .read(discoverSortProvider.notifier)
+                          .set(ToolSort.newest),
+                    ),
                     const SectionHeader(title: 'All tools'),
                     const _CategoryChips(),
                     const _SortBar(),
@@ -191,7 +197,6 @@ class _SortBar extends ConsumerWidget {
   const _SortBar();
 
   static const _labels = {
-    ToolSort.trending: 'Trending',
     ToolSort.rising: 'Rising',
     ToolSort.newest: 'New',
     ToolSort.topRated: 'Top rated',

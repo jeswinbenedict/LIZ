@@ -130,10 +130,19 @@ class MockContentRepository implements ContentRepository {
       );
     }
 
+    if (q.movingOnly) list = list.where((t) => _risingScore(t) > 0);
+    if (q.newWithinDays != null) {
+      list = list.where(
+        (t) =>
+            DateTime.now().difference(t.createdAt).inDays <= q.newWithinDays!,
+      );
+    }
+    if (q.sort == ToolSort.topRated) {
+      list = list.where((t) => t.ratingCount > 0);
+    }
+
     final sorted = list.toList();
     switch (q.sort) {
-      case ToolSort.trending:
-        sorted.sort((a, b) => b.trendScore.compareTo(a.trendScore));
       case ToolSort.newest:
         sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       case ToolSort.rising:
@@ -649,6 +658,19 @@ class MockAdminRepository implements AdminRepository {
       detail: 'Crash reports filed by clients in the last day.',
     ),
   ];
+
+  @override
+  Future<Map<String, int>> usageSummary({int days = 7}) async => const {
+    'visitors': 42,
+    'page_views': 310,
+    'tool_views': 128,
+    'website_visits': 37,
+    'saves': 19,
+    'searches': 55,
+    'sign_ups': 3,
+    'visitors_who_saved': 11,
+    'returning_visitors': 9,
+  };
 
   @override
   Future<List<JobRun>> recentJobRuns({int limit = 20}) async => [

@@ -23,6 +23,13 @@ declare const Supabase: {
 export const EMBEDDING_MODEL = 'gte-small';
 export const EMBEDDING_DIMS = 384;
 
+/// What a stored vector was built from: the model plus the recipe in
+/// toolText(). Changing the recipe means bumping this, which queues every tool
+/// for re-embedding (the `tools_needing_embedding` view compares against it).
+/// Queries use the same model, so a vector from an older recipe still works
+/// in the meantime — it is just not as good.
+export const EMBEDDING_VERSION = 'gte-small+summary';
+
 // gte-small truncates around 512 tokens; trim first so the tail of a long
 // description cannot push the tagline out of the window.
 const MAX_CHARS = 1500;
@@ -48,16 +55,28 @@ export type EmbeddableTool = {
   description?: string | null;
   category?: string | null;
   tags?: string[] | null;
+  ai_summary?: unknown;
 };
+
+function summaryLines(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map(String);
+  if (raw && typeof raw === 'object' && Array.isArray((raw as { bullets?: unknown }).bullets)) {
+    return ((raw as { bullets: unknown[] }).bullets).map(String);
+  }
+  return [];
+}
 
 /// Builds the text that represents a tool in vector space.
 ///
 /// Leads with what the tool *does* rather than its name: a user asking to
 /// "remove image backgrounds" describes a job, not a brand, so the functional
-/// wording is what needs to dominate the embedding.
+/// wording is what needs to dominate the embedding. The summary comes next:
+/// its bullets are plain statements of function, where a tagline is often a
+/// slogan and a description is often marketing.
 export function toolText(t: EmbeddableTool): string {
   const parts = [
     t.tagline ?? '',
+    summaryLines(t.ai_summary).join(' '),
     t.description ?? '',
     (t.tags ?? []).join(', '),
     (t.category ?? '').replace(/^ai-/, ''),

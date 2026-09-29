@@ -12,7 +12,13 @@ from dataclasses import dataclass, field
 from .config import load_settings
 from .enrich import resolve_and_enrich
 from .http_client import PoliteSession
-from .normalize import build_tool_row, choose_name, content_hash
+from .normalize import (
+    build_tool_row,
+    choose_name,
+    choose_tagline,
+    content_hash,
+    strip_name_prefix,
+)
 from .quality import assess
 from .sources import ALL_SOURCES
 from .supabase_sink import SupabaseSink
@@ -76,14 +82,18 @@ def run(
         if facts is not None:
             result.enriched += 1
 
+        name = choose_name(
+            candidate.name,
+            facts.title if facts else "",
+            url=site_url,
+        )
+        tagline = choose_tagline(
+            candidate.tagline, facts.description if facts else ""
+        ) or (facts.description if facts else "")
         row = build_tool_row(
-            name=choose_name(
-                candidate.name,
-                facts.title if facts else "",
-                url=site_url,
-            ),
+            name=name,
             website_url=site_url,
-            tagline=candidate.tagline or (facts.description if facts else ""),
+            tagline=strip_name_prefix(tagline, name),
             description=(facts.description if facts else candidate.tagline),
             logo_url=facts.logo_url if facts else None,
             category=facts.category if facts else None,
@@ -93,6 +103,12 @@ def run(
             source_url=candidate.url,
             status="pending",
         )
+
+        # The story a tool launched with, so its points can be read daily
+        # (liz_scraper.signals). Every row carries both keys: PostgREST
+        # rejects a batch whose rows have different columns.
+        row["hn_id"] = getattr(candidate, "external_id", None)
+        row["hn_points"] = getattr(candidate, "points", None)
 
         # The gate reads the finished row rather than the candidate, so it
         # judges what a reader would actually get — including whether

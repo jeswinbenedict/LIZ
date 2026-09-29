@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/settings_controller.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
+import 'guest_saves.dart';
 
 /// A set of ids the signed-in user has marked — bookmarked tools, followed
 /// tools, followed people. A toggle changes the set only once the server has
@@ -20,6 +23,9 @@ abstract class _IdSetController extends Notifier<Set<String>> {
   @override
   Set<String> build() {
     ref.watch(currentUserProvider);
+    // Signing in or out changes whose marks these are — and, for saves,
+    // whether they live in the browser or the account.
+    ref.watch(isSignedInProvider);
     _load();
     return const {};
   }
@@ -42,15 +48,55 @@ abstract class _IdSetController extends Notifier<Set<String>> {
   }
 }
 
-/// Which tool ids the current user has bookmarked.
+/// Which tool ids the current user has bookmarked — or, for a visitor who has
+/// not signed in, which ones this browser has saved (see [GuestSaves]).
 class BookmarkController extends _IdSetController {
-  @override
-  Future<Set<String>> fetch() =>
-      ref.read(trackRepositoryProvider).bookmarkedToolIds();
+  /// Null where the browser offers no storage (a locked-down private
+  /// window): saving then needs an account, as it always used to.
+  Future<GuestSaves?> _guest() async {
+    try {
+      return GuestSaves(await ref.read(sharedPreferencesProvider.future));
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
-  Future<bool> write(String id) =>
-      ref.read(trackRepositoryProvider).toggleBookmark(id);
+  Future<Set<String>> fetch() async {
+    final guest = await _guest();
+    if (!ref.read(isSignedInProvider)) return guest?.read() ?? {};
+
+    final repo = ref.read(trackRepositoryProvider);
+    final saved = await repo.bookmarkedToolIds();
+    if (guest == null) return saved;
+    final pending = guest.read().difference(saved);
+    if (pending.isEmpty) return saved;
+
+    // Signed in with saves from before: move them into the account, once. A
+    // tool that has since been withdrawn fails on its own without stopping
+    // the rest.
+    final moved = <String>{};
+    for (final id in pending) {
+      try {
+        if (await repo.toggleBookmark(id)) moved.add(id);
+      } catch (_) {}
+    }
+    await guest.clear();
+    return {...saved, ...moved};
+  }
+
+  @override
+  Future<bool> write(String id) async {
+    final guest = ref.read(isSignedInProvider) ? null : await _guest();
+    // No storage and no account: toggleBookmark raises AuthRequiredException
+    // and the button offers sign-in.
+    final added = guest == null
+        ? await ref.read(trackRepositoryProvider).toggleBookmark(id)
+        : await guest.toggle(id);
+    // Saves are one of the signals Rising ranks by.
+    Analytics.track(added ? 'save' : 'unsave', toolId: id);
+    return added;
+  }
 
   Future<void> refresh() => _load();
 }
@@ -88,8 +134,13 @@ final followUserControllerProvider =
       FollowUserController.new,
     );
 
-/// Bookmarked tools as full objects (for the Saved screen).
+/// Bookmarked tools as full objects (for the Saved screen). A visitor's are
+/// looked up by id, since they live in the browser rather than the account.
 final bookmarkedToolsProvider = FutureProvider<List<Tool>>((ref) async {
-  ref.watch(bookmarkControllerProvider); // refresh when the set changes
+  final ids = ref.watch(bookmarkControllerProvider); // refresh on change
+  if (!ref.watch(isSignedInProvider)) {
+    if (ids.isEmpty) return const [];
+    return ref.watch(contentRepositoryProvider).compareTools(ids.toList());
+  }
   return ref.watch(trackRepositoryProvider).bookmarkedTools();
 });

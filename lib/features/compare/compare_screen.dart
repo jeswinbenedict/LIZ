@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
+import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 
 final _compareProvider = FutureProvider.autoDispose.family<List<Tool>, String>((
@@ -16,7 +19,11 @@ final _compareProvider = FutureProvider.autoDispose.family<List<Tool>, String>((
   idsCsv,
 ) async {
   final ids = idsCsv.split(',').where((e) => e.isNotEmpty).toList();
-  return ref.watch(contentRepositoryProvider).compareTools(ids);
+  final tools = await ref.watch(contentRepositoryProvider).compareTools(ids);
+  if (tools.length >= 2) {
+    Analytics.track('compare', props: {'tools': tools.length});
+  }
+  return tools;
 });
 
 class CompareScreen extends ConsumerWidget {
@@ -86,10 +93,11 @@ class _CompareTable extends StatelessWidget {
     final bestRating = tools
         .where((t) => t.ratingCount > 0)
         .fold<double>(0, (m, t) => t.avgRating > m ? t.avgRating : m);
-    final bestTrend = tools.fold<double>(
-      0,
-      (m, t) => t.trendScore > m ? t.trendScore : m,
-    );
+    final bestStars = tools.fold<int>(0, (m, t) {
+      final stars = t.ghStars ?? 0;
+      return stars > m ? stars : m;
+    });
+    final hasStars = bestStars > 0;
 
     // A Wrap, not a Row: at the narrowest column, stars, the figure and the
     // "Best" badge do not fit on one line.
@@ -158,14 +166,40 @@ class _CompareTable extends StatelessWidget {
           style: LizText.callout.copyWith(color: p.textPrimary),
         ),
       ),
+      // What moved this week, in words. This row used to rank the tools by a
+      // score computed from invented totals.
       _Row(
-        'Trending',
+        'This week',
         52,
-        (t) => emphasis(
-          t.trendRank != null
-              ? '#${t.trendRank}'
-              : compactCount(t.trendScore.round()),
-          t.trendScore == bestTrend,
+        (t) => Text(
+          t.trendReason ?? 'No change measured',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: LizText.callout.copyWith(
+            color: t.trendReason == null ? p.textSecondary : p.textPrimary,
+          ),
+        ),
+      ),
+      if (hasStars)
+        _Row(
+          'GitHub stars',
+          52,
+          (t) => t.ghStars == null
+              ? Text(
+                  '—',
+                  style: LizText.callout.copyWith(color: p.textSecondary),
+                )
+              : emphasis(compactCount(t.ghStars!), t.ghStars == bestStars),
+        ),
+      _Row(
+        'First seen',
+        52,
+        (t) => Text(
+          DateFormat('d MMM y').format(t.createdAt.toLocal()),
+          style: LizText.callout.copyWith(
+            color: p.textPrimary,
+            fontFeatures: LizText.tabular,
+          ),
         ),
       ),
       _Row(
@@ -245,7 +279,7 @@ class _CompareTable extends StatelessWidget {
                   Transform.translate(
                     offset: const Offset(-12, 0),
                     child: TextButton(
-                      onPressed: () => context.push('/tool/${t.id}'),
+                      onPressed: () => context.push(toolPath(t)),
                       child: const Text('View tool'),
                     ),
                   ),

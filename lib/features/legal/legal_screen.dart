@@ -99,22 +99,33 @@ class LegalDocument {
 
   static const privacy = LegalDocument(
     title: 'Privacy policy',
-    updated: '27 September 2026',
+    updated: '29 September 2026',
     summary:
-        'Liz keeps what it needs to run your account and to keep the service '
-        'working, and nothing for advertising. There are no ads, no analytics '
-        'trackers, and nothing is sold.',
+        'Liz keeps what it needs to run your account, to keep the service '
+        'working, and to learn which tools people find useful. Nothing is kept '
+        'for advertising: there are no ads, no third-party trackers, and '
+        'nothing is sold.',
     sections: [
       LegalSection('If you only browse', [
-        'Browsing without an account stores nothing that identifies you. Your '
-            'light or dark theme choice is kept in your own browser.',
+        'On your first visit Liz gives your browser a random ID. With it, Liz '
+            'counts which pages and tools are viewed, which tool websites '
+            'you visit from Liz, what is saved, and what is searched for or '
+            'asked. This is how "Rising" knows what people are interested in, '
+            'and how Liz learns what its catalog is missing. The ID is not '
+            'linked to your name, it is not a cookie, and no IP address is '
+            'stored with it. Clearing your browser\'s site data resets it.',
+        'The words you type into search or ask Liz are kept for 90 days and '
+            'then deleted. The counts are kept for 13 months.',
+        'Tools you save without an account, and your light or dark theme '
+            'choice, are kept in your own browser. If you sign in, your saved '
+            'tools move into your account.',
         'If the app crashes, it sends an error report: the error message, where '
             'in the code it happened, which screen you were on, the app version '
             'and the kind of browser. Reports are deleted after 30 days.',
         'Asking Liz a question, loading tool logos and reading a tool\'s release '
             'notes are free to use but limited per visitor, so they count '
             'requests against your IP address. Those counters are deleted after '
-            'a day. The questions you ask Liz are not stored.',
+            'a day.',
       ]),
       LegalSection('If you have an account', [
         'Your email address and password. The password is stored only as a '
@@ -124,6 +135,10 @@ class LegalDocument {
             'you leave, and anything you report.',
         'Notifications sent to you inside Liz. If you turn on browser '
             'notifications, a token that lets Liz send them to that browser.',
+        'While you are signed in, the usage counts above are linked to your '
+            'account, so Liz can tell you when a tool you saved changes.',
+        'If you are a moderator, the setup for your authenticator app. Its '
+            'secret is held by the sign-in service, not by Liz.',
       ]),
       LegalSection('What other people can see', [
         'Your display name, bio, picture and role, and the reviews, posts and '
@@ -147,9 +162,10 @@ class LegalDocument {
         'Settings > Delete account removes your account at once, together with '
             'your profile, saves, follows, reviews, posts, comments, likes, '
             'notifications and notification tokens.',
-        'Two things are kept without your name on them: reports you filed, so '
-            'moderation decisions still make sense, and error reports, which '
-            'expire after 30 days anyway.',
+        'Three things are kept without your name on them: reports you filed, '
+            'so moderation decisions still make sense; usage counts, which '
+            'expire as described above; and error reports, which expire after '
+            '30 days anyway.',
       ]),
       LegalSection('Changes', [
         'If this policy changes, the date at the top changes with it. A change '

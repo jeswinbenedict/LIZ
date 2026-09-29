@@ -18,7 +18,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
 import { clampLimit, embedBatch } from '../_shared/batch.ts';
-import { EMBEDDING_MODEL, embed, toolText } from '../_shared/embed.ts';
+import { EMBEDDING_MODEL, EMBEDDING_VERSION, embed, toolText } from '../_shared/embed.ts';
 
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 10;
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
     const { data: pending, error: selectError } = await supabase
       .from('tools_needing_embedding')
-      .select('id,name,tagline,description,category,tags')
+      .select('id,name,tagline,description,category,tags,ai_summary')
       .limit(limit);
 
     if (selectError) {
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
           .from('tools')
           .update({
             embedding: vector,
-            embedding_model: EMBEDDING_MODEL,
+            embedding_model: EMBEDDING_VERSION,
             embedded_at: new Date().toISOString(),
           })
           .eq('id', id);

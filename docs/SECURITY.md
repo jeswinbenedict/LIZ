@@ -217,7 +217,7 @@ this address has an account, a link is on its way" — whether or not it does. A
 reset form that says "no account found" is a way to find out who has one. Only a
 rate-limit refusal is passed back, because it says nothing about the address.
 
-The link returns to `/#/reset-password`, built from the running origin so one
+The link returns to `/reset-password`, built from the running origin so one
 build works locally and deployed. That address has to be on the allowlist under
 Authentication → URL Configuration, or Supabase silently sends the reader to the
 project's default site instead.
@@ -230,6 +230,43 @@ does not fail the same way, and retries the action. Row-level-security refusals
 (`42501`) are deliberately *not* treated as expiry — signing in again cannot fix
 them, and treating them as expiry would send someone round a loop.
 
+## September 2026: honest numbers, events, admin two-step, search
+
+- **Invented metrics removed.** Seeded ratings and view counts (Claude "4.8 from
+  18,400 ratings" with no reviews in the table) were shown as measurements.
+  Displaying fabricated review figures is deceptive under consumer-protection
+  rules such as the FTC's 16 CFR Part 465. Migration 0037 backed them up to
+  `seeded_metrics_backup` (no policies, never shown) and cleared them; counts
+  now come only from what people do. See docs/RANKING.md.
+- **Search could rewrite its own query.** `searchTools` put the typed text into
+  a PostgREST `or()` filter unquoted, so a comma ended a condition and a
+  parenthesis closed the group — "Notion, Coda" failed, and a crafted string
+  could add conditions of its own (bounded by RLS to published rows). Search
+  now goes through `search_tools()` (migration 0041) with the text as a typed
+  parameter, and the remaining filter uses `containsAny()`, which quotes and
+  escapes.
+- **Usage events.** `events` has RLS on and no policies: written only through
+  `track()`, read only through `usage_summary()`, which checks
+  `is_moderator()`. `track()` caps payloads at 1 KB, accepts a fixed list of
+  names, and rate-limits by address without storing it. Search words are
+  removed after 90 days and events after 13 months (`prune-events`, migration
+  0043), as the privacy policy says.
+- **Two-step verification for moderators.** Every moderator power goes through
+  `is_moderator()`, which now also requires an `aal2` session once
+  `app_config.moderator_mfa_required` is true (migration 0042). It is switched
+  on by the first moderator to verify an authenticator code
+  (`require_moderator_mfa()`, which only an aal2 moderator can call and which
+  cannot switch it off), so nobody is locked out of the console where
+  enrolment happens.
+- **Evaluation key.** `ask-liz` skips its public rate limit for requests
+  carrying the `ASK_EVAL_KEY` secret in `x-liz-eval` — a random 48-character
+  value, compared in constant time, that grants nothing else. It exists so the
+  60-question evaluation set runs in one go.
+- **Security headers** ship with the web build (`web/_headers`): HSTS,
+  `X-Frame-Options: DENY`, `nosniff`, a strict referrer policy, and a
+  Content-Security-Policy in report-only mode until it is checked against the
+  deployed site.
+
 ## Still open
 
 - **No SMTP provider.** Reset links, magic links and confirmation emails are all
@@ -237,4 +274,8 @@ them, and treating them as expiry would send someone round a loop.
   until a provider is configured.
 - **Google and Apple sign-in are disabled** on the live project; only email works.
 - **`site_url` still points at `localhost:3000`**, which will misdirect every auth
-  email the moment this is deployed.
+  email the moment this is deployed. Add the deployed origin's
+  `/reset-password` to the redirect allowlist at the same time.
+- **The scraper machine holds the full service key** (`~/.liz/n8n.env`). A
+  narrower credential that can only write the staging columns would limit what
+  a compromised laptop exposes.

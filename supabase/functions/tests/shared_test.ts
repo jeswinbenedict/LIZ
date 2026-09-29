@@ -26,6 +26,19 @@ Deno.test('toolText leads with what the tool does, not its name', () => {
   assert(!text.includes('ai-video'));
 });
 
+Deno.test('toolText puts the summary right after the tagline', () => {
+  const text = toolText({
+    name: 'Descript',
+    tagline: 'Edit video by editing text.',
+    ai_summary: ['Transcribes recordings.', 'Removes filler words.'],
+    description: 'Marketing copy.',
+  });
+  assert(text.indexOf('Transcribes') > text.indexOf('Edit video'));
+  assert(text.indexOf('Transcribes') < text.indexOf('Marketing'));
+  // The older {"bullets": [...]} shape still reads.
+  assert(toolText({ ai_summary: { bullets: ['Old shape.'] } }).includes('Old shape.'));
+});
+
 Deno.test('toolText tolerates missing fields', () => {
   assertEquals(toolText({ name: 'Solo' }), 'Solo');
   assertEquals(toolText({}), '');

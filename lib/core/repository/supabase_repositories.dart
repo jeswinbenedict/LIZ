@@ -21,6 +21,17 @@ int _decodeCursor(String? cursor) =>
 String? _nextCursor(int offset, int limit, int received) =>
     received < limit ? null : '${offset + limit}';
 
+/// A PostgREST `or()` filter matching [text] anywhere in any of [columns].
+///
+/// The text is quoted. Put in bare, a comma ended the condition early and a
+/// parenthesis closed the group, so a search for "Notion, Coda" failed and a
+/// crafted one could add conditions of its own. RLS still bounded what that
+/// could reach, but a search box should not be able to rewrite its query.
+String containsAny(List<String> columns, String text) {
+  final escaped = text.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+  return columns.map((c) => '$c.ilike."%$escaped%"').join(',');
+}
+
 /// Live discovery content backed by Supabase's auto REST API + RLS.
 class SupabaseContentRepository implements ContentRepository {
   SupabaseContentRepository(this._client);
@@ -30,7 +41,8 @@ class SupabaseContentRepository implements ContentRepository {
       'id,name,slug,tagline,description,ai_summary,website_url,logo_url,'
       'category,tags,platforms,pricing_type,price_note,source,source_url,'
       'launched_at,trend_score,view_count,save_count,avg_rating,rating_count,'
-      'status,created_at,trend_rank';
+      'status,created_at,trend_rank,momentum,trend_reason,gh_repo,gh_stars,'
+      'hn_id,hn_points,hn_comments';
 
   /// Everything a feed card draws, and nothing more. Dropping the description
   /// and the AI summary halves a page of the grid on the wire, and the model
@@ -38,7 +50,8 @@ class SupabaseContentRepository implements ContentRepository {
   static const _toolCardCols =
       'id,name,slug,tagline,website_url,logo_url,category,tags,platforms,'
       'pricing_type,price_note,launched_at,trend_score,view_count,save_count,'
-      'avg_rating,rating_count,status,created_at,trend_rank';
+      'avg_rating,rating_count,status,created_at,trend_rank,momentum,'
+      'trend_reason,gh_stars,hn_points';
 
   @override
   Future<List<Category>> categories() async {
@@ -58,19 +71,25 @@ class SupabaseContentRepository implements ContentRepository {
     }
     if (q.tag != null) query = query.contains('tags', [q.tag!]);
     if (q.search != null && q.search!.trim().isNotEmpty) {
-      final s = q.search!.replaceAll(',', ' ');
-      query = query.or('name.ilike.%$s%,tagline.ilike.%$s%');
+      query = query.or(containsAny(['name', 'tagline'], q.search!.trim()));
     }
+    if (q.movingOnly) query = query.gt('momentum', 0);
+    if (q.newWithinDays != null) {
+      final since = DateTime.now().toUtc().subtract(
+        Duration(days: q.newWithinDays!),
+      );
+      query = query.gte('created_at', since.toIso8601String());
+    }
+    // Only what people have actually rated. Ordering the rest by a rating of
+    // zero would list them in no meaningful order under "Top rated".
+    if (q.sort == ToolSort.topRated) query = query.gt('rating_count', 0);
 
     final ordered = switch (q.sort) {
-      ToolSort.trending => query.order('trend_score', ascending: false),
-      ToolSort.newest => query.order('created_at', ascending: false),
-      // "Rising early" is served by a computed view/RPC in production; the
-      // client falls back to trend_score ordering here.
       ToolSort.rising =>
         query
-            .order('trend_score', ascending: false)
-            .order('save_count', ascending: true),
+            .order('momentum', ascending: false)
+            .order('created_at', ascending: false),
+      ToolSort.newest => query.order('created_at', ascending: false),
       ToolSort.topRated =>
         query
             .order('avg_rating', ascending: false)
@@ -136,17 +155,16 @@ class SupabaseContentRepository implements ContentRepository {
   Future<List<Tool>> searchTools(String query, {PricingType? pricing}) async {
     final s = query.trim();
     if (s.isEmpty) return [];
-    var request = _client
-        .from('tools')
-        .select(_toolCols)
-        .eq('status', 'published')
-        .or('name.ilike.%$s%,tagline.ilike.%$s%,description.ilike.%$s%');
-    if (pricing != null) {
-      // On the server, so thirty results are thirty matches rather than thirty
-      // results filtered down to however many happened to be free.
-      request = request.eq('pricing_type', pricing.name);
-    }
-    final rows = await request.limit(30);
+    // Ranked and typo-tolerant on the server (migration 0041): an exact name
+    // first, then every word, then some words, then a near spelling. It used
+    // to be a substring match returned in no order. The price filter is
+    // applied there too, so thirty results are thirty matches.
+    final rows = await _client
+        .rpc<dynamic>(
+          'search_tools',
+          params: {'q': s, 'pricing': pricing?.name, 'max_results': 30},
+        )
+        .select(_toolCols);
     return (rows as List).map((e) => Tool.fromJson(e)).toList();
   }
 
@@ -595,6 +613,19 @@ class SupabaseAdminRepository implements AdminRepository {
         detail: asString(e['detail']),
       );
     }).toList();
+  }
+
+  @override
+  Future<Map<String, int>> usageSummary({int days = 7}) async {
+    final rows = await _client.rpc<dynamic>(
+      'usage_summary',
+      params: {'days': days},
+    );
+    if (rows is! List) return const {};
+    return {
+      for (final r in rows.whereType<Map>())
+        asString(r['metric']): asInt(r['value']),
+    };
   }
 
   @override

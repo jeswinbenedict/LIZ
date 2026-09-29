@@ -75,11 +75,22 @@ scraper runs from a home connection. That is what the n8n workflow is for.
 
 → [n8n/README.md](n8n/README.md)
 
+## How "Rising" is decided
+
+Every tool's GitHub stars, Hacker News points, and views, website visits and
+saves on Liz are recorded daily, and tools are ranked by how much those grew in
+the last seven days — with the reason shown in words ("227 points on Hacker
+News"). A famous tool that is not growing is not rising. Nothing shown is
+estimated or seeded.
+
+→ [docs/RANKING.md](docs/RANKING.md)
+
 ## Knowing it still works
 
-`system_health()` reports ten signals derived from the data itself — catalog and
-news freshness, embedding and summary coverage, unexplained backlog, failed
-scheduled calls, crash reports, open reports. It runs hourly and notifies admins
+`system_health()` reports twelve signals derived from the data itself — catalog
+and news freshness, embedding and summary coverage, unexplained backlog, failed
+scheduled calls, crash reports, open reports, and whether the daily signal
+history and outside signals are still being written. It runs hourly and notifies admins
 when something fails, at most once every six hours. The admin console's
 **Health** tab shows all of it.
 
@@ -96,6 +107,7 @@ problems fixed along the way.
 flutter analyze                                           # clean at every level
 flutter test                                              # app
 cd scrapers && python -m pytest tests                     # scraper
+cd scrapers && python -m liz_scraper.eval_ask              # Ask Liz, 60 questions (live)
 deno test --allow-env --no-check supabase/functions/tests # Edge Functions
 ```
 

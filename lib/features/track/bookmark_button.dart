@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/providers.dart';
 import '../auth/guard.dart';
+import '../auth/sign_in_view.dart';
 import 'track_controller.dart';
 
-/// Save/bookmark toggle. Optimistic, and prompts sign-in for guests.
+/// Save/bookmark toggle. Works before signing in: a visitor's saves stay in
+/// the browser and move into their account when they sign in.
 class BookmarkButton extends ConsumerWidget {
   const BookmarkButton({
     super.key,
@@ -33,17 +36,34 @@ class BookmarkButton extends ConsumerWidget {
       prompt: 'Sign in to save tools to your list.',
       action: () async {
         final added = await controller.toggle(toolId);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context)
-            ..clearSnackBars()
-            ..showSnackBar(
-              SnackBar(
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 1),
-                content: Text(added ? 'Saved' : 'Removed from saved'),
+        if (!context.mounted) return;
+        final guest = !ref.read(isSignedInProvider);
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: guest && added ? 4 : 1),
+              content: Text(
+                !added
+                    ? 'Removed from saved'
+                    : guest
+                    ? 'Saved in this browser'
+                    : 'Saved',
               ),
-            );
-        }
+              // Offer an account only once there is something to keep.
+              action: guest && added
+                  ? SnackBarAction(
+                      label: 'Keep everywhere',
+                      onPressed: () => showSignInSheet(
+                        context,
+                        prompt:
+                            'Sign in to keep your saved tools on every device.',
+                      ),
+                    )
+                  : null,
+            ),
+          );
       },
     );
 

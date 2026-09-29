@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../../core/telemetry/analytics.dart';
 import '../../shared/models/profile.dart';
 
 /// Drives the sign-in / sign-up flows and exposes a busy flag for buttons.
@@ -18,11 +19,23 @@ class AuthController extends Notifier<bool> {
     }
   }
 
-  Future<Profile> signInWithEmail(String email, String password) =>
-      _run(() => ref.read(authRepositoryProvider).signInWithEmail(email, password));
+  Future<Profile> signInWithEmail(String email, String password) async {
+    final profile = await _run(
+      () => ref.read(authRepositoryProvider).signInWithEmail(email, password),
+    );
+    Analytics.track('sign_in');
+    return profile;
+  }
 
-  Future<Profile> signUp(String email, String password, String name) => _run(
-      () => ref.read(authRepositoryProvider).signUpWithEmail(email, password, name));
+  Future<Profile> signUp(String email, String password, String name) async {
+    final profile = await _run(
+      () => ref
+          .read(authRepositoryProvider)
+          .signUpWithEmail(email, password, name),
+    );
+    Analytics.track('sign_up');
+    return profile;
+  }
 
   Future<void> sendMagicLink(String email) =>
       _run(() => ref.read(authRepositoryProvider).sendMagicLink(email));

@@ -1,0 +1,23 @@
+# Security headers for Cloudflare Pages (copied into build/web by Flutter).
+# See .github/workflows/deploy-web.yml and docs/SECURITY.md.
+#
+# The Content-Security-Policy ships as Report-Only first: a wrong CSP blanks a
+# Flutter app entirely, and the list of origins it needs (CanvasKit or skwasm
+# from gstatic, the Firebase SDK, Supabase) is best confirmed against the
+# deployed site. Open the console there, fix anything it reports, then rename
+# the header to Content-Security-Policy to enforce it.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.gstatic.com https://fonts.gstatic.com https://*.googleapis.com; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+# The app shell changes with every deploy; everything it loads is
+# content-hashed or versioned by the service worker.
+/index.html
+  Cache-Control: no-cache
+/flutter_bootstrap.js
+  Cache-Control: no-cache

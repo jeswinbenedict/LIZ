@@ -10,12 +10,18 @@ import '../../shared/models/tool.dart';
 
 /// How a tool feed is ordered. `rising` implements the "rising early" idea:
 /// high velocity but still low absolute popularity.
-enum ToolSort { trending, newest, rising, topRated }
+/// How a list of tools is ordered.
+///
+/// `rising` is momentum: measured growth over the last seven days (migration
+/// 0037). There used to be a separate "trending" order over all-time totals,
+/// but those totals were seeded, not measured, and the two orders were never
+/// meaningfully different.
+enum ToolSort { rising, newest, topRated }
 
 /// Query parameters for the discover feed.
 class ToolQuery {
   const ToolQuery({
-    this.sort = ToolSort.trending,
+    this.sort = ToolSort.rising,
     this.categorySlug,
     this.tag,
     this.search,
@@ -23,6 +29,8 @@ class ToolQuery {
     this.cursor,
     this.includeProse = false,
     this.pricing,
+    this.movingOnly = false,
+    this.newWithinDays,
   });
 
   final ToolSort sort;
@@ -34,6 +42,14 @@ class ToolQuery {
 
   /// Show only tools at this price. Null means any.
   final PricingType? pricing;
+
+  /// Only tools with measurable growth this week. The Rising chart sets this
+  /// so it shows fewer rows rather than padding itself with tools that are
+  /// not moving at all.
+  final bool movingOnly;
+
+  /// Only tools Liz first saw within this many days.
+  final int? newWithinDays;
 
   /// Whether the long description and AI summary are needed.
   ///
@@ -56,6 +72,9 @@ class ToolQuery {
     limit: limit,
     cursor: cursor,
     includeProse: includeProse,
+    pricing: pricing,
+    movingOnly: movingOnly,
+    newWithinDays: newWithinDays,
   );
 }
 
@@ -304,6 +323,11 @@ abstract interface class AdminRepository {
   /// this says the attempt was made, which is how "broken" is told apart from
   /// "nothing new to fetch".
   Future<List<JobRun>> recentJobRuns({int limit = 20});
+
+  /// What people did on Liz over the last [days], counted from the event log
+  /// (migration 0037): visitors, views, website visits, saves, searches,
+  /// sign-ups, and visitors who came back on another day.
+  Future<Map<String, int>> usageSummary({int days = 7});
 
   /// Distinct client faults, most recent first.
   Future<List<ErrorGroup>> recentErrors({int limit = 20});

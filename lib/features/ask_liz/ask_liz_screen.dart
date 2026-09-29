@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/liz_card.dart';
 import '../../shared/widgets/skeletons.dart';
+import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 import '../track/bookmark_button.dart';
 import 'tool_ranking.dart';
@@ -25,7 +26,10 @@ class _Suggestion {
 /// bundled tools; in live mode it would call the `/ask-liz` Edge Function which
 /// wraps the LLM. Either way the UI is identical.
 class AskLizScreen extends ConsumerStatefulWidget {
-  const AskLizScreen({super.key});
+  const AskLizScreen({super.key, this.initialQuery});
+
+  /// Asked at once when the screen opens (from the search box).
+  final String? initialQuery;
 
   @override
   ConsumerState<AskLizScreen> createState() => _AskLizScreenState();
@@ -49,6 +53,18 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final q = widget.initialQuery?.trim() ?? '';
+    if (q.isNotEmpty) {
+      _controller.text = q;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _ask(q);
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -67,6 +83,10 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     // nothing. "No tool is close enough" is a real answer, so only an
     // unreachable backend (null) falls through to on-device keyword ranking.
     final server = await _askServer(q);
+    Analytics.track(
+      'ask',
+      props: {'q': clip(q, 100), 'results': server?.length},
+    );
     if (_notice != null) {
       // Falling through to keyword ranking here would hand back visibly worse
       // answers and blame nothing — the exact failure this screen was rebuilt
@@ -273,10 +293,18 @@ class _Answer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tool = suggestion.tool;
+    return ToolLink(
+      tool: tool,
+      builder: (context, open) => _card(context, open),
+    );
+  }
+
+  Widget _card(BuildContext context, VoidCallback open) {
     final p = context.liz;
     final tool = suggestion.tool;
     return LizCard(
-      onTap: () => context.push('/tool/${tool.id}'),
+      onTap: open,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

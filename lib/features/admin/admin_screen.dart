@@ -9,9 +9,11 @@ import 'content_tab.dart';
 import 'health_tab.dart';
 import 'moderation_tab.dart';
 import 'news_tab.dart';
+import 'two_step_gate.dart';
 
 /// Web-focused moderation console. Role-gated: non-admins are turned away
-/// (defense-in-depth on top of RLS, which is the real enforcement).
+/// (defense-in-depth on top of RLS, which is the real enforcement), and a
+/// moderator passes a two-step code check first (TwoStepGate).
 class AdminScreen extends ConsumerWidget {
   const AdminScreen({super.key});
 
@@ -33,25 +35,27 @@ class AdminScreen extends ConsumerWidget {
       );
     }
 
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Admin console'),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Health', icon: Icon(Icons.monitor_heart_outlined)),
-              Tab(text: 'Content', icon: Icon(Icons.inventory_2_outlined)),
-              Tab(text: 'News', icon: Icon(Icons.newspaper_outlined)),
-              Tab(text: 'Moderation', icon: Icon(Icons.flag_outlined)),
-            ],
+    return TwoStepGate(
+      child: DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Admin console'),
+            bottom: const TabBar(
+              isScrollable: true,
+              tabs: [
+                Tab(text: 'Health', icon: Icon(Icons.monitor_heart_outlined)),
+                Tab(text: 'Content', icon: Icon(Icons.inventory_2_outlined)),
+                Tab(text: 'News', icon: Icon(Icons.newspaper_outlined)),
+                Tab(text: 'Moderation', icon: Icon(Icons.flag_outlined)),
+              ],
+            ),
           ),
-        ),
-        body: MaxWidth(
-          maxWidth: 1000,
-          child: const TabBarView(
-            children: [HealthTab(), ContentTab(), NewsTab(), ModerationTab()],
+          body: MaxWidth(
+            maxWidth: 1000,
+            child: const TabBarView(
+              children: [HealthTab(), ContentTab(), NewsTab(), ModerationTab()],
+            ),
           ),
         ),
       ),

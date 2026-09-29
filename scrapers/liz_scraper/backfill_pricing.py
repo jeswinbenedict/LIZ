@@ -8,6 +8,8 @@ same read to the tools already published.
 
     python -m liz_scraper.backfill_pricing              # report, change nothing
     python -m liz_scraper.backfill_pricing --apply      # write what was learned
+    python -m liz_scraper.backfill_pricing --apply --render
+                                   # also render JavaScript-only sites (render.py)
 
 Only pricing_type is written, and only when the answer is known. Moving from
 "unknown" to a price does not alert followers (migration 0021): the product
@@ -25,8 +27,11 @@ import sys
 import requests
 
 from .config import REQUEST_TIMEOUT, load_settings
-from .enrich import enrich_url, is_aggregator
+from bs4 import BeautifulSoup
+
+from .enrich import enrich_url, find_pricing_url, is_aggregator
 from .http_client import PoliteSession
+from .normalize import canonical_url, clean_text, infer_pricing
 
 log = logging.getLogger(__name__)
 
@@ -65,10 +70,34 @@ def learned_pricing(session: PoliteSession, row: dict) -> str:
     return facts.pricing_type if facts else "unknown"
 
 
+def rendered_pricing(render, url: str) -> str:
+    """Pricing read from the page as a browser draws it: the linked pricing
+    page when there is one, as in enrich_url, else the home page."""
+    home = render.html(url)
+    if not home:
+        return "unknown"
+    pricing_url = find_pricing_url(home, url)
+    if pricing_url and canonical_url(pricing_url) != canonical_url(url):
+        page = render.html(pricing_url)
+        if page:
+            text = clean_text(BeautifulSoup(page, "lxml").get_text(" "), limit=20000)
+            found = infer_pricing(text)
+            if found != "unknown":
+                return found
+    text = clean_text(BeautifulSoup(home, "lxml").get_text(" "), limit=20000)
+    return infer_pricing(text)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true", help="Write the results.")
     parser.add_argument("--limit", type=int, default=500)
+    parser.add_argument(
+        "--render",
+        action="store_true",
+        help="When a page yields nothing, render it in headless Chromium and "
+             "try again. Needs Playwright; slow.",
+    )
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -88,8 +117,19 @@ def main(argv: list[str] | None = None) -> int:
     rows = fetch_unknown(settings, rest, args.limit)
     learned: collections.Counter[str] = collections.Counter()
 
+    render_ctx = None
+    render = None
+    if args.render:
+        from .render import renderer
+
+        render_ctx = renderer(polite)
+        render = render_ctx.__enter__()
+
     for row in rows:
         pricing = learned_pricing(polite, row)
+        url = row.get("website_url") or ""
+        if pricing == "unknown" and render is not None and url and not is_aggregator(url):
+            pricing = rendered_pricing(render, url)
         learned[pricing] += 1
         log.info("%-8s %s", pricing, row.get("name"))
         if pricing == "unknown" or not args.apply:
@@ -104,6 +144,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         if resp.status_code >= 400:
             log.warning("could not update %s: %s", row["id"], resp.text[:200])
+
+    if render_ctx is not None:
+        render_ctx.__exit__(None, None, None)
 
     report = {"tried": len(rows), "learned": dict(learned), "applied": args.apply}
     print(json.dumps(report, indent=2))

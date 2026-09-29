@@ -69,6 +69,13 @@ class Tool {
     required this.createdAt,
     this.trendRank,
     this.holdReason,
+    this.momentum = 0,
+    this.trendReason,
+    this.ghRepo,
+    this.ghStars,
+    this.hnId,
+    this.hnPoints,
+    this.hnComments,
   });
 
   final String id;
@@ -104,6 +111,32 @@ class Tool {
   /// Why the quality gate held this back, when it is pending. Null once
   /// published, and null for rows that predate the gate.
   final String? holdReason;
+
+  /// Growth over the last seven days across GitHub, Hacker News and Liz
+  /// (migration 0037). Zero means nothing measurable moved.
+  final double momentum;
+
+  /// What moved, in words: "+1.2k GitHub stars this week". Shown instead of a
+  /// bare score, and null when nothing did.
+  final String? trendReason;
+
+  /// `owner/name` of the tool's GitHub repository, when it has one.
+  final String? ghRepo;
+  final int? ghStars;
+
+  /// The Show HN story the tool launched with, and what it earned there.
+  final String? hnId;
+  final int? hnPoints;
+  final int? hnComments;
+
+  bool get isRising => momentum > 0 && trendReason != null;
+
+  Uri? get githubUri =>
+      ghRepo == null ? null : Uri.https('github.com', '/$ghRepo');
+
+  Uri? get hackerNewsUri => hnId == null
+      ? null
+      : Uri.https('news.ycombinator.com', '/item', {'id': hnId!});
 
   bool get isNew => DateTime.now().difference(createdAt).inDays <= 14;
 
@@ -147,6 +180,13 @@ class Tool {
       createdAt: asDate(j['created_at']),
       trendRank: j['trend_rank'] == null ? null : asInt(j['trend_rank']),
       holdReason: asStringOrNull(j['hold_reason']),
+      momentum: asDouble(j['momentum']),
+      trendReason: asStringOrNull(j['trend_reason']),
+      ghRepo: asStringOrNull(j['gh_repo']),
+      ghStars: j['gh_stars'] == null ? null : asInt(j['gh_stars']),
+      hnId: asStringOrNull(j['hn_id']),
+      hnPoints: j['hn_points'] == null ? null : asInt(j['hn_points']),
+      hnComments: j['hn_comments'] == null ? null : asInt(j['hn_comments']),
     );
   }
 
@@ -175,6 +215,13 @@ class Tool {
     'status': status.value,
     'created_at': createdAt.toIso8601String(),
     'trend_rank': trendRank,
+    'momentum': momentum,
+    'trend_reason': trendReason,
+    'gh_repo': ghRepo,
+    'gh_stars': ghStars,
+    'hn_id': hnId,
+    'hn_points': hnPoints,
+    'hn_comments': hnComments,
   };
 
   Tool copyWith({
@@ -209,5 +256,12 @@ class Tool {
     createdAt: createdAt,
     trendRank: trendRank,
     holdReason: holdReason,
+    momentum: momentum,
+    trendReason: trendReason,
+    ghRepo: ghRepo,
+    ghStars: ghStars,
+    hnId: hnId,
+    hnPoints: hnPoints,
+    hnComments: hnComments,
   );
 }

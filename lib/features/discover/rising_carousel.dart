@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/page_header.dart';
-import '../../shared/widgets/time_ago.dart';
+import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 import 'discover_controller.dart';
 
-/// "Rising this week" as a chart: rank numerals, logo, name, and how fast it
-/// is climbing — the App Store's Top Charts pattern (docs/DESIGN.md §7, Chart
-/// row). It replaced a strip of small tiles where the rank was a number in a
-/// pill and the list had no visible order.
+/// "Rising this week" as a chart: rank numerals, logo, name, and what moved —
+/// the App Store's Top Charts pattern (docs/DESIGN.md §7, Chart row).
+///
+/// Only tools with measured growth appear (migration 0037), each with the
+/// reason in words: "+1.2k GitHub stars this week", "227 points on Hacker
+/// News". It used to rank the most famous tools by seeded totals under the
+/// heading "still under the radar", with a bare score beside each.
 class RisingCarousel extends ConsumerWidget {
   const RisingCarousel({super.key});
 
@@ -23,6 +25,7 @@ class RisingCarousel extends ConsumerWidget {
     final key = FeedKey(
       sort: ToolSort.rising,
       pricing: ref.watch(discoverPricingProvider),
+      movingOnly: true,
     );
     final state = ref.watch(toolFeedProvider(key));
     if (state.loading || state.items.isEmpty) {
@@ -43,7 +46,9 @@ class RisingCarousel extends ConsumerWidget {
       children: [
         const SectionHeader(
           title: 'Rising this week',
-          subtitle: 'Growing fastest, still under the radar.',
+          subtitle:
+              'Biggest jumps in the last seven days, on GitHub, '
+              'Hacker News and Liz.',
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
@@ -121,15 +126,19 @@ class _ChartRow extends StatelessWidget {
   final Tool tool;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ToolLink(tool: tool, builder: _row);
+
+  Widget _row(BuildContext context, VoidCallback open) {
     final p = context.liz;
-    final climb = tool.trendScore.round();
+    final reason = tool.trendReason;
     return Semantics(
       button: true,
-      label: 'Number $rank, ${tool.name}. ${tool.tagline}',
+      label:
+          'Number $rank, ${tool.name}. ${tool.tagline}'
+          '${reason == null ? '' : '. $reason'}',
       excludeSemantics: true,
       child: InkWell(
-        onTap: () => context.push('/tool/${tool.id}'),
+        onTap: open,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 68),
           child: Padding(
@@ -170,40 +179,40 @@ class _ChartRow extends StatelessWidget {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
+                      if (reason != null) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Icon(Icons.trending_up, size: 14, color: p.rising),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                reason,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: LizText.footnote.copyWith(
+                                  color: LizColors.legibleOn(
+                                    p.rising,
+                                    p.surface,
+                                  ),
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: LizText.tabular,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.trending_up, size: 15, color: p.rising),
-                        const SizedBox(width: 3),
-                        Text(
-                          compactCount(climb),
-                          style: LizText.subhead.copyWith(
-                            color: LizColors.legibleOn(p.rising, p.surface),
-                            fontWeight: FontWeight.w600,
-                            fontFeatures: LizText.tabular,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (tool.pricingType != PricingType.unknown) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        tool.pricingType.label,
-                        style: LizText.footnote.copyWith(
-                          color: p.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                if (tool.pricingType != PricingType.unknown) ...[
+                  const SizedBox(width: 12),
+                  Text(
+                    tool.pricingType.label,
+                    style: LizText.footnote.copyWith(color: p.textSecondary),
+                  ),
+                ],
               ],
             ),
           ),
@@ -212,4 +221,3 @@ class _ChartRow extends StatelessWidget {
     );
   }
 }
-

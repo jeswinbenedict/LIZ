@@ -8,6 +8,20 @@ import 'auth_repository.dart';
 /// In-memory auth for mock mode. Any credentials "work" and drop you into a
 /// demo profile so every gated action is testable without a backend.
 class MockAuthRepository implements AuthRepository {
+  // Demo mode has no second factor to check; the console is open.
+  @override
+  Future<TwoStep> twoStep() async => const TwoStep(TwoStepStatus.verified);
+
+  @override
+  Future<TotpSetup> startTwoStepSetup() async => const TotpSetup(
+    factorId: 'demo',
+    uri: 'otpauth://totp/Liz:demo?secret=DEMO&issuer=Liz',
+    secret: 'DEMO',
+  );
+
+  @override
+  Future<void> verifyTwoStep(String factorId, String code) async {}
+
   final _controller = StreamController<Profile?>.broadcast();
   Profile? _current;
 

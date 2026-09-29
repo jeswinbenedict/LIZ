@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/pricing_filter.dart';
@@ -23,9 +25,16 @@ final searchResultsProvider = FutureProvider.autoDispose
       // Typing "video editor" used to leave a cached result for every prefix the
       // debounce happened to fire on, each holding up to thirty tools.
       if (key.query.trim().length < 2) return [];
-      return ref
+      final results = await ref
           .watch(contentRepositoryProvider)
           .searchTools(key.query, pricing: key.pricing);
+      // What people look for, and whether Liz had it: the list of questions
+      // the catalog cannot answer yet.
+      Analytics.track(
+        'search',
+        props: {'q': clip(key.query.trim(), 100), 'results': results.length},
+      );
+      return results;
     });
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -139,8 +148,71 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  /// Three words or more reads as a description of a job ("edit a podcast
+  /// with AI"), which Ask Liz answers by meaning. Offered, not forced: the
+  /// words may still be a name.
+  bool get _readsAsQuestion =>
+      _query.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length >=
+      3;
+
+  Widget _askLizRow(double gutter) {
+    final p = context.liz;
+    final q = _query.trim();
+    return Padding(
+      padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 0),
+      child: Material(
+        color: p.accentSoft,
+        shape: LizRadius.shape(LizRadius.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.go(
+            Uri(path: '/ask', queryParameters: {'q': q}).toString(),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(Icons.auto_awesome, size: 20, color: p.textPrimary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Ask Liz: \u201c$q\u201d',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LizText.callout.copyWith(
+                      color: p.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(Icons.arrow_forward, size: 18, color: p.textPrimary),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _results(AsyncValue<List<Tool>> results, int columns, double gutter) {
     final key = (query: _query, pricing: _pricing);
+    final list = _resultList(results, columns, gutter, key);
+    if (_query.trim().length < 2 || !_readsAsQuestion) return list;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _askLizRow(gutter),
+        Expanded(child: list),
+      ],
+    );
+  }
+
+  Widget _resultList(
+    AsyncValue<List<Tool>> results,
+    int columns,
+    double gutter,
+    SearchKey key,
+  ) {
     return _query.trim().length < 2
         ? const EmptyView(
             icon: Icons.search,
