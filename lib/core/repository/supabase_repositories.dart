@@ -253,6 +253,28 @@ class SupabaseContentRepository implements ContentRepository {
   }
 
   @override
+  Future<List<ToolHeadline>> toolHeadlines({int limit = 6}) async {
+    final rows = await _client
+        .from('news')
+        .select('*, news_tools!inner(tools(id,name,slug))')
+        .eq('status', 'published')
+        .order('published_at', ascending: false)
+        .limit(limit);
+    return [
+      for (final r in (rows as List).whereType<Map<String, dynamic>>())
+        ToolHeadline(NewsItem.fromJson(r), [
+          for (final link in (r['news_tools'] as List? ?? const []))
+            if (link is Map && link['tools'] is Map)
+              (
+                id: asString(link['tools']['id']),
+                name: asString(link['tools']['name']),
+                slug: asString(link['tools']['slug']),
+              ),
+        ]),
+    ];
+  }
+
+  @override
   Future<List<NewsItem>> newsForTool(String toolId, {int limit = 5}) async {
     final rows = await _client
         .from('news')

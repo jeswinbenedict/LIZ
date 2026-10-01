@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/providers.dart';
+import '../../core/ui_state.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/models/tool_history.dart';
 import '../../shared/widgets/badges.dart';
@@ -19,6 +20,22 @@ import 'discover_controller.dart';
 /// reason in words ("+1.2k GitHub stars this week") and its last two weeks as
 /// a line. Wide layouts get a real table with column headings; phones get the
 /// same facts as compact rows. The leader's row is lit.
+/// What the movers table shows: everything (null), free tools ('free'), or
+/// one kind of tool (its category slug).
+final moversFilterProvider = uiStateProvider<String?>(null);
+
+/// The filters offered: the kinds of tool that move most often.
+const _moversFilters = <(String?, String)>[
+  (null, 'All'),
+  ('free', 'Free'),
+  ('ai-agents', 'Agents'),
+  ('ai-dev', 'Dev tools'),
+  ('ai-research', 'Research'),
+  ('ai-audio', 'Audio'),
+  ('ai-video', 'Video'),
+  ('ai-image', 'Image'),
+];
+
 class TopMovers extends ConsumerWidget {
   const TopMovers({super.key});
 
@@ -27,13 +44,19 @@ class TopMovers extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(moversFilterProvider);
     final key = FeedKey(
       sort: ToolSort.rising,
-      pricing: ref.watch(discoverPricingProvider),
+      pricing: filter == 'free'
+          ? PricingType.free
+          : ref.watch(discoverPricingProvider),
+      category: filter == null || filter == 'free' ? null : filter,
       movingOnly: true,
     );
     final state = ref.watch(toolFeedProvider(key));
-    if (state.loading || state.items.isEmpty) {
+    // Nothing is moving at all: the section is absent. Nothing moving in
+    // the chosen kind: the section stays, so the filter can be changed back.
+    if (filter == null && (state.loading || state.items.isEmpty)) {
       return const SizedBox.shrink();
     }
     final p = context.liz;
@@ -56,43 +79,97 @@ class TopMovers extends ConsumerWidget {
               'Biggest jumps in the last seven days, on GitHub, '
               'Hacker News and Liz.',
         ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: gutter),
-          child: DecoratedBox(
-            decoration: ShapeDecoration(
-              color: p.surface,
-              shape: LizRadius.shape(
-                LizRadius.md,
-                side: BorderSide(color: p.hairline),
-              ),
-            ),
-            child: ClipRSuperellipse(
-              borderRadius: BorderRadius.circular(LizRadius.md),
-              child: LayoutBuilder(
-                builder: (context, box) {
-                  final wide = box.maxWidth >= tableWidth;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (wide) const _HeadingRow(),
-                      for (var i = 0; i < items.length; i++) ...[
-                        if (i > 0 || wide)
-                          Divider(height: 1, color: p.hairline),
-                        _MoverRow(
-                          rank: i + 1,
-                          tool: items[i],
-                          history: histories[items[i].id] ?? const [],
-                          wide: wide,
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
-            ),
+        // Sideways on a narrow window rather than wrapping into rows.
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 6),
+          child: Row(
+            children: [
+              for (final (value, label) in _moversFilters) ...[
+                LizFilterPill(
+                  label: label,
+                  selected: filter == value,
+                  semanticLabel: 'Show $label movers',
+                  onTap: () =>
+                      ref.read(moversFilterProvider.notifier).set(value),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ],
           ),
         ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: gutter),
+          child: items.isEmpty
+              ? _NoMovers(loading: state.loading)
+              : DecoratedBox(
+                  decoration: ShapeDecoration(
+                    color: p.surface,
+                    shape: LizRadius.shape(
+                      LizRadius.md,
+                      side: BorderSide(color: p.hairline),
+                    ),
+                  ),
+                  child: ClipRSuperellipse(
+                    borderRadius: BorderRadius.circular(LizRadius.md),
+                    child: LayoutBuilder(
+                      builder: (context, box) {
+                        final wide = box.maxWidth >= tableWidth;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (wide) const _HeadingRow(),
+                            for (var i = 0; i < items.length; i++) ...[
+                              if (i > 0 || wide)
+                                Divider(height: 1, color: p.hairline),
+                              _MoverRow(
+                                rank: i + 1,
+                                tool: items[i],
+                                history: histories[items[i].id] ?? const [],
+                                wide: wide,
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+        ),
       ],
+    );
+  }
+}
+
+/// The chosen kind has nothing moving this week. Said plainly, in the
+/// table's place, so the filter row above stays usable.
+class _NoMovers extends StatelessWidget {
+  const _NoMovers({required this.loading});
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Container(
+      height: 96,
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairline),
+        ),
+      ),
+      child: loading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Text(
+              'Nothing of this kind is rising this week.',
+              style: LizText.callout.copyWith(color: p.textSecondary),
+            ),
     );
   }
 }

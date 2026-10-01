@@ -259,6 +259,26 @@ class MockContentRepository implements ContentRepository {
   Future<List<Tool>> alternativeTools(String toolId) => similarTools(toolId);
 
   @override
+  Future<List<ToolHeadline>> toolHeadlines({int limit = 6}) async {
+    final out = <ToolHeadline>[];
+    final news =
+        _store.news.where((n) => n.status == PublishStatus.published).toList()
+          ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    for (final n in news) {
+      final named = [
+        for (final t in _store.tools)
+          if (t.status == PublishStatus.published &&
+              t.name.length >= 4 &&
+              RegExp('\\b${RegExp.escape(t.name)}\\b').hasMatch(n.title))
+            (id: t.id, name: t.name, slug: t.slug),
+      ];
+      if (named.isNotEmpty) out.add(ToolHeadline(n, named));
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
+  @override
   Future<List<NewsItem>> newsForTool(String toolId, {int limit = 5}) async {
     final tool = _store.tools.where((t) => t.id == toolId).firstOrNull;
     if (tool == null || tool.name.length < 4) return const [];

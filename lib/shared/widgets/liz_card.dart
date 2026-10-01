@@ -49,9 +49,12 @@ class _LizCardState extends State<LizCard> {
         color: p.surface,
         shape: LizRadius.shape(
           widget.radius,
-          side: BorderSide(color: lifted ? p.hairlineStrong : p.hairline),
+          // Under the pointer a card is lit: a red edge and a faint glow.
+          side: BorderSide(
+            color: lifted ? p.accent.withValues(alpha: 0.65) : p.hairline,
+          ),
         ),
-        shadows: lifted ? LizShadows.raised(p) : const [],
+        shadows: lifted ? LizShadows.glow(p, strength: 0.4) : const [],
       ),
       child: Material(
         type: MaterialType.transparency,

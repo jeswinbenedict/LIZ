@@ -176,251 +176,280 @@ class _ToolBody extends ConsumerWidget {
     final phone = context.isPhone;
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
-    // Selectable, so a name, a price note or a paragraph can be copied — which
-    // the canvas-drawn page otherwise does not allow.
-    return MaxWidth(
-      maxWidth: 760 + gutter * 2,
-      child: SelectionArea(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(gutter, phone ? 8 : 24, gutter, 48),
-          children: [
-            Row(
+    final header = <Widget>[
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ToolLogo(tool: tool, size: phone ? 76 : 96),
+          SizedBox(width: phone ? 16 : 20),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ToolLogo(tool: tool, size: phone ? 76 : 96),
-                SizedBox(width: phone ? 16 : 20),
-                Expanded(
-                  child: Column(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        tool.name,
+                        style: LizText.title1.copyWith(color: p.textPrimary),
+                      ),
+                    ),
+                    if (tool.isNew) LizPill(label: 'New', color: p.accent),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  tool.tagline,
+                  style: LizText.body.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 20),
+      if (phone)
+        // One row on a phone: the call to action takes the width, and
+        // save sits beside it as an icon.
+        Row(
+          children: [
+            if (tool.websiteUrl != null) _VisitButton(tool: tool, expand: true),
+            const SizedBox(width: 10),
+            // Saving is watching: saved tools get change alerts
+            // (migration 0044), so there is no separate Follow.
+            BookmarkButton(toolId: tool.id, filledStyle: true, compact: true),
+            const SizedBox(width: 10),
+            IconButton.filled(
+              style: LizButtons.tonal(context.liz).merge(
+                const ButtonStyle(
+                  minimumSize: WidgetStatePropertyAll(Size(44, 44)),
+                ),
+              ),
+              tooltip: 'Compare with similar tools',
+              onPressed: () => showCompareSheet(context, tool),
+              icon: const Icon(Icons.compare_arrows, size: 20),
+            ),
+          ],
+        )
+      else
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            if (tool.websiteUrl != null) _VisitButton(tool: tool),
+            BookmarkButton(toolId: tool.id, filledStyle: true),
+            FilledButton.icon(
+              style: LizButtons.tonal(context.liz).merge(LizButtons.capsule),
+              onPressed: () => showCompareSheet(context, tool),
+              icon: const Icon(Icons.compare_arrows, size: 18),
+              label: const Text('Compare'),
+            ),
+          ],
+        ),
+      const SizedBox(height: 24),
+    ];
+    // The facts and the signal: on a wide screen they stand in a rail beside
+    // the reading column, so they stay in view while the page is read.
+    final rail = <Widget>[
+      _InfoStrip(tool: tool),
+      // How it is moving — Signal's lead, before the words about it.
+      ToolSignalsSection(tool: tool),
+      _SignalLinks(tool: tool),
+    ];
+    final body = <Widget>[
+      if (tool.imageUrl != null) _Preview(tool: tool),
+
+      if (tool.aiSummary.isNotEmpty)
+        _Section(
+          title: 'Summary',
+          badge: 'AI',
+          child: Column(
+            children: [
+              for (final bullet in tool.aiSummary)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              tool.name,
-                              style: LizText.title1.copyWith(
-                                color: p.textPrimary,
-                              ),
-                            ),
-                          ),
-                          if (tool.isNew)
-                            LizPill(label: 'New', color: p.accent),
-                        ],
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(top: 8, right: 12),
+                        decoration: BoxDecoration(
+                          color: p.accent,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        tool.tagline,
-                        style: LizText.body.copyWith(color: p.textSecondary),
+                      Expanded(
+                        child: Text(
+                          bullet,
+                          style: LizText.body.copyWith(color: p.textPrimary),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            if (phone)
-              // One row on a phone: the call to action takes the width, and
-              // save sits beside it as an icon.
-              Row(
-                children: [
-                  if (tool.websiteUrl != null)
-                    _VisitButton(tool: tool, expand: true),
-                  const SizedBox(width: 10),
-                  // Saving is watching: saved tools get change alerts
-                  // (migration 0044), so there is no separate Follow.
-                  BookmarkButton(
-                    toolId: tool.id,
-                    filledStyle: true,
-                    compact: true,
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton.filled(
-                    style: LizButtons.tonal(context.liz).merge(
-                      const ButtonStyle(
-                        minimumSize: WidgetStatePropertyAll(Size(44, 44)),
-                      ),
-                    ),
-                    tooltip: 'Compare with similar tools',
-                    onPressed: () => showCompareSheet(context, tool),
-                    icon: const Icon(Icons.compare_arrows, size: 20),
-                  ),
-                ],
-              )
-            else
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  if (tool.websiteUrl != null) _VisitButton(tool: tool),
-                  BookmarkButton(toolId: tool.id, filledStyle: true),
-                  FilledButton.icon(
-                    style: LizButtons.tonal(
-                      context.liz,
-                    ).merge(LizButtons.capsule),
-                    onPressed: () => showCompareSheet(context, tool),
-                    icon: const Icon(Icons.compare_arrows, size: 18),
-                    label: const Text('Compare'),
-                  ),
-                ],
+            ],
+          ),
+        ),
+
+      _Section(
+        title: 'About',
+        child: Text(
+          tool.description,
+          style: LizText.body.copyWith(color: p.textPrimary, height: 24 / 15),
+        ),
+      ),
+
+      // What has happened to it.
+      ToolTimelineSection(tool: tool),
+
+      // Related products, matched on the embeddings already in the table.
+      SimilarToolsSection(toolId: tool.id, slug: tool.slug),
+
+      // Headlines from the news feed that name this tool.
+      ToolNewsSection(toolId: tool.id, name: tool.name),
+
+      // Live "what's new" for this tool — real releases / feature updates.
+      ToolUpdatesSection(
+        name: tool.name,
+        slug: tool.slug,
+        sourceUrl: tool.sourceUrl,
+      ),
+
+      _Section(
+        title: 'Ratings & reviews',
+        trailing: TextButton.icon(
+          onPressed: () => showReviewComposer(
+            context,
+            ref,
+            toolId: tool.id,
+            toolName: tool.name,
+          ),
+          icon: const Icon(Icons.edit_outlined, size: 18),
+          label: const Text('Write a review'),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _RatingSummary(tool: tool),
+            reviewsAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(20),
+                child: LoadingView(),
               ),
-            const SizedBox(height: 24),
-            _InfoStrip(tool: tool),
-            // How it is moving — Signal's lead, before the words about it.
-            ToolSignalsSection(tool: tool),
-            _SignalLinks(tool: tool),
-            if (tool.imageUrl != null) _Preview(tool: tool),
-
-            if (tool.aiSummary.isNotEmpty)
-              _Section(
-                title: 'Summary',
-                badge: 'AI',
-                child: Column(
-                  children: [
-                    for (final bullet in tool.aiSummary)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              margin: const EdgeInsets.only(top: 8, right: 12),
-                              decoration: BoxDecoration(
-                                color: p.accent,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                bullet,
-                                style: LizText.body.copyWith(
-                                  color: p.textPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-            _Section(
-              title: 'About',
-              child: Text(
-                tool.description,
-                style: LizText.body.copyWith(
-                  color: p.textPrimary,
-                  height: 24 / 15,
-                ),
-              ),
-            ),
-
-            // What has happened to it.
-            ToolTimelineSection(tool: tool),
-
-            // Related products, matched on the embeddings already in the table.
-            SimilarToolsSection(toolId: tool.id, slug: tool.slug),
-
-            // Headlines from the news feed that name this tool.
-            ToolNewsSection(toolId: tool.id, name: tool.name),
-
-            // Live "what's new" for this tool — real releases / feature updates.
-            ToolUpdatesSection(
-              name: tool.name,
-              slug: tool.slug,
-              sourceUrl: tool.sourceUrl,
-            ),
-
-            _Section(
-              title: 'Ratings & reviews',
-              trailing: TextButton.icon(
-                onPressed: () => showReviewComposer(
-                  context,
-                  ref,
-                  toolId: tool.id,
-                  toolName: tool.name,
-                ),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Write a review'),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _RatingSummary(tool: tool),
-                  reviewsAsync.when(
-                    loading: () => const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: LoadingView(),
-                    ),
-                    error: (_, _) => const SizedBox.shrink(),
-                    data: (List<Review> reviews) => reviews.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Text(
-                              'No reviews yet — be the first.',
-                              style: LizText.callout.copyWith(
-                                color: p.textSecondary,
-                              ),
-                            ),
-                          )
-                        : Column(
-                            children: [
-                              for (var i = 0; i < reviews.length; i++) ...[
-                                if (i > 0) const Divider(height: 1),
-                                ReviewTile(review: reviews[i]),
-                              ],
-                            ],
-                          ),
-                  ),
-                ],
-              ),
-            ),
-
-            _Section(
-              title: 'From the community',
-              trailing: TextButton.icon(
-                onPressed: () => showPostComposer(
-                  context,
-                  ref,
-                  toolId: tool.id,
-                  toolName: tool.name,
-                ),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Post'),
-              ),
-              child: postsAsync.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: LoadingView(),
-                ),
-                error: (_, _) => const SizedBox.shrink(),
-                data: (posts) => posts.isEmpty
-                    ? Text(
-                        'No posts about this tool yet.',
+              error: (_, _) => const SizedBox.shrink(),
+              data: (List<Review> reviews) => reviews.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'No reviews yet — be the first.',
                         style: LizText.callout.copyWith(color: p.textSecondary),
-                      )
-                    : Column(
-                        children: [
-                          for (final post in posts) ...[
-                            PostCard(post: post),
-                            const SizedBox(height: 12),
-                          ],
-                        ],
                       ),
-              ),
+                    )
+                  : Column(
+                      children: [
+                        for (var i = 0; i < reviews.length; i++) ...[
+                          if (i > 0) const Divider(height: 1),
+                          ReviewTile(review: reviews[i]),
+                        ],
+                      ],
+                    ),
             ),
-
-            // For the people who made it: a badge linking back here.
-            MakerBadgeRow(tool: tool),
           ],
         ),
       ),
+
+      _Section(
+        title: 'From the community',
+        trailing: TextButton.icon(
+          onPressed: () => showPostComposer(
+            context,
+            ref,
+            toolId: tool.id,
+            toolName: tool.name,
+          ),
+          icon: const Icon(Icons.edit_outlined, size: 18),
+          label: const Text('Post'),
+        ),
+        child: postsAsync.when(
+          loading: () =>
+              const Padding(padding: EdgeInsets.all(20), child: LoadingView()),
+          error: (_, _) => const SizedBox.shrink(),
+          data: (posts) => posts.isEmpty
+              ? Text(
+                  'No posts about this tool yet.',
+                  style: LizText.callout.copyWith(color: p.textSecondary),
+                )
+              : Column(
+                  children: [
+                    for (final post in posts) ...[
+                      PostCard(post: post),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                ),
+        ),
+      ),
+
+      // For the people who made it: a badge linking back here.
+      MakerBadgeRow(tool: tool),
+    ];
+
+    // Selectable, so a name, a price note or a paragraph can be copied — which
+    // the canvas-drawn page otherwise does not allow.
+    return LayoutBuilder(
+      builder: (context, box) {
+        // Liz is used mostly in a desktop browser: there a single 760 column
+        // left two thirds of a wide window empty.
+        if (box.maxWidth < 1100) {
+          return MaxWidth(
+            maxWidth: 760 + gutter * 2,
+            child: SelectionArea(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  gutter,
+                  phone ? 8 : 24,
+                  gutter,
+                  48,
+                ),
+                children: [...header, ...rail, ...body],
+              ),
+            ),
+          );
+        }
+        return MaxWidth(
+          maxWidth: 1200 + gutter * 2,
+          child: SelectionArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: gutter),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(0, 24, 0, 48),
+                      children: [...header, ...body],
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                  SizedBox(
+                    width: 360,
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(0, 24, 0, 48),
+                      children: rail,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

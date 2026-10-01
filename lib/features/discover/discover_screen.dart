@@ -12,6 +12,7 @@ import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/tool_grid_sliver.dart';
 import 'discover_controller.dart';
 import 'new_this_week.dart';
+import 'tool_headlines.dart';
 import 'top_movers.dart';
 import 'welcome_card.dart';
 
@@ -115,6 +116,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                     ),
                     const WelcomeCard(),
                     const TopMovers(),
+                    const ToolHeadlines(),
                     const ForYou(),
                     NewThisWeek(
                       onSeeAll: () => ref

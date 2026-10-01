@@ -85,6 +85,16 @@ class ToolQuery {
   );
 }
 
+/// A tool an article names, as much as a link to it needs.
+typedef HeadlineTool = ({String id, String name, String slug});
+
+/// An article and the catalog tools its headline names.
+class ToolHeadline {
+  const ToolHeadline(this.item, this.tools);
+  final NewsItem item;
+  final List<HeadlineTool> tools;
+}
+
 /// Discovery content: tools, categories, news, search.
 abstract interface class ContentRepository {
   Future<List<Category>> categories();
@@ -108,6 +118,10 @@ abstract interface class ContentRepository {
   /// Published articles whose headline names this tool, newest first.
   /// Linked in Postgres as each article arrives (migrations 0052–0053).
   Future<List<NewsItem>> newsForTool(String toolId, {int limit = 5});
+
+  /// The latest published articles that name any tool in the catalog, each
+  /// with the tools it names — Discover's "In the news".
+  Future<List<ToolHeadline>> toolHeadlines({int limit = 6});
 
   /// One point per day for the last [days] days, oldest first
   /// (tool_signal_snapshots). History starts on 29 September 2026.
