@@ -14,6 +14,7 @@ import { corsHeaders, json } from '../_shared/cors.ts';
 import { callerKey, InMemoryLimiter, tooManyRequests } from '../_shared/rate_limit.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import {
+  aboutTool,
   cacheKey,
   cacheUse,
   hackerNewsFrom,
@@ -133,7 +134,12 @@ Deno.serve(async (req) => {
     const cached = await readCache(key);
     const use = cacheUse(cached?.fetched_at, Date.now());
     if (cached && use === 'fresh') {
-      return json({ data: cached.items, kind: cached.kind, source: `cache (${cached.source})`, error: null });
+      return json({
+        data: aboutTool(cached.items as Item[], toolName),
+        kind: cached.kind,
+        source: `cache (${cached.source})`,
+        error: null,
+      });
     }
 
     let items: Item[] = [];
@@ -149,7 +155,7 @@ Deno.serve(async (req) => {
         items: [] as Item[],
         source: `google-news failed: ${String(e).slice(0, 120)}`,
       }));
-      items = news.items;
+      items = aboutTool(news.items, toolName);
       source = news.source;
     }
     // Google News turns this address away about half the time. Ask Hacker
@@ -169,7 +175,12 @@ Deno.serve(async (req) => {
       await writeCache(key, kind, items, source ?? '');
     } else if (cached && use === 'fallback') {
       // Every source refused: last week's answer beats an empty section.
-      return json({ data: cached.items, kind: cached.kind, source: `stale cache; ${source}`, error: null });
+      return json({
+        data: aboutTool(cached.items as Item[], toolName),
+        kind: cached.kind,
+        source: `stale cache; ${source}`,
+        error: null,
+      });
     }
 
     return json({ data: items, kind, source, error: null });

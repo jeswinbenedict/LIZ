@@ -3,6 +3,7 @@ import { clampLimit, embedBatch, summarizeBatch } from '../_shared/batch.ts';
 import { deleteCaller } from '../delete-account/logic.ts';
 import { fcmMessage, isDeadToken, targetIds } from '../send-notification/logic.ts';
 import {
+  aboutTool,
   firstLine,
   newestFirst,
   newsFrom,
@@ -220,4 +221,23 @@ Deno.test('embedding skips rows with nothing to embed and survives one failure',
   assertEquals(embeddedIds, ['a', 'c']);
   assertEquals(result.failures.length, 1);
   assert(result.failures[0].startsWith('b:'));
+});
+
+Deno.test('tool-updates keeps only headlines that name the tool, once per story', () => {
+  const item = (title: string, source = 'TechCrunch') => ({
+    title, note: null, url: `https://x/${encodeURIComponent(title)}`, source, published_at: null,
+  });
+  const kept = aboutTool([
+    item('ElevenLabs Doubles Valuation to $22 Billion'),
+    // Matched by Google News on the article body, not the headline (1 Oct).
+    item('Ramp Launches in the UK', 'PR Newswire'),
+    item('ElevenLabs launches Eleven v4'),
+    item('ElevenLabs Launches Eleven V4!'),
+    item('v2.3.0', 'GitHub Releases'),
+  ], 'ElevenLabs');
+  assertEquals(kept.map((i) => i.title), [
+    'ElevenLabs Doubles Valuation to $22 Billion',
+    'ElevenLabs launches Eleven v4',
+    'v2.3.0',
+  ]);
 });

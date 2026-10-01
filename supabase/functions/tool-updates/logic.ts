@@ -73,6 +73,43 @@ export function releasesFrom(data: unknown): Item[] {
     }));
 }
 
+/**
+ * Whether [title] names the tool as a whole word, in any script: letters and
+ * digits either side mean it is part of a longer word ("Cursor" in "Cursors"
+ * or "RecursorAI").
+ */
+export function namesTool(title: string, name: string): boolean {
+  const n = name.trim();
+  if (!n) return false;
+  const escaped = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}($|[^\\p{L}\\p{N}])`, 'iu').test(title);
+}
+
+/** Headlines that differ only in case and punctuation are one story. */
+function storyKey(title: string): string {
+  return title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
+/**
+ * Items whose headline names the tool, one per story.
+ *
+ * Google News matches a quoted name anywhere in an article, so a story about
+ * another company that mentions the tool once in its body came back too — on
+ * 1 October ElevenLabs' page listed "Ramp Launches in the UK". Applied to
+ * cached answers as well, so those go the moment this is deployed.
+ */
+export function aboutTool(items: Item[], name: string): Item[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (item.source === 'GitHub Releases') return true;
+    if (!namesTool(item.title, name)) return false;
+    const key = storyKey(item.title);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /** A Google News RSS answer as items, at most [limit]. */
 export function newsFrom(xml: string, limit = 10): Item[] {
   const items: Item[] = [];
@@ -121,14 +158,10 @@ export function newestFirst(items: Item[]): Item[] {
 export function hackerNewsFrom(data: unknown, name: string, limit = 10): Item[] {
   const hits = (data as { hits?: unknown })?.hits;
   if (!Array.isArray(hits) || !name.trim()) return [];
-  const escaped = name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // A whole word, in any script: letters and digits either side mean it is
-  // part of a longer word ("Cursor" in "Cursors" or "RecursorAI").
-  const aboutIt = new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}($|[^\\p{L}\\p{N}])`, 'iu');
   const items: Item[] = [];
   for (const h of hits as Record<string, unknown>[]) {
     const title = typeof h.title === 'string' ? h.title.trim() : '';
-    if (!title || !aboutIt.test(title) || /^(show|ask|tell) hn\b/i.test(title)) continue;
+    if (!title || !namesTool(title, name) || /^(show|ask|tell) hn\b/i.test(title)) continue;
     const id = String(h.objectID ?? '');
     items.push({
       title,
