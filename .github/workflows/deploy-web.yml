@@ -96,7 +96,7 @@ jobs:
       # structured data and text, plus sitemap.xml and robots.txt — so search
       # engines and link previews see more than an empty app shell. Reads
       # published rows with the public anon key. docs/SEO.md.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: pip
