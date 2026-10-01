@@ -61,11 +61,11 @@ function decodePart(part: string): Record<string, unknown> {
   return JSON.parse(atob(s));
 }
 
-function decodeBytes(part: string): Uint8Array {
+function decodeBytes(part: string): Uint8Array<ArrayBuffer> {
   let s = part.replace(/-/g, '+').replace(/_/g, '/');
   s += '='.repeat((4 - (s.length % 4)) % 4);
   const raw = atob(s);
-  const out = new Uint8Array(raw.length);
+  const out = new Uint8Array(new ArrayBuffer(raw.length));
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
 }

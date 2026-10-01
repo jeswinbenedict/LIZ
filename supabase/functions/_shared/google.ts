@@ -28,7 +28,7 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
     .replace(/-----END PRIVATE KEY-----/, '')
     .replace(/\s+/g, '');
   const raw = atob(b64);
-  const buf = new Uint8Array(raw.length);
+  const buf = new Uint8Array(new ArrayBuffer(raw.length));
   for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
   return buf.buffer;
 }
