@@ -25,10 +25,9 @@ import logging
 import sys
 
 import requests
-
-from .config import REQUEST_TIMEOUT, load_settings
 from bs4 import BeautifulSoup
 
+from .config import REQUEST_TIMEOUT, load_settings
 from .enrich import enrich_url, find_pricing_url, is_aggregator
 from .http_client import PoliteSession
 from .normalize import canonical_url, clean_text, infer_pricing

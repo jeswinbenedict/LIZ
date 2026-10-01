@@ -11,7 +11,15 @@ from __future__ import annotations
 import json
 import re
 
-from liz_scraper.prerender import Site, category_page, robots, sitemap, tool_page
+from liz_scraper.prerender import (
+    Site,
+    alternatives_page,
+    badge_svg,
+    category_page,
+    robots,
+    sitemap,
+    tool_page,
+)
 
 TEMPLATE = """<!DOCTYPE html><html lang="en"><head>
   <base href="/">
@@ -131,3 +139,33 @@ def test_a_tool_with_a_picture_previews_with_it():
     plain = tool_page(TEMPLATE, TOOL, SITE, "", [])
     assert 'content="https://liz.example/icons/Icon-512.png"' in plain
     assert 'content="summary"' in plain
+
+
+def test_alternatives_page_lists_and_links_each_alternative():
+    alts = [TOOL | {"id": f"a{i}", "name": f"Alt {i}", "slug": f"alt-{i}"} for i in range(3)]
+    page = alternatives_page(TEMPLATE, TOOL, alts, SITE)
+    assert "<title>Alternatives to Koi.rest | Liz</title>" in page
+    assert '<link rel="canonical" href="https://liz.example/alternatives/koi-rest">' in page
+    for i in range(3):
+        assert f'href="/tools/alt-{i}"' in page
+    assert 'href="/tools/koi-rest"' in page, "links back to the tool itself"
+    xml = sitemap(SITE, [TOOL], [], [TOOL])
+    assert "<loc>https://liz.example/alternatives/koi-rest</loc>" in xml
+
+
+def test_badge_names_the_tool_and_escapes_it():
+    svg = badge_svg({"name": "A <b>&</b> B", "slug": "ab"})
+    assert svg.startswith("<svg") and svg.endswith("</svg>")
+    assert "<b>" not in svg
+    assert "A &lt;b&gt;&amp;&lt;/b&gt; B — listed on Liz" in svg
+    assert "LISTED ON" in svg
+
+
+def test_badge_says_rising_only_while_ranked():
+    assert "RISING ON" in badge_svg({"name": "X", "trend_reason": "Saves up 40%", "momentum": 3.2})
+    assert "RISING ON" not in badge_svg({"name": "X", "trend_reason": None})
+
+
+def test_dark_badge_uses_dark_surfaces():
+    assert "#161618" in badge_svg({"name": "X"}, "dark")
+    assert "#161618" not in badge_svg({"name": "X"})

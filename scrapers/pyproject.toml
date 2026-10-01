@@ -1,0 +1,11 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Errors that are bugs (pyflakes), import order, and modern-Python upgrades.
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+  "E501",  # long lines: prose comments and URLs read better unwrapped
+  "B008",  # function calls in defaults are deliberate in argparse setups
+]

@@ -75,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
         # Why the rest were held, so a run that publishes nothing says why in
         # the log instead of looking like it did nothing.
         "held": result.held,
+        "duplicates": result.duplicates,
     }
     print(json.dumps(summary, indent=2))
 

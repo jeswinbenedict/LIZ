@@ -18,8 +18,8 @@ the same user agent identifies Liz.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 from .config import USER_AGENT
 from .http_client import PoliteSession

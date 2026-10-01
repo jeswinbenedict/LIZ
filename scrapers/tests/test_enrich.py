@@ -1,6 +1,5 @@
 from liz_scraper.enrich import find_product_url, is_aggregator, parse_page
 
-
 LISTING = """
 <html><body>
   <a href="https://openmarket.m11.ai">Visit</a>
@@ -94,7 +93,7 @@ def test_parse_page_decodes_utf8_bytes_without_mojibake():
         '<html><head><meta charset="utf-8">'
         '<meta property="og:description" content="Summarize anything…">'
         "</head></html>"
-    ).encode("utf-8")
+    ).encode()
     facts = parse_page(raw, "https://acme.ai")
     assert "…" in facts.description
     assert "â€¦" not in facts.description

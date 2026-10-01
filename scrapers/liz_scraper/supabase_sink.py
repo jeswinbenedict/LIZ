@@ -78,6 +78,28 @@ class SupabaseSink:
 
         return found
 
+    def existing_sites(self, keys: list[str]) -> dict[str, str]:
+        """site_key -> content_hash for published rows on these sites, so a
+        product reached through a different listing URL is not written again."""
+        found: dict[str, str] = {}
+        keys = [k for k in keys if k]
+        for start in range(0, len(keys), BATCH_SIZE):
+            chunk = keys[start : start + BATCH_SIZE]
+            quoted = ",".join(f'"{k}"' for k in chunk)
+            try:
+                resp = self._session.get(
+                    f"{self.settings.rest_url}/tools",
+                    params={"select": "site_key,content_hash",
+                            "site_key": f"in.({quoted})", "status": "eq.published"},
+                    headers=self._headers, timeout=REQUEST_TIMEOUT,
+                )
+                resp.raise_for_status()
+            except requests.RequestException as err:
+                log.warning("site lookup failed: %s", err)
+                continue
+            found.update({r["site_key"]: r["content_hash"] for r in resp.json()})
+        return found
+
     def _post(self, rows: list[dict]) -> tuple[bool, str]:
         try:
             resp = self._session.post(

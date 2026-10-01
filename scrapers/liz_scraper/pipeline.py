@@ -17,11 +17,15 @@ from .normalize import (
     choose_name,
     choose_tagline,
     content_hash,
+    site_key,
     strip_name_prefix,
 )
 from .quality import assess
 from .sources import ALL_SOURCES
 from .supabase_sink import SupabaseSink
+from .threats import REASON as THREAT_REASON
+from .threats import fetch_hosts as fetch_threat_hosts
+from .threats import is_listed
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +37,8 @@ class RunResult:
     enriched: int = 0
     written: int = 0
     published: int = 0
+    # Already in the catalog under another listing URL (site_key).
+    duplicates: int = 0
     held: dict[str, int] = field(default_factory=dict)
     rows: list[dict] | None = None
 
@@ -73,6 +79,10 @@ def run(
         before = len(candidates)
         candidates = [c for c in candidates if content_hash(c.url) not in known]
         result.skipped_existing = before - len(candidates)
+
+    # Hosts currently serving malware (abuse.ch URLhaus). Only on real runs: a
+    # dry run should not depend on the network beyond the sources themselves.
+    threat_hosts = fetch_threat_hosts() if sink is not None else set()
 
     rows: list[dict] = []
     for candidate in candidates:
@@ -117,6 +127,10 @@ def run(
         # enrichment managed to follow the listing through to the product.
         verdict = assess(row)
         row["status"] = status or verdict.status
+        # No override publishes a site known to serve malware.
+        if is_listed(row["website_url"], threat_hosts):
+            row["status"] = "pending"
+            verdict.reasons.insert(0, THREAT_REASON)
         if row["status"] == "published":
             row["hold_reason"] = None
             result.published += 1
@@ -136,6 +150,16 @@ def run(
             result.held[reason] = result.held.get(reason, 0) + 1
 
         rows.append(row)
+
+    if sink is not None:
+        # Same product, different listing URL: the content hash differs but the
+        # site does not. Writing it would publish a second copy (migration 0049).
+        published = sink.existing_sites([site_key(r["website_url"]) for r in rows])
+        fresh = [r for r in rows
+                 if published.get(site_key(r["website_url"]), r["content_hash"])
+                 == r["content_hash"]]
+        result.duplicates = len(rows) - len(fresh)
+        rows = fresh
 
     result.rows = rows
     if sink is not None:

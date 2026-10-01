@@ -15,13 +15,14 @@ This writes one HTML file per tool (`tools/<slug>.html`, served at
   price, and links to the site, its category and related pages, so the
   catalog can be crawled link by link.
 
-The app then starts exactly as it would at any other address. The HTML
-content is visually hidden (it sits behind the canvas anyway) and hidden from
-screen readers once the app has drawn its first frame, so nothing is read
-twice. It is the same text the app shows, so this is a page summary, not
-cloaking.
+The app then starts exactly as it would at any other address. Until it has
+drawn, the HTML content is shown as a plain page — a reader on a slow phone
+gets the tool's name and description at once instead of a logo — and then it
+is visually hidden and hidden from screen readers, so nothing is shown or
+read twice. It is the same text the app shows: a page summary, not cloaking.
 
-Also writes sitemap.xml and robots.txt. Reads only published rows, with the
+Also writes a badge per tool (`badge/<slug>.svg`, and `-dark.svg`) that its
+maker can embed, sitemap.xml and robots.txt. Reads only published rows, with the
 public anon key: SUPABASE_URL and SUPABASE_ANON_KEY.
 """
 
@@ -34,7 +35,7 @@ import os
 import pathlib
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import quote
 
 import requests
@@ -44,24 +45,49 @@ from .config import REQUEST_TIMEOUT
 TOOL_COLUMNS = (
     "id,name,slug,tagline,description,ai_summary,category,pricing_type,"
     "price_note,website_url,gh_repo,gh_stars,hn_id,hn_points,trend_reason,"
-    "avg_rating,rating_count,created_at,updated_at,image_url"
+    "avg_rating,rating_count,created_at,updated_at,image_url,momentum"
 )
 
 PRICING_LABEL = {"free": "Free", "freemium": "Freemium", "paid": "Paid"}
 
-# Visually hidden, the way screen-reader-only text is: still in the document
-# for crawlers and for anyone reading the page without the app.
-_HIDDEN_STYLE = (
-    "position:absolute;width:1px;height:1px;padding:0;margin:-1px;"
-    "overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0"
-)
+# The page's content, shown as a plain readable page while the app loads —
+# on a slow phone that is several seconds in which a visitor reads the tool
+# instead of watching a logo. It replaces the splash image on these pages, and
+# once the app has drawn its first frame it becomes visually hidden (still in
+# the document for crawlers) and hidden from screen readers, so nothing is
+# shown or read twice. Colours follow the app's own surfaces (docs/DESIGN.md).
+_PAGE_STYLE = """<style id="liz-page-style">
+    #liz-page ~ #splash { display: none; }
+    #liz-page { box-sizing: border-box; max-width: 760px; margin: 0 auto;
+      padding: 24px 20px 48px; color: #1C1B22; background: #FAF9FD;
+      font: 16px/1.55 Inter, -apple-system, "Segoe UI", system-ui, sans-serif; }
+    #liz-page nav a { color: #1C1B22; font-weight: 700; font-size: 20px;
+      text-decoration: none; }
+    #liz-page h1 { font-size: 30px; line-height: 1.15; margin: 28px 0 6px; }
+    #liz-page h2 { font-size: 20px; margin: 28px 0 8px; }
+    #liz-page p, #liz-page li { color: #4A4857; }
+    #liz-page a { color: #4F4DC9; }
+    #liz-page ul { padding-left: 20px; }
+    #liz-page .liz-loading { margin-top: 32px; font-size: 14px; color: #6E6C7B; }
+    @media (prefers-color-scheme: dark) {
+      #liz-page { color: #ECEBF2; background: #131318; }
+      #liz-page nav a { color: #ECEBF2; }
+      #liz-page p, #liz-page li { color: #B9B7C6; }
+      #liz-page a { color: #A9A7FA; }
+    }
+    #liz-page.liz-hidden { position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0; }
+  </style>"""
 
 _FIRST_FRAME_SCRIPT = """<script>
-    // The app draws the same content; once it has, keep screen readers from
-    // reading this summary as well.
+    // The app draws the same content; once it has, hide this copy from view
+    // and from screen readers so nothing is shown or read twice.
     window.addEventListener('flutter-first-frame', function () {
       var page = document.getElementById('liz-page');
-      if (page) page.setAttribute('aria-hidden', 'true');
+      if (!page) return;
+      page.classList.add('liz-hidden');
+      page.setAttribute('aria-hidden', 'true');
     });
   </script>"""
 
@@ -141,8 +167,10 @@ def replace_head(template: str, *, title: str, description: str,
 
 
 def insert_body(page: str, content: str) -> str:
-    block = (f'<main id="liz-page" style="{_HIDDEN_STYLE}">\n{content}\n</main>\n'
+    content += '\n<p class="liz-loading">Opening Liz…</p>'
+    block = (f'<main id="liz-page">\n{content}\n</main>\n'
              f"  {_FIRST_FRAME_SCRIPT}\n")
+    page = page.replace("</head>", f"  {_PAGE_STYLE}\n</head>", 1)
     return page.replace("<body>", "<body>\n" + block, 1)
 
 
@@ -278,16 +306,129 @@ def home_page(template: str, rising: list[dict], categories: list[dict], site: S
     return insert_body(page, content)
 
 
-def sitemap(site: Site, tools: list[dict], categories: list[dict]) -> str:
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+# Fewer than this many close alternatives, and an "Alternatives to X" page
+# would be thin — a page with one link on it helps nobody and reads as spam.
+MIN_ALTERNATIVES = 3
+
+# How close counts as an alternative on a page meant for search engines.
+# gte-small puts any two product descriptions near 0.83; measured on the
+# catalog (1 Oct 2026), 0.86 still paired a prompt optimiser with a
+# spreadsheet tool, while at 0.88 the neighbours do the same job. 246 tools
+# have three such neighbours; the rest get no page rather than a weak one.
+ALTERNATIVE_FLOOR = 0.88
+
+
+def alternatives_page(template: str, tool: dict, alts: list[dict], site: Site) -> str:
+    name = tool["name"]
+    title = clip(f"Alternatives to {name}", 70) + " | Liz"
+    description = clip(
+        f"{len(alts)} tools that do a similar job to {name}, closest first: "
+        + ", ".join(a["name"] for a in alts[:6]) + ".", 160)
+    url = site.url(f"/alternatives/{quote(tool['slug'])}")
+    items = "".join(
+        f'<li><a href="{esc(tool_path(a))}">{esc(a["name"])}</a> — '
+        f'{esc(clip(a.get("tagline") or "", 110))}</li>'
+        for a in alts
+    )
+    content = (
+        f'<nav><a href="/">Liz</a></nav>\n<h1>Alternatives to {esc(name)}</h1>\n'
+        f'<p>Tools that do the most similar job to '
+        f'<a href="{esc(tool_path(tool))}">{esc(name)}</a>, closest first.</p>\n'
+        f"<ul>{items}</ul>"
+    )
+    ld = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": f"Alternatives to {name}",
+        "itemListElement": [
+            {"@type": "ListItem", "position": i + 1, "name": a["name"],
+             **({"url": site.url(tool_path(a))} if site.base else {})}
+            for i, a in enumerate(alts)
+        ],
+    }
+    page = replace_head(template, title=title, description=description, url=url,
+                        image=site.url("/icons/Icon-512.png"), extra=json_ld(ld))
+    return insert_body(page, content)
+
+
+def fetch_alternatives(url: str, key: str, tools: list[dict]) -> dict[str, list[dict]]:
+    """Close alternatives per tool id, from the same similar_tools query the
+    app's alternatives page uses (12 neighbours, a 0.08 window)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def one(tool: dict) -> tuple[str, list[dict]]:
+        try:
+            resp = requests.post(
+                f"{url.rstrip('/')}/rest/v1/rpc/similar_tools",
+                json={"source_id": tool["id"], "match_count": 12,
+                      "min_similarity": 0.8, "window_size": 0.08},
+                headers={"apikey": key, "Authorization": f"Bearer {key}"},
+                timeout=REQUEST_TIMEOUT,
+            )
+            resp.raise_for_status()
+            return tool["id"], resp.json()
+        except requests.RequestException:
+            return tool["id"], []
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        return dict(pool.map(one, tools))
+
+
+def sitemap(site: Site, tools: list[dict], categories: list[dict],
+            alternatives: list[dict] | None = None) -> str:
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     entries = [(site.url("/"), today)]
     entries += [(site.url(f"/category/{quote(c['slug'])}"), today) for c in categories]
     entries += [(site.url(tool_path(t)), (t.get("updated_at") or today)[:10]) for t in tools]
+    entries += [(site.url(f"/alternatives/{quote(t['slug'])}"), today)
+                for t in alternatives or []]
     rows = "".join(f"  <url><loc>{esc(u)}</loc><lastmod>{d}</lastmod></url>\n"
                    for u, d in entries)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             f"{rows}</urlset>\n")
+
+
+# A badge a maker can put on their own site, linking back to the tool's page
+# on Liz: the way Product Hunt grew. Two variants per tool, for light and dark
+# pages, in the app's own neutrals (docs/DESIGN.md). "Rising" only while Liz's
+# ranking says so: the pages are rebuilt daily, so a badge never claims a
+# trend that has passed for more than a day.
+_BADGE_THEMES = {
+    "light": {"bg": "#FFFFFF", "line": "#D2D2D7", "caption": "#6E6E73",
+              "word": "#1D1D1F", "accent": "#5856D6", "rising": "#C93400"},
+    "dark": {"bg": "#161618", "line": "#3A3A3C", "caption": "#A1A1A6",
+             "word": "#F5F5F7", "accent": "#7B79FF", "rising": "#FF7A45"},
+}
+BADGE_WIDTH, BADGE_HEIGHT = 136, 48
+
+
+def badge_svg(tool: dict, theme: str = "light") -> str:
+    c = _BADGE_THEMES[theme]
+    # The app's own test (Tool.isRising), so badge and page agree.
+    rising = bool(tool.get("trend_reason")) and (tool.get("momentum") or 0) > 0
+    label = f"{tool.get('name') or 'This tool'} — {'rising' if rising else 'listed'} on Liz"
+    if rising:
+        icon = (f'<path d="M102 30l7-7 4 4 9-9M115 18h7v7" fill="none" '
+                f'stroke="{c["rising"]}" stroke-width="2.2" '
+                'stroke-linecap="round" stroke-linejoin="round"/>')
+    else:
+        icon = (f'<circle cx="112" cy="24" r="9" fill="{c["accent"]}"/>'
+                '<path d="M108 24.2l2.8 2.8 5.2-5.6" fill="none" stroke="#FFFFFF" '
+                'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>')
+    font = "Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{BADGE_WIDTH}" '
+        f'height="{BADGE_HEIGHT}" viewBox="0 0 {BADGE_WIDTH} {BADGE_HEIGHT}" '
+        f'role="img" aria-label="{esc(label)}"><title>{esc(label)}</title>'
+        f'<rect x="0.5" y="0.5" width="{BADGE_WIDTH - 1}" height="{BADGE_HEIGHT - 1}" '
+        f'rx="10" fill="{c["bg"]}" stroke="{c["line"]}"/>'
+        f'<g font-family="{font}">'
+        f'<text x="16" y="20" font-size="9.5" font-weight="600" letter-spacing="0.8" '
+        f'fill="{c["caption"]}">{"RISING ON" if rising else "LISTED ON"}</text>'
+        f'<text x="16" y="38" font-size="19" font-weight="700" '
+        f'fill="{c["word"]}">Liz</text></g>{icon}</svg>'
+    )
 
 
 def robots(site: Site) -> str:
@@ -365,14 +506,34 @@ def main(argv: list[str] | None = None) -> int:
         page = category_page(template, c, by_category[c["slug"]], site)
         (build / "category" / f"{c['slug']}.html").write_text(page, encoding="utf-8")
 
+    (build / "alternatives").mkdir(exist_ok=True)
+    with_alts = []
+    for t_id, alts in fetch_alternatives(supabase_url, key, tools).items():
+        tool = next(t for t in tools if t["id"] == t_id)
+        alts = [a for a in alts if (a.get("similarity") or 0) >= ALTERNATIVE_FLOOR]
+        if len(alts) < MIN_ALTERNATIVES or not tool.get("slug") or "/" in tool["slug"]:
+            continue
+        page = alternatives_page(template, tool, alts, site)
+        (build / "alternatives" / f"{tool['slug']}.html").write_text(page, encoding="utf-8")
+        with_alts.append(tool)
+
+    (build / "badge").mkdir(exist_ok=True)
+    for t in tools:
+        if not t.get("slug") or "/" in t["slug"]:
+            continue
+        (build / "badge" / f"{t['slug']}.svg").write_text(badge_svg(t), encoding="utf-8")
+        (build / "badge" / f"{t['slug']}-dark.svg").write_text(
+            badge_svg(t, "dark"), encoding="utf-8")
+
     rising = [t for t in tools if t.get("trend_reason")][:12]
     index.write_text(home_page(template, rising, listed, site), encoding="utf-8")
     (build / "robots.txt").write_text(robots(site), encoding="utf-8")
     if site.base:
-        (build / "sitemap.xml").write_text(sitemap(site, tools, listed), encoding="utf-8")
+        (build / "sitemap.xml").write_text(
+            sitemap(site, tools, listed, with_alts), encoding="utf-8")
 
     print(json.dumps({"tools": written, "categories": len(listed),
-                      "sitemap": bool(site.base)}))
+                      "alternatives": len(with_alts), "sitemap": bool(site.base)}))
     return 0
 
 

@@ -25,7 +25,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit
 
 import requests
@@ -174,7 +174,7 @@ def plan_updates(
     now: datetime | None = None,
 ) -> list[dict]:
     """Read every signal the catalog has a handle for; one dict per tool."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     updates: dict[str, dict] = {}
 
     # GitHub ---------------------------------------------------------------
@@ -232,7 +232,7 @@ def plan_updates(
 
 def _parse_time(value: str | None) -> datetime:
     if not value:
-        return datetime.min.replace(tzinfo=timezone.utc)
+        return datetime.min.replace(tzinfo=UTC)
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 

@@ -131,6 +131,18 @@ def canonical_url(url: str) -> str:
     return urlunsplit((parts.scheme.lower(), netloc, path, "", ""))
 
 
+def site_key(url: str | None) -> str | None:
+    """A product's address reduced to host and path, as tools.site_key stores
+    it (migration 0049): no scheme, no www, no query or fragment, no trailing
+    slash, lower case. Two rows with one key are one product."""
+    if not url:
+        return None
+    key = re.sub(r"^[a-z][a-z0-9+.-]*://(www\.)?", "", url.lower())
+    key = re.sub(r"[?#].*$", "", key)
+    key = re.sub(r"/+$", "", key)
+    return key or None
+
+
 def content_hash(url: str) -> str:
     """Stable dedupe key: a tool is identified by where it lives.
 
@@ -180,7 +192,7 @@ def infer_pricing(page_text: str) -> str:
 # A launch title is a sentence, not a name. Splitting on the first of these
 # recovers the product: "MacTap, use knocks on your MacBook" → "MacTap",
 # "Rokz: a browser port of a 1990 dungeon crawler" → "Rokz".
-_TITLE_SEPARATORS = re.compile(r"\s*[–—:,|]\s*|\s+-\s+")
+_TITLE_SEPARATORS = re.compile(r"\s*[–—:,|·]\s*|\s+-\s+")
 
 # Titles that open with one of these are describing a thing, not naming it,
 # so the product's own site is the better source for its name.
@@ -210,6 +222,34 @@ def looks_like_a_name(value: str) -> bool:
     return words[0].strip("'\"").lower() not in _DESCRIPTIVE_OPENERS
 
 
+# Hosts that belong to a platform, not to the product on them: the product is
+# somewhere in the path, so the domain names the platform. Taking it is how the
+# catalog got three tools called "Producthunt", and one each called "PyPI",
+# "Microsoft" and "Vercel".
+_PLATFORM_HOSTS = (
+    "producthunt.com", "pypi.org", "microsoft.com", "apple.com", "google.com",
+    "vercel.com", "github.com", "gitlab.com", "codeberg.org", "npmjs.com",
+    "huggingface.co", "chromewebstore.google.com", "medium.com", "substack.com",
+    "notion.site", "ycombinator.com", "reddit.com", "x.com", "twitter.com",
+)
+
+# Hosting services that give each product its own subdomain: the subdomain is
+# the name ("harness-router.vercel.app" is Harness Router, not Vercel).
+_HOSTING_SUFFIXES = (
+    "vercel.app", "netlify.app", "github.io", "pages.dev", "workers.dev",
+    "fly.dev", "onrender.com", "run.app", "web.app", "firebaseapp.com",
+    "streamlit.app", "replit.app", "repl.co", "hf.space", "herokuapp.com",
+    "railway.app", "glitch.me", "surge.sh", "deno.dev", "val.run",
+)
+
+
+def _on(host: str, domains: tuple[str, ...]) -> str | None:
+    for d in domains:
+        if host == d or host.endswith("." + d):
+            return d
+    return None
+
+
 def name_from_domain(url: str) -> str:
     """A product name derived from its own domain.
 
@@ -219,7 +259,13 @@ def name_from_domain(url: str) -> str:
     dropped so demo.ontoplano.com becomes "Ontoplano".
     """
     host = urlsplit(url).netloc.lower().split(":")[0]
-    labels = [l for l in host.split(".") if l not in {"www", "demo", "app", "get", "try"}]
+    if _on(host, _PLATFORM_HOSTS):
+        return ""
+    suffix = _on(host, _HOSTING_SUFFIXES)
+    if suffix:
+        sub = host[: -len(suffix) - 1].split(".")[-1] if host != suffix else ""
+        return sub.replace("-", " ").replace("_", " ").title()
+    labels = [part for part in host.split(".") if part not in {"www", "demo", "app", "get", "try"}]
     if len(labels) > 2:  # keep the registrable label, not the subdomain
         labels = labels[-2:]
     if not labels:

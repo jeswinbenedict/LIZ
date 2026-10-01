@@ -9,7 +9,6 @@ an unexplained backlog could not see them either. These pin both halves.
 from __future__ import annotations
 
 import pytest
-
 from liz_scraper import pipeline
 from liz_scraper.enrich import PageFacts
 

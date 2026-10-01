@@ -231,3 +231,55 @@ def test_prices_of_goods_on_a_demo_are_not_the_products_price():
         "Everyday hoodie Grey / Small €42 each View product. "
         "Garden House Lisbon €180 per night View rooms"
     ) == "unknown"
+
+
+def test_a_platform_domain_is_never_taken_as_the_name():
+    from liz_scraper.normalize import name_from_domain
+
+    assert name_from_domain("https://www.producthunt.com/products/x") == ""
+    assert name_from_domain("https://pypi.org/project/fivetran-cli") == ""
+    assert name_from_domain("https://apps.microsoft.com/detail/xp9c") == ""
+    assert name_from_domain("https://vercel.com/i/a-guide") == ""
+    # On a hosting service the subdomain is the product.
+    assert name_from_domain("https://harness-router.vercel.app") == "Harness Router"
+    assert name_from_domain("https://my-tool.github.io/demo") == "My Tool"
+    # An ordinary domain still names its product.
+    assert name_from_domain("https://remove-ai-watermark.com") == "Remove Ai Watermark"
+
+
+def test_site_key_matches_the_database_column():
+    from liz_scraper.normalize import site_key
+
+    # Same rules as tools.site_key (migration 0049).
+    assert site_key("https://www.ZergRouter.com/") == "zergrouter.com"
+    assert site_key("http://zergrouter.com?ref=producthunt") == "zergrouter.com"
+    assert site_key("https://provetogether.ai/problems/15#top") == "provetogether.ai/problems/15"
+    assert site_key("") is None and site_key(None) is None
+
+
+def test_duplicates_group_by_site_or_by_name_and_host():
+    from liz_scraper.dedupe_tools import group_duplicates
+
+    rows = [
+        {"id": "a", "name": "Arc", "website_url": "https://arcassistant.app", "site_key": "arcassistant.app", "created_at": "2026-09-01"},
+        {"id": "b", "name": "Arc", "website_url": "https://www.arcassistant.app/?ref=ph", "site_key": "arcassistant.app", "created_at": "2026-09-05"},
+        {"id": "c", "name": "Prove Together", "website_url": "https://provetogether.ai", "site_key": "provetogether.ai", "created_at": "2026-09-02"},
+        {"id": "d", "name": "Prove Together", "website_url": "https://provetogether.ai/problems/15", "site_key": "provetogether.ai/problems/15", "created_at": "2026-09-03"},
+        # Same host, different product: not a duplicate.
+        {"id": "e", "name": "Alexandria by Firecrawl", "website_url": "https://firecrawl.dev", "site_key": "firecrawl.dev/alexandria", "created_at": "2026-09-04"},
+        {"id": "f", "name": "firecrawl", "website_url": "https://firecrawl.dev", "site_key": "firecrawl.dev", "created_at": "2026-09-01"},
+    ]
+    groups = {tuple(r["id"] for r in g) for g in group_duplicates(rows)}
+    assert groups == {("a", "b"), ("c", "d")}
+
+
+def test_malware_hosts_are_recognised_with_their_subdomains():
+    from liz_scraper.threats import is_listed, parse_hostfile
+
+    hosts = parse_hostfile("# comment\n127.0.0.1\tbad.example\n127.0.0.1\tevil.net\n")
+    assert hosts == {"bad.example", "evil.net"}
+    assert is_listed("https://bad.example/x", hosts)
+    assert is_listed("https://cdn.evil.net/app", hosts)
+    assert is_listed("https://www.bad.example", hosts)
+    assert not is_listed("https://notbad.example", hosts)
+    assert not is_listed("", hosts)

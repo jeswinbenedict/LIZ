@@ -7,7 +7,7 @@ is not. These run offline against a fake reader.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from liz_scraper.normalize import choose_tagline, is_first_person, strip_name_prefix
 from liz_scraper.signals import (
@@ -17,7 +17,7 @@ from liz_scraper.signals import (
     repo_batches,
 )
 
-NOW = datetime(2026, 9, 29, tzinfo=timezone.utc)
+NOW = datetime(2026, 9, 29, tzinfo=UTC)
 
 
 class FakeReader:
@@ -138,3 +138,23 @@ def test_the_hn_posting_time_is_kept_for_the_timeline():
     reader = FakeReader(points={"7": (10, 2, "2026-09-25T14:03:00Z")})
     [row] = plan_updates(tools, reader, now=NOW)
     assert row["hn_posted_at"] == "2026-09-25T14:03:00Z"
+
+
+def test_logos_are_shrunk_to_small_webp():
+    import io
+
+    from liz_scraper.store_logos import domain_of, object_name, to_webp
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGBA", (512, 256), (255, 0, 0, 255)).save(buf, format="PNG")
+    webp = to_webp(buf.getvalue())
+    img = Image.open(io.BytesIO(webp))
+    assert img.format == "WEBP" and max(img.size) == 128 and img.size == (128, 64)
+    assert to_webp(b"not an image") is None
+    tiny = io.BytesIO()
+    Image.new("RGB", (8, 8)).save(tiny, format="PNG")
+    assert to_webp(tiny.getvalue()) is None, "too small to be a logo"
+    assert object_name("t1", webp).startswith("t1-") and object_name("t1", webp).endswith(".webp")
+    assert domain_of("https://www.koi.rest/x") == "koi.rest"
+    assert domain_of("https://github.com/a/b") is None

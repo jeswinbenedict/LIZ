@@ -7,7 +7,6 @@ content_hash.
 """
 
 import pytest
-
 from liz_scraper.config import Settings
 from liz_scraper.supabase_sink import SupabaseSink
 
