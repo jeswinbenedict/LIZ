@@ -47,7 +47,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(

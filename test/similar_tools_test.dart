@@ -37,7 +37,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: const SimilarToolsSection(toolId: 'does-not-exist'),
         ),
       ),
@@ -53,7 +53,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: const ToolDetailScreen(toolId: 't-1'),
         ),
       ),

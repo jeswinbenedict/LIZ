@@ -4,8 +4,8 @@ import '../../app/theme.dart';
 
 /// Liz's signal line: how one measure moved, day by day.
 ///
-/// One accent-coloured line with a faint fill beneath and a dot on today's
-/// value — drawn the same way wherever it appears, so it reads as the same
+/// One red line of light — a glow under a crisp stroke — with a fading fill
+/// beneath and a lit dot on today's value — drawn the same way wherever it appears, so it reads as the same
 /// thing on a chart row and on a tool page. It never shows a scale: the words
 /// beside it carry the numbers ("76.2k → 76.9k stars").
 class SignalSparkline extends StatelessWidget {
@@ -37,7 +37,8 @@ class SignalSparkline extends StatelessWidget {
           painter: _SparklinePainter(
             values: values,
             line: p.accent,
-            fill: p.accentSoft,
+            fill: p.glow.withValues(alpha: 0.22),
+            glow: p.glow,
             strokeWidth: strokeWidth,
           ),
         ),
@@ -51,12 +52,14 @@ class _SparklinePainter extends CustomPainter {
     required this.values,
     required this.line,
     required this.fill,
+    required this.glow,
     required this.strokeWidth,
   });
 
   final List<double> values;
   final Color line;
   final Color fill;
+  final Color glow;
   final double strokeWidth;
 
   @override
@@ -87,7 +90,26 @@ class _SparklinePainter extends CustomPainter {
       ..lineTo(at(0).dx, size.height)
       ..close();
 
-    canvas.drawPath(area, Paint()..color = fill);
+    canvas.drawPath(
+      area,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [fill, fill.withValues(alpha: 0)],
+        ).createShader(Offset.zero & size),
+    );
+    // The glow: the same line, wider and blurred, under the crisp one.
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = glow.withValues(alpha: 0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth * 2.5
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
     canvas.drawPath(
       path,
       Paint()
@@ -99,6 +121,13 @@ class _SparklinePainter extends CustomPainter {
     );
     canvas.drawCircle(
       at(values.length - 1),
+      strokeWidth * 3,
+      Paint()
+        ..color = glow.withValues(alpha: 0.6)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    canvas.drawCircle(
+      at(values.length - 1),
       strokeWidth * 1.6,
       Paint()..color = line,
     );
@@ -106,5 +135,8 @@ class _SparklinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SparklinePainter old) =>
-      old.values != values || old.line != line || old.fill != fill;
+      old.values != values ||
+      old.line != line ||
+      old.fill != fill ||
+      old.glow != glow;
 }

@@ -46,58 +46,109 @@ class ToolSignalsSection extends ConsumerWidget {
     final series = SignalSeries.pick(points);
     final since = DateFormat('d MMM').format(points.first.day);
 
+    // An instrument panel: Signal's signature on a tool page. A seam of red
+    // light along its top, the label and the reason in monospace, the line.
     return Padding(
-      padding: const EdgeInsets.only(top: 36),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _heading(context, 'Signals'),
-          const SizedBox(height: 14),
-          if (series == null)
-            Text(
-              'Liz has recorded this tool\'s signals daily since $since. '
-              'Nothing measurable has moved yet; the line appears once it does.',
-              style: LizText.callout.copyWith(color: p.textSecondary),
-            )
-          else
-            LayoutBuilder(
-              builder: (context, box) {
-                final change = series.last - series.first;
-                final summary =
-                    '${series.label}: ${_fmt(series.first)} → ${_fmt(series.last)}'
-                    ' since $since';
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SignalSparkline(
-                      values: series.values,
-                      width: box.maxWidth,
-                      height: 72,
-                      strokeWidth: 2,
-                      semanticLabel: summary,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      summary,
-                      style: LizText.callout.copyWith(
-                        color: p.textPrimary,
-                        fontFeatures: LizText.tabular,
-                      ),
-                    ),
-                    if (change > 0)
-                      Text(
-                        '+${_fmt(change)} in ${points.length - 1} '
-                        '${points.length == 2 ? 'day' : 'days'}',
-                        style: LizText.footnote.copyWith(
-                          color: LizColors.legibleOn(p.rising, p.canvas),
-                          fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.only(top: 24),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: p.surface,
+          shape: LizRadius.shape(
+            LizRadius.md,
+            side: BorderSide(color: p.hairline),
+          ),
+        ),
+        child: Stack(
+          children: [
+            const Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: GlowLine(strength: 0.8),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          'SIGNAL · ${points.length} DAYS',
+                          style: LizText.label.copyWith(color: p.textSecondary),
                         ),
                       ),
-                  ],
-                );
-              },
+                      const SizedBox(width: 16),
+                      if (tool.trendReason != null)
+                        Expanded(
+                          child: Text(
+                            tool.trendReason!,
+                            textAlign: TextAlign.end,
+                            style: LizText.mono.copyWith(
+                              fontSize: 12,
+                              color: p.accent,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (series == null)
+                    Text(
+                      'Liz has recorded this tool\'s signals daily since '
+                      '$since. Nothing measurable has moved yet; the line '
+                      'appears once it does.',
+                      style: LizText.callout.copyWith(color: p.textSecondary),
+                    )
+                  else
+                    LayoutBuilder(
+                      builder: (context, box) {
+                        final change = series.last - series.first;
+                        final summary =
+                            '${series.label}: ${_fmt(series.first)} → '
+                            '${_fmt(series.last)} since $since';
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SignalSparkline(
+                              values: series.values,
+                              width: box.maxWidth,
+                              height: 76,
+                              strokeWidth: 2,
+                              semanticLabel: summary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              summary,
+                              style: LizText.mono.copyWith(
+                                fontSize: 12,
+                                color: p.textPrimary,
+                              ),
+                            ),
+                            if (change > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  '+${_fmt(change)} in ${points.length - 1} '
+                                  '${points.length == 2 ? 'day' : 'days'}',
+                                  style: LizText.mono.copyWith(
+                                    fontSize: 12,
+                                    color: p.accent,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

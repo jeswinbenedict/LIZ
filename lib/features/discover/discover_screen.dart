@@ -12,7 +12,7 @@ import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/tool_grid_sliver.dart';
 import 'discover_controller.dart';
 import 'new_this_week.dart';
-import 'rising_carousel.dart';
+import 'top_movers.dart';
 import 'welcome_card.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
@@ -90,6 +90,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     PageHeader(
+                      eyebrow: '// MOMENTUM, NOT HYPE',
                       title: 'Discover',
                       subtitle: phone
                           ? null
@@ -113,7 +114,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                       ),
                     ),
                     const WelcomeCard(),
-                    const RisingCarousel(),
+                    const TopMovers(),
                     const ForYou(),
                     NewThisWeek(
                       onSeeAll: () => ref

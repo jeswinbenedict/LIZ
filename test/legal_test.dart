@@ -44,7 +44,7 @@ Future<GoRouter> _pumpRouter(WidgetTester tester) async {
   final r = _router();
   await tester.pumpWidget(
     ProviderScope(
-      child: MaterialApp.router(theme: LizTheme.light(), routerConfig: r),
+      child: MaterialApp.router(theme: LizTheme.app(), routerConfig: r),
     ),
   );
   await tester.pumpAndSettle();
@@ -105,7 +105,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: MediaQuery(
             data: const MediaQueryData(
               size: Size(320, 640),

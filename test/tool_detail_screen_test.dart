@@ -12,7 +12,7 @@ Future<void> _pump(WidgetTester tester, String toolId) async {
   await tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: ToolDetailScreen(toolId: toolId),
       ),
     ),

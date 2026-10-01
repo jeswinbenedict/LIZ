@@ -3,12 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
-import '../../app/settings_controller.dart';
 import '../../app/theme.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
 import '../../shared/widgets/grouped_list.dart';
-import '../../shared/widgets/page_header.dart';
 import '../auth/auth_controller.dart';
 import 'data_export.dart';
 import 'preferences.dart';
@@ -19,7 +17,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
     final signedIn = ref.watch(isSignedInProvider);
     final isLive = ref.watch(isLiveBackendProvider);
     final prefs = ref.watch(preferencesProvider);
@@ -33,42 +30,6 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 40),
           children: [
-            LizGroup(
-              title: 'Appearance',
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Theme',
-                          style: LizText.body.copyWith(color: p.textPrimary),
-                        ),
-                      ),
-                      // Flexible gives the control a bounded width, so it
-                      // scrolls on a narrow phone instead of overflowing.
-                      Flexible(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: LizSegmented<ThemeMode>(
-                            segments: const {
-                              ThemeMode.system: 'System',
-                              ThemeMode.light: 'Light',
-                              ThemeMode.dark: 'Dark',
-                            },
-                            value: themeMode,
-                            onChanged: (m) =>
-                                ref.read(themeModeProvider.notifier).set(m),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
             LizGroup(
               title: 'Discover',
               children: [
@@ -122,7 +83,6 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 LizGroupRow(
                   icon: Icons.cloud_outlined,
-                  iconColor: isLive ? p.positive : p.caution,
                   title: 'Backend',
                   value: isLive ? 'Connected' : 'Demo data',
                 ),
@@ -144,7 +104,6 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   LizGroupRow(
                     icon: Icons.logout,
-                    iconColor: p.textSecondary,
                     title: 'Sign out',
                     showChevron: false,
                     onTap: () async {

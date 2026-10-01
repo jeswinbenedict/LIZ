@@ -23,7 +23,7 @@ Future<ProviderContainer> _pump(WidgetTester tester, Widget screen) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp(theme: LizTheme.light(), home: screen),
+      child: MaterialApp(theme: LizTheme.app(), home: screen),
     ),
   );
   await tester.pumpAndSettle(const Duration(seconds: 1));
@@ -206,7 +206,7 @@ void main() {
       final r = router();
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp.router(theme: LizTheme.light(), routerConfig: r),
+          child: MaterialApp.router(theme: LizTheme.app(), routerConfig: r),
         ),
       );
       await tester.pumpAndSettle(const Duration(seconds: 1));
@@ -225,7 +225,7 @@ void main() {
       final r = router();
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp.router(theme: LizTheme.light(), routerConfig: r),
+          child: MaterialApp.router(theme: LizTheme.app(), routerConfig: r),
         ),
       );
       await tester.pumpAndSettle(const Duration(seconds: 1));
@@ -266,7 +266,7 @@ void main() {
         );
         await tester.pumpWidget(
           ProviderScope(
-            child: MaterialApp.router(theme: LizTheme.light(), routerConfig: r),
+            child: MaterialApp.router(theme: LizTheme.app(), routerConfig: r),
           ),
         );
         await tester.pumpAndSettle();

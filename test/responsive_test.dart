@@ -17,7 +17,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: const Scaffold(
           body: Column(
             children: [

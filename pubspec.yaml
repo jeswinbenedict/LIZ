@@ -88,8 +88,8 @@ flutter_launcher_icons:
 # The transparent, safe-zone-padded mark centered on a white field. Web only,
 # for the same reason as the icons above.
 flutter_native_splash:
-  color: "#FFFFFF"
-  image: "assets/icon/zion-icon-adaptive-fg.png"
+  color: "#050506"
+  image: "assets/icon/liz-splash.png"
   android: false
   ios: false
   web: true
@@ -109,14 +109,18 @@ flutter:
   assets:
     - assets/branding/
 
-  # Inter is bundled rather than fetched from fonts.gstatic.com at runtime.
-  # Fetching it cost 1.6 MB per load, sent every visitor's IP to Google, and
-  # laid the UI out with fallback metrics first — which is why chip labels
-  # rendered clipped ("Trendin", "Top rate") until the real font arrived.
+  # Fonts are bundled rather than fetched from fonts.gstatic.com at runtime:
+  # fetching cost 1.6 MB per load, sent every visitor's IP to Google, and laid
+  # the UI out with fallback metrics first (clipped chip labels). Both are
+  # variable fonts (one file covers every weight), subset to Latin with
+  # pyftsubset, SIL Open Font Licence (the OFL files beside them).
   fonts:
-    - family: Inter
+    - family: SpaceGrotesk
       fonts:
-        - asset: assets/fonts/Inter-Latin.ttf
+        - asset: assets/fonts/SpaceGrotesk-Latin.ttf
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Latin.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

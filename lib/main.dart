@@ -110,7 +110,6 @@ class _LizAppState extends ConsumerState<LizApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
     final router = ref.watch(_routerProvider);
 
     // When the user signs in, link the cached device token to their account
@@ -124,9 +123,9 @@ class _LizAppState extends ConsumerState<LizApp> {
     return MaterialApp.router(
       title: PageTitle.defaultTitle,
       debugShowCheckedModeBanner: false,
-      theme: LizTheme.light(),
-      darkTheme: LizTheme.dark(),
-      themeMode: themeMode,
+      // One theme: Signal, black and red (docs/DESIGN.md).
+      theme: LizTheme.app(),
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }

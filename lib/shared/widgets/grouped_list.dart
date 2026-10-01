@@ -25,7 +25,7 @@ class LizGroup extends StatelessWidget {
               header: true,
               child: Text(
                 title!.toUpperCase(),
-                style: LizText.caption.copyWith(color: p.textSecondary),
+                style: LizText.label.copyWith(color: p.textSecondary),
               ),
             ),
           ),
@@ -66,7 +66,7 @@ class LizGroup extends StatelessWidget {
   }
 }
 
-/// One row of a [LizGroup]: a tinted icon tile, a title, and a value or a
+/// One row of a [LizGroup]: an icon tile, a title, and a value or a
 /// chevron. [destructive] turns it red, for actions that cannot be undone.
 class LizGroupRow extends StatelessWidget {
   const LizGroupRow({
@@ -76,7 +76,6 @@ class LizGroupRow extends StatelessWidget {
     this.subtitle,
     this.value,
     this.onTap,
-    this.iconColor,
     this.destructive = false,
     this.trailing,
     this.showChevron = true,
@@ -87,7 +86,6 @@ class LizGroupRow extends StatelessWidget {
   final String? subtitle;
   final String? value;
   final VoidCallback? onTap;
-  final Color? iconColor;
   final bool destructive;
   final Widget? trailing;
   final bool showChevron;
@@ -95,7 +93,9 @@ class LizGroupRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    final tint = destructive ? p.danger : (iconColor ?? p.accent);
+    // Icons are white on a dark tile: in a list of settings, red on every
+    // row would mean nothing. Only a destructive row is coloured.
+    final tint = destructive ? p.danger : p.textPrimary;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -110,18 +110,15 @@ class LizGroupRow extends StatelessWidget {
                   width: 30,
                   height: 30,
                   decoration: ShapeDecoration(
-                    color: tint.withValues(alpha: 0.12),
-                    shape: LizRadius.shape(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 18,
-                    color: LizColors.legibleOn(
-                      tint,
-                      Color.alphaBlend(tint.withValues(alpha: 0.12), p.surface),
-                      minimum: 3,
+                    color: destructive
+                        ? p.danger.withValues(alpha: 0.12)
+                        : p.surfaceHover,
+                    shape: LizRadius.shape(
+                      LizRadius.sm,
+                      side: BorderSide(color: p.hairlineStrong),
                     ),
                   ),
+                  child: Icon(icon, size: 17, color: tint),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

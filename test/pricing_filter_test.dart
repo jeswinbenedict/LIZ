@@ -55,10 +55,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(
-          theme: LizTheme.light(),
-          home: const DiscoverScreen(),
-        ),
+        child: MaterialApp(theme: LizTheme.app(), home: const DiscoverScreen()),
       ),
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
@@ -123,7 +120,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: LizTheme.light(), home: const SavedScreen()),
+        child: MaterialApp(theme: LizTheme.app(), home: const SavedScreen()),
       ),
     );
     await tester.pumpAndSettle();
@@ -158,7 +155,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: const SearchScreen(initialQuery: 'ai'),
         ),
       ),

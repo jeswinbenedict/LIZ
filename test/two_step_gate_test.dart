@@ -32,7 +32,7 @@ Future<void> _pump(WidgetTester tester, _Auth auth) async {
     ProviderScope(
       overrides: [authRepositoryProvider.overrideWithValue(auth)],
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: const TwoStepGate(child: Text('Console')),
       ),
     ),

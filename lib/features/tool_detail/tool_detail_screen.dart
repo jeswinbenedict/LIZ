@@ -269,6 +269,8 @@ class _ToolBody extends ConsumerWidget {
               ),
             const SizedBox(height: 24),
             _InfoStrip(tool: tool),
+            // How it is moving — Signal's lead, before the words about it.
+            ToolSignalsSection(tool: tool),
             _SignalLinks(tool: tool),
             if (tool.imageUrl != null) _Preview(tool: tool),
 
@@ -319,8 +321,7 @@ class _ToolBody extends ConsumerWidget {
               ),
             ),
 
-            // How it is moving, and what has happened to it.
-            ToolSignalsSection(tool: tool),
+            // What has happened to it.
             ToolTimelineSection(tool: tool),
 
             // Related products, matched on the embeddings already in the table.
@@ -543,7 +544,7 @@ class _InfoCell extends StatelessWidget {
           children: [
             Text(
               label.toUpperCase(),
-              style: LizText.caption.copyWith(color: p.textSecondary),
+              style: LizText.label.copyWith(color: p.textSecondary),
             ),
             const SizedBox(height: 6),
             Row(

@@ -70,8 +70,11 @@ class SignalSeries {
   double get first => values.first;
   double get last => values.last;
 
-  static SignalSeries? pick(List<SignalPoint> points) {
-    if (points.length < 3) return null;
+  static SignalSeries? pick(List<SignalPoint> unordered) {
+    if (unordered.length < 3) return null;
+    // Oldest first, whatever order they came in: a query that returned them
+    // newest first drew every rising tool as falling (1 October).
+    final points = [...unordered]..sort((a, b) => a.day.compareTo(b.day));
     List<double>? series(double? Function(SignalPoint) f) {
       final v = points.map(f).toList();
       if (v.any((x) => x == null)) return null;

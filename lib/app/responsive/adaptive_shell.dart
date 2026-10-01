@@ -138,8 +138,9 @@ class _PhoneScaffold extends StatelessWidget {
 /// Which edge of a glass bar carries its hairline.
 enum GlassEdge { top, bottom }
 
-/// The one signature material (docs/DESIGN.md §5): the surface at 72%
-/// over a 24px blur, so content shows through as it scrolls underneath.
+/// The bar material (docs/DESIGN.md §5): black at 82% over a 24px blur, so
+/// content shows through as it scrolls underneath, edged with a glowing red
+/// seam ([GlowLine]) where it meets the page.
 class GlassBar extends StatelessWidget {
   const GlassBar({
     super.key,
@@ -152,21 +153,27 @@ class GlassBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    final line = BorderSide(color: p.hairline);
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: p.surface.withValues(alpha: 0.72),
-            border: Border(
-              top: edge == GlassEdge.top ? line : BorderSide.none,
-              bottom: edge == GlassEdge.bottom ? line : BorderSide.none,
+    return Stack(
+      children: [
+        ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: p.canvas.withValues(alpha: 0.82),
+              ),
+              child: child,
             ),
           ),
-          child: child,
         ),
-      ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: edge == GlassEdge.top ? 0 : null,
+          bottom: edge == GlassEdge.bottom ? 0 : null,
+          child: const GlowLine(strength: 0.85),
+        ),
+      ],
     );
   }
 }
@@ -189,7 +196,7 @@ class _RailScaffold extends StatelessWidget {
           Container(
             width: 72,
             decoration: BoxDecoration(
-              color: p.surfaceMuted,
+              color: p.surface,
               border: Border(right: BorderSide(color: p.hairline)),
             ),
             child: SafeArea(
@@ -249,10 +256,12 @@ class _RailButton extends StatelessWidget {
           label: label,
           excludeSemantics: true,
           child: Material(
-            color: selected ? p.surface : Colors.transparent,
+            color: selected ? p.accentSoft : Colors.transparent,
             shape: LizRadius.shape(
               LizRadius.sm,
-              side: selected ? BorderSide(color: p.hairline) : BorderSide.none,
+              side: selected
+                  ? BorderSide(color: p.accent.withValues(alpha: 0.6))
+                  : BorderSide.none,
             ),
             child: InkWell(
               customBorder: LizRadius.shape(LizRadius.sm),
@@ -263,6 +272,9 @@ class _RailButton extends StatelessWidget {
                   icon,
                   size: 22,
                   color: selected ? p.accent : p.textSecondary,
+                  shadows: selected
+                      ? [Shadow(color: p.glow, blurRadius: 10)]
+                      : null,
                 ),
               ),
             ),
@@ -297,7 +309,7 @@ class _SidebarScaffold extends StatelessWidget {
           Container(
             width: 248,
             decoration: BoxDecoration(
-              color: p.surfaceMuted,
+              color: p.surface,
               border: Border(right: BorderSide(color: p.hairline)),
             ),
             child: SafeArea(
@@ -358,14 +370,15 @@ class _GroupLabel extends StatelessWidget {
         header: true,
         child: Text(
           text.toUpperCase(),
-          style: LizText.caption.copyWith(color: context.liz.textSecondary),
+          style: LizText.label.copyWith(color: context.liz.textSecondary),
         ),
       ),
     );
   }
 }
 
-/// A sidebar row: icon and label, a white card with a hairline when selected.
+/// A sidebar row: icon and label; when selected, lit — a faint red fill and
+/// a glowing red bar on its leading edge.
 class _SideRow extends StatelessWidget {
   const _SideRow({
     required this.icon,
@@ -388,24 +401,31 @@ class _SideRow extends StatelessWidget {
       child: Semantics(
         selected: selected,
         child: Material(
-          color: selected ? p.surface : Colors.transparent,
-          shape: LizRadius.shape(
-            LizRadius.sm,
-            side: selected ? BorderSide(color: p.hairline) : BorderSide.none,
-          ),
+          color: selected ? p.glow.withValues(alpha: 0.08) : Colors.transparent,
+          shape: LizRadius.shape(LizRadius.sm),
           child: InkWell(
             customBorder: LizRadius.shape(LizRadius.sm),
             onTap: onTap,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 38),
-              child: Padding(
+              child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: selected
+                    ? BoxDecoration(
+                        border: Border(
+                          left: BorderSide(color: p.accent, width: 2),
+                        ),
+                      )
+                    : null,
                 child: Row(
                   children: [
                     Icon(
                       icon,
                       size: 20,
                       color: selected ? p.accent : p.textSecondary,
+                      shadows: selected
+                          ? [Shadow(color: p.glow, blurRadius: 10)]
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -563,10 +583,10 @@ class _SidebarSearch extends StatelessWidget {
       label: 'Search tools',
       excludeSemantics: true,
       child: Material(
-        color: p.surface,
+        color: p.canvas,
         shape: LizRadius.shape(
           LizRadius.sm,
-          side: BorderSide(color: p.hairline),
+          side: BorderSide(color: p.hairlineStrong),
         ),
         child: InkWell(
           customBorder: LizRadius.shape(LizRadius.sm),
@@ -640,12 +660,12 @@ class _Mark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    // The artwork is a single near-black glyph on transparency, so it is
-    // tinted to the text colour to stay visible in dark mode. ColorFiltered
-    // rather than Image's own `color`: the latter renders nothing under
-    // CanvasKit, so the mark vanished entirely in dark.
-    return ColorFiltered(
-      colorFilter: ColorFilter.mode(context.liz.textPrimary, BlendMode.srcIn),
+    final p = context.liz;
+    // The artwork is a single near-black glyph on transparency, tinted red.
+    // ColorFiltered rather than Image's own `color`: the latter renders
+    // nothing under CanvasKit. A blurred copy behind it is its glow.
+    Widget glyph(Color color) => ColorFiltered(
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
       child: Image.asset(
         'assets/branding/liz-logo-light.png',
         width: size,
@@ -654,6 +674,15 @@ class _Mark extends StatelessWidget {
         cacheHeight: (size * dpr).round(),
         filterQuality: FilterQuality.high,
       ),
+    );
+    return Stack(
+      children: [
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+          child: glyph(p.glow.withValues(alpha: 0.9)),
+        ),
+        glyph(p.accent),
+      ],
     );
   }
 }
@@ -672,12 +701,17 @@ class LizWordmark extends StatelessWidget {
       children: [
         ExcludeSemantics(child: _Mark(size: size)),
         const SizedBox(width: 10),
-        Text(
-          'Liz',
-          style: LizText.title2.copyWith(
-            color: context.liz.textPrimary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.6,
+        // Set in spaced capitals; read as the name, not spelled out.
+        Semantics(
+          label: 'Liz',
+          excludeSemantics: true,
+          child: Text(
+            'LIZ',
+            style: LizText.title3.copyWith(
+              color: context.liz.textPrimary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 3,
+            ),
           ),
         ),
       ],

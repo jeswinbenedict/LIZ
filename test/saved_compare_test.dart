@@ -33,7 +33,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: LizTheme.light(), home: const SavedScreen()),
+        child: MaterialApp(theme: LizTheme.app(), home: const SavedScreen()),
       ),
     );
     await tester.pumpAndSettle();

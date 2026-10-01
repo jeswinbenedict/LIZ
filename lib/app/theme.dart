@@ -1,34 +1,38 @@
 import 'package:flutter/material.dart';
 
-/// Liz's design tokens and themes. docs/DESIGN.md explains every value here;
+/// Liz's design tokens and theme. docs/DESIGN.md explains every value here;
 /// change the two together.
 ///
-/// Neutral greys carry the interface and one indigo accent marks what can be
-/// acted on. The previous theme generated everything from a single seed colour,
-/// which tinted every surface lavender and read as a template.
+/// "Signal", in black and red (1 October 2026): near-black surfaces, one red
+/// that marks what can be acted on and what is moving, and thin glowing red
+/// light lines — after the TRON: Ares reference the product's owner chose.
+/// There is one theme. The previous neutral light/dark pair with an indigo
+/// accent is gone, not hidden.
 class LizColors {
   const LizColors._();
 
-  /// The accent, as a constant for places without a theme to hand (the logo,
-  /// generated tiles). Prefer `context.liz.accent`, which adapts to the theme.
-  static const Color brand = Color(0xFF5856D6);
+  /// The red, as a constant for places without a theme to hand (the logo,
+  /// generated tiles, the splash). Prefer `context.liz.accent`.
+  static const Color brand = Color(0xFFFF2A2A);
 
-  /// Trending. Used as a cue next to a number, never as body text.
-  static const Color rising = Color(0xFFFF7A45);
+  /// The red behind white text: dark enough to carry it (5.2:1).
+  static const Color brandFill = Color(0xFFD7141A);
+
+  /// Trending. The same red: in Signal, rising *is* the signal.
+  static const Color rising = Color(0xFFFF3B3B);
 
   /// Free, up, healthy.
-  static const Color positive = Color(0xFF34C759);
+  static const Color positive = Color(0xFF34D399);
 
   /// Paid, warning.
-  static const Color warn = Color(0xFFFF9F0A);
+  static const Color warn = Color(0xFFFFB020);
 
   /// [accent], darkened on a light [background] or lightened on a dark one,
   /// just far enough to reach [minimum] contrast (WCAG: 4.5 for body text).
   ///
-  /// The accents above are chosen to be seen, not read: orange text on a pale
-  /// orange tint measured 2.2:1, and white initials on the green avatar 2.4:1.
-  /// Adjusting lightness alone keeps the hue, so a badge still reads as the
-  /// same colour — only one that can be read.
+  /// The accents above are chosen to be seen, not read. Adjusting lightness
+  /// alone keeps the hue, so a badge still reads as the same colour — only
+  /// one that can be read.
   static Color legibleOn(
     Color accent,
     Color background, {
@@ -56,7 +60,7 @@ class LizColors {
   }
 }
 
-/// The theme-dependent palette (docs/DESIGN.md §2). Read it with `context.liz`.
+/// The palette (docs/DESIGN.md §2). Read it with `context.liz`.
 @immutable
 class LizPalette extends ThemeExtension<LizPalette> {
   const LizPalette({
@@ -78,6 +82,7 @@ class LizPalette extends ThemeExtension<LizPalette> {
     required this.rising,
     required this.danger,
     required this.shadow,
+    required this.glow,
   });
 
   final Color canvas;
@@ -89,10 +94,12 @@ class LizPalette extends ThemeExtension<LizPalette> {
   final Color textPrimary;
   final Color textSecondary;
   final Color textTertiary;
+
+  /// Red for text, icons, lines and focus: bright enough to read on black.
   final Color accent;
 
-  /// The accent behind white text (primary buttons). In dark mode the text
-  /// accent is too light to carry white: #7B79FF measured 3.7:1.
+  /// Red behind white text (primary buttons): dark enough to carry it. The
+  /// text red measured 3.5:1 under white.
   final Color accentFill;
   final Color accentHover;
   final Color accentSoft;
@@ -102,7 +109,37 @@ class LizPalette extends ThemeExtension<LizPalette> {
   final Color danger;
   final Color shadow;
 
-  static const light = LizPalette(
+  /// The light of the light lines: red, used only with blur
+  /// ([LizShadows.glow], [GlowLine]).
+  final Color glow;
+
+  /// The app's palette.
+  static const ares = LizPalette(
+    canvas: Color(0xFF050506),
+    surface: Color(0xFF0D0E11),
+    surfaceMuted: Color(0xFF121318),
+    surfaceHover: Color(0xFF191A20),
+    hairline: Color(0xFF1F2128),
+    hairlineStrong: Color(0xFF2E313A),
+    textPrimary: Color(0xFFF4F5F7),
+    textSecondary: Color(0xFFA3A7B1),
+    textTertiary: Color(0xFF6F7380),
+    accent: Color(0xFFFF3B3B),
+    accentFill: LizColors.brandFill,
+    accentHover: Color(0xFFFF5C5C),
+    accentSoft: Color(0x24FF2A2A),
+    positive: LizColors.positive,
+    caution: LizColors.warn,
+    rising: LizColors.rising,
+    danger: Color(0xFFFF5A6E),
+    shadow: Color(0xFF000000),
+    glow: LizColors.brand,
+  );
+
+  /// A light page, for one thing only: previewing how the maker badge looks
+  /// on someone else's light website (maker_badge.dart). Liz itself has no
+  /// light theme.
+  static const lightSite = LizPalette(
     canvas: Color(0xFFFBFBFD),
     surface: Color(0xFFFFFFFF),
     surfaceMuted: Color(0xFFF5F5F7),
@@ -112,36 +149,16 @@ class LizPalette extends ThemeExtension<LizPalette> {
     textPrimary: Color(0xFF1D1D1F),
     textSecondary: Color(0xFF6E6E73),
     textTertiary: Color(0xFF86868B),
-    accent: Color(0xFF5856D6),
-    accentFill: Color(0xFF5856D6),
-    accentHover: Color(0xFF4B49C8),
-    accentSoft: Color(0x1A5856D6),
+    accent: Color(0xFFD7141A),
+    accentFill: Color(0xFFD7141A),
+    accentHover: Color(0xFFB80F14),
+    accentSoft: Color(0x1AD7141A),
     positive: Color(0xFF248A3D),
     caution: Color(0xFFB25000),
-    rising: Color(0xFFC93400),
+    rising: Color(0xFFD7141A),
     danger: Color(0xFFD70015),
     shadow: Color(0xFF000000),
-  );
-
-  static const dark = LizPalette(
-    canvas: Color(0xFF0A0A0B),
-    surface: Color(0xFF161618),
-    surfaceMuted: Color(0xFF1C1C1E),
-    surfaceHover: Color(0xFF232326),
-    hairline: Color(0xFF2C2C2E),
-    hairlineStrong: Color(0xFF3A3A3C),
-    textPrimary: Color(0xFFF5F5F7),
-    textSecondary: Color(0xFFA1A1A6),
-    textTertiary: Color(0xFF8A8A8F),
-    accent: Color(0xFF7B79FF),
-    accentFill: Color(0xFF5E5CE6),
-    accentHover: Color(0xFF8E8CFF),
-    accentSoft: Color(0x2E7B79FF),
-    positive: Color(0xFF30D158),
-    caution: Color(0xFFFF9F0A),
-    rising: Color(0xFFFF7A45),
-    danger: Color(0xFFFF453A),
-    shadow: Color(0xFF000000),
+    glow: Color(0xFFD7141A),
   );
 
   @override
@@ -170,26 +187,28 @@ class LizPalette extends ThemeExtension<LizPalette> {
       rising: l(rising, other.rising),
       danger: l(danger, other.danger),
       shadow: l(shadow, other.shadow),
+      glow: l(glow, other.glow),
     );
   }
 }
 
 extension LizPaletteX on BuildContext {
   LizPalette get liz =>
-      Theme.of(this).extension<LizPalette>() ?? LizPalette.light;
+      Theme.of(this).extension<LizPalette>() ?? LizPalette.ares;
 }
 
-/// Corner radii (docs/DESIGN.md §4). Drawn as continuous-corner squircles.
+/// Corner radii (docs/DESIGN.md §4). Tighter than before: Signal is
+/// precise rather than soft. Drawn as continuous-corner squircles.
 class LizRadius {
   const LizRadius._();
-  static const double xs = 6;
-  static const double sm = 10;
-  static const double md = 14;
-  static const double lg = 20;
-  static const double xl = 28;
+  static const double xs = 4;
+  static const double sm = 6;
+  static const double md = 10;
+  static const double lg = 14;
+  static const double xl = 20;
   static const double pill = 999;
 
-  /// Apple's continuous-corner shape at [radius].
+  /// A continuous-corner shape at [radius].
   static RoundedSuperellipseBorder shape(double radius, {BorderSide? side}) =>
       RoundedSuperellipseBorder(
         borderRadius: BorderRadius.circular(radius),
@@ -233,21 +252,32 @@ class LizMotion {
       : duration;
 }
 
-/// Shadows for the raised and floating materials (docs/DESIGN.md §5).
+/// Depth (docs/DESIGN.md §5). On black a shadow barely shows, so raised
+/// things are told apart by a lighter surface and a hairline; the red glow is
+/// kept for what is active, selected or primary.
 class LizShadows {
   const LizShadows._();
   static List<BoxShadow> raised(LizPalette p) => [
     BoxShadow(
-      color: p.shadow.withValues(alpha: 0.06),
+      color: p.shadow.withValues(alpha: 0.5),
       blurRadius: 20,
       offset: const Offset(0, 6),
     ),
   ];
   static List<BoxShadow> floating(LizPalette p) => [
     BoxShadow(
-      color: p.shadow.withValues(alpha: 0.12),
+      color: p.shadow.withValues(alpha: 0.7),
       blurRadius: 40,
       offset: const Offset(0, 12),
+    ),
+  ];
+
+  /// The red light around something lit: a primary button, the selected tab,
+  /// a trend line. [strength] scales it; 1 is a button's.
+  static List<BoxShadow> glow(LizPalette p, {double strength = 1}) => [
+    BoxShadow(
+      color: p.glow.withValues(alpha: (0.45 * strength).clamp(0, 1)),
+      blurRadius: 18 * strength,
     ),
   ];
 }
@@ -256,24 +286,23 @@ class LizShadows {
 class LizButtons {
   const LizButtons._();
 
-  /// Accent label on a soft accent fill: a secondary action that still reads
-  /// as clickable. `FilledButton.tonal` would inherit the solid accent from
-  /// the theme, so this is set explicitly.
+  /// A secondary action: a red outline that glows faintly, white label.
   static ButtonStyle tonal(LizPalette p) => ButtonStyle(
+    elevation: const WidgetStatePropertyAll(0),
     backgroundColor: WidgetStateProperty.resolveWith(
       (s) => s.contains(WidgetState.hovered)
-          ? p.accent.withValues(alpha: 0.16)
+          ? p.glow.withValues(alpha: 0.16)
           : p.accentSoft,
     ),
-    foregroundColor: WidgetStatePropertyAll(
-      LizColors.legibleOn(p.accent, Color.alphaBlend(p.accentSoft, p.surface)),
+    foregroundColor: WidgetStatePropertyAll(p.textPrimary),
+    side: WidgetStatePropertyAll(
+      BorderSide(color: p.accent.withValues(alpha: 0.7)),
     ),
-    overlayColor: WidgetStatePropertyAll(p.accent.withValues(alpha: 0.06)),
+    overlayColor: WidgetStatePropertyAll(p.glow.withValues(alpha: 0.08)),
   );
 
-  /// The capsule used for a page's primary call to action.
+  /// The shape used for a page's primary call to action.
   static const ButtonStyle capsule = ButtonStyle(
-    shape: WidgetStatePropertyAll(StadiumBorder()),
     padding: WidgetStatePropertyAll(
       EdgeInsets.symmetric(horizontal: 20, vertical: 12),
     ),
@@ -281,9 +310,11 @@ class LizButtons {
   );
 }
 
-const String _fontFamily = 'Inter';
+const String _fontFamily = 'SpaceGrotesk';
+const String _monoFamily = 'JetBrainsMono';
 
-/// Text roles after Apple's text styles, sized for the web (docs/DESIGN.md §3).
+/// Text roles (docs/DESIGN.md §3): Space Grotesk for words, JetBrains Mono
+/// for the numbers and labels that make Signal read as instruments.
 class LizText {
   const LizText._();
 
@@ -292,19 +323,20 @@ class LizText {
     double height,
     FontWeight weight, [
     double tracking = 0,
+    String family = _fontFamily,
   ]) => TextStyle(
-    fontFamily: _fontFamily,
+    fontFamily: family,
     fontSize: size,
     height: height / size,
     fontWeight: weight,
     letterSpacing: tracking,
   );
 
-  static final display = _s(40, 44, FontWeight.w700, -1.2);
-  static final largeTitle = _s(32, 38, FontWeight.w700, -0.8);
-  static final title1 = _s(26, 32, FontWeight.w700, -0.5);
-  static final title2 = _s(21, 27, FontWeight.w600, -0.3);
-  static final title3 = _s(18, 24, FontWeight.w600, -0.2);
+  static final display = _s(44, 46, FontWeight.w700, -1.4);
+  static final largeTitle = _s(32, 36, FontWeight.w700, -0.9);
+  static final title1 = _s(26, 31, FontWeight.w700, -0.6);
+  static final title2 = _s(21, 26, FontWeight.w600, -0.3);
+  static final title3 = _s(18, 23, FontWeight.w600, -0.2);
   static final headline = _s(15, 21, FontWeight.w600, -0.1);
   static final body = _s(15, 22, FontWeight.w400);
   static final callout = _s(14, 20, FontWeight.w400);
@@ -312,54 +344,59 @@ class LizText {
   static final footnote = _s(12, 16, FontWeight.w500, 0.1);
   static final caption = _s(11, 14, FontWeight.w600, 0.3);
 
-  /// Numbers that change in place (ranks, counts) keep their width.
+  /// Instrument labels: small monospace capitals ("SIGNAL · 30 DAYS").
+  /// Write the text in capitals; the style does not transform it.
+  static final label = _s(11, 14, FontWeight.w500, 1.0, _monoFamily);
+
+  /// Figures that change in place: ranks, counts, deltas.
+  static final mono = _s(13, 18, FontWeight.w500, 0, _monoFamily);
+
+  /// Numbers that change in place keep their width.
   static const tabular = [FontFeature.tabularFigures()];
 }
 
 class LizTheme {
   const LizTheme._();
 
-  static ThemeData light() => _build(Brightness.light, LizPalette.light);
-  static ThemeData dark() => _build(Brightness.dark, LizPalette.dark);
+  /// The one theme.
+  static ThemeData app() => _build(LizPalette.ares);
 
-  static ThemeData _build(Brightness brightness, LizPalette p) {
-    final isDark = brightness == Brightness.dark;
-
+  static ThemeData _build(LizPalette p) {
     // Built role by role rather than generated from a seed, so surfaces stay
-    // neutral and the accent appears only where it is asked for.
+    // black and the red appears only where it is asked for.
     final scheme = ColorScheme(
-      brightness: brightness,
+      brightness: Brightness.dark,
       primary: p.accent,
       onPrimary: Colors.white,
       primaryContainer: p.accentSoft,
-      onPrimaryContainer: p.accent,
+      onPrimaryContainer: p.accentHover,
       secondary: p.textPrimary,
-      onSecondary: p.surface,
+      onSecondary: p.canvas,
       secondaryContainer: p.accentSoft,
-      onSecondaryContainer: isDark ? p.accentHover : p.accent,
+      onSecondaryContainer: p.accentHover,
       tertiary: p.rising,
       onTertiary: Colors.white,
       error: p.danger,
       onError: Colors.white,
-      errorContainer: p.danger.withValues(alpha: 0.12),
+      errorContainer: p.danger.withValues(alpha: 0.14),
       onErrorContainer: p.danger,
       surface: p.surface,
       onSurface: p.textPrimary,
       onSurfaceVariant: p.textSecondary,
       surfaceDim: p.canvas,
-      surfaceBright: p.surface,
-      surfaceContainerLowest: p.surface,
+      surfaceBright: p.surfaceHover,
+      surfaceContainerLowest: p.canvas,
       surfaceContainerLow: p.surface,
       surfaceContainer: p.surfaceMuted,
       surfaceContainerHigh: p.surfaceHover,
-      surfaceContainerHighest: p.surfaceMuted,
+      surfaceContainerHighest: p.surfaceHover,
       outline: p.hairlineStrong,
       outlineVariant: p.hairline,
       shadow: p.shadow,
       scrim: Colors.black,
       inverseSurface: p.textPrimary,
       onInverseSurface: p.canvas,
-      inversePrimary: p.accentHover,
+      inversePrimary: p.accentFill,
       surfaceTint: Colors.transparent,
     );
 
@@ -387,6 +424,7 @@ class LizTheme {
     final buttonText = LizText.subhead.copyWith(
       fontSize: 14,
       fontWeight: FontWeight.w600,
+      letterSpacing: 0.3,
     );
     final controlShape = LizRadius.shape(LizRadius.sm);
     const buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 12);
@@ -408,19 +446,18 @@ class LizTheme {
 
     return ThemeData(
       useMaterial3: true,
-      brightness: brightness,
+      brightness: Brightness.dark,
       colorScheme: scheme,
       extensions: [p],
       fontFamily: _fontFamily,
       textTheme: text,
       scaffoldBackgroundColor: p.canvas,
       canvasColor: p.canvas,
-      // No ink ripples: pointer feedback is a quiet hover and press fill, as
-      // on Apple's platforms and the web generally.
+      // No ink ripples: pointer feedback is a quiet hover and press fill.
       splashFactory: NoSplash.splashFactory,
       hoverColor: p.textPrimary.withValues(alpha: 0.04),
       highlightColor: p.textPrimary.withValues(alpha: 0.06),
-      focusColor: p.accent.withValues(alpha: 0.12),
+      focusColor: p.accent.withValues(alpha: 0.16),
       visualDensity: VisualDensity.standard,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -443,7 +480,7 @@ class LizTheme {
         titleTextStyle: LizText.title3.copyWith(color: p.textPrimary),
         iconTheme: IconThemeData(color: p.textPrimary, size: 22),
         actionsIconTheme: IconThemeData(color: p.textSecondary, size: 22),
-        shape: Border(bottom: BorderSide(color: Colors.transparent)),
+        shape: const Border(bottom: BorderSide(color: Colors.transparent)),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -457,20 +494,26 @@ class LizTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        // Monochrome selection: the chosen pill inverts to the text colour, so
-        // filters never compete with the accent that marks actions.
+        // The chosen filter is lit: a red edge on a faint red fill. Others
+        // are outlines that wait.
         color: WidgetStateProperty.resolveWith((s) {
-          if (s.contains(WidgetState.selected)) return p.textPrimary;
+          if (s.contains(WidgetState.selected)) return p.accentSoft;
           if (s.contains(WidgetState.hovered)) return p.surfaceHover;
-          return p.surfaceMuted;
+          return p.surface;
         }),
-        side: BorderSide.none,
-        shape: const StadiumBorder(),
+        side: WidgetStateBorderSide.resolveWith(
+          (s) => BorderSide(
+            color: s.contains(WidgetState.selected)
+                ? p.accent
+                : p.hairlineStrong,
+          ),
+        ),
+        shape: LizRadius.shape(LizRadius.xs),
         // Plain styles, with the selected one in Material's own slot for it:
         // a state-resolved label style rendered chips with no text at all.
-        labelStyle: LizText.subhead.copyWith(color: p.textPrimary),
+        labelStyle: LizText.subhead.copyWith(color: p.textSecondary),
         secondaryLabelStyle: LizText.subhead.copyWith(
-          color: p.canvas,
+          color: p.textPrimary,
           fontWeight: FontWeight.w600,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -479,10 +522,9 @@ class LizTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: p.surfaceMuted,
-        hoverColor: p.surfaceHover,
-        // Placeholders are text, so they get text contrast; tertiary is
-        // 3.6:1 on white, fine for icons and too faint to read.
+        fillColor: p.surface,
+        hoverColor: p.surfaceMuted,
+        // Placeholders are text, so they get text contrast.
         hintStyle: LizText.body.copyWith(color: p.textSecondary),
         labelStyle: LizText.callout.copyWith(color: p.textSecondary),
         floatingLabelStyle: LizText.footnote.copyWith(color: p.accent),
@@ -490,11 +532,11 @@ class LizTheme {
         suffixIconColor: p.textSecondary,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LizRadius.sm),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: p.hairlineStrong),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LizRadius.sm),
-          borderSide: BorderSide(color: p.hairline),
+          borderSide: BorderSide(color: p.hairlineStrong),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LizRadius.sm),
@@ -519,18 +561,20 @@ class LizTheme {
           padding: const WidgetStatePropertyAll(buttonPadding),
           shape: WidgetStatePropertyAll(controlShape),
           textStyle: WidgetStatePropertyAll(buttonText),
-          elevation: const WidgetStatePropertyAll(0),
+          // A primary button is lit: its shadow is red light, stronger when
+          // the pointer is on it.
+          elevation: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.disabled)
+                ? 0
+                : (s.contains(WidgetState.hovered) ? 6 : 3),
+          ),
+          shadowColor: WidgetStatePropertyAll(p.glow.withValues(alpha: 0.45)),
           backgroundColor: WidgetStateProperty.resolveWith((s) {
             if (s.contains(WidgetState.disabled)) return p.surfaceHover;
-            final base = p.accentFill;
-            // Hover darkens by a step in either theme, so white stays legible.
             if (s.contains(WidgetState.hovered)) {
-              return Color.alphaBlend(
-                Colors.black.withValues(alpha: 0.1),
-                base,
-              );
+              return const Color(0xFFE41A20);
             }
-            return base;
+            return p.accentFill;
           }),
           foregroundColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.disabled)
@@ -547,9 +591,15 @@ class LizTheme {
           shape: WidgetStatePropertyAll(controlShape),
           textStyle: WidgetStatePropertyAll(buttonText),
           foregroundColor: WidgetStatePropertyAll(p.textPrimary),
-          backgroundColor: WidgetStatePropertyAll(p.surface),
-          side: WidgetStatePropertyAll(BorderSide(color: p.hairlineStrong)),
-          overlayColor: overlay(p.textPrimary),
+          backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+          side: WidgetStateProperty.resolveWith(
+            (s) => BorderSide(
+              color: s.contains(WidgetState.hovered)
+                  ? p.accent
+                  : p.hairlineStrong,
+            ),
+          ),
+          overlayColor: overlay(p.glow),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -574,10 +624,15 @@ class LizTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           textStyle: WidgetStatePropertyAll(buttonText.copyWith(fontSize: 13)),
-          side: WidgetStatePropertyAll(BorderSide(color: p.hairline)),
+          side: WidgetStateProperty.resolveWith(
+            (s) => BorderSide(
+              color: s.contains(WidgetState.selected)
+                  ? p.accent
+                  : p.hairlineStrong,
+            ),
+          ),
           backgroundColor: WidgetStateProperty.resolveWith(
-            (s) =>
-                s.contains(WidgetState.selected) ? p.surface : p.surfaceMuted,
+            (s) => s.contains(WidgetState.selected) ? p.accentSoft : p.surface,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.selected)
@@ -590,10 +645,10 @@ class LizTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: p.accentFill,
         foregroundColor: Colors.white,
-        elevation: 2,
-        highlightElevation: 4,
+        elevation: 6,
+        highlightElevation: 10,
         extendedTextStyle: buttonText,
-        shape: const StadiumBorder(),
+        shape: LizRadius.shape(LizRadius.md),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
@@ -604,7 +659,7 @@ class LizTheme {
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (s) => LizText.caption.copyWith(
-            letterSpacing: 0,
+            letterSpacing: 0.2,
             fontSize: 11,
             color: s.contains(WidgetState.selected)
                 ? p.accent
@@ -617,6 +672,9 @@ class LizTheme {
             color: s.contains(WidgetState.selected)
                 ? p.accent
                 : p.textSecondary,
+            shadows: s.contains(WidgetState.selected)
+                ? [Shadow(color: p.glow, blurRadius: 10)]
+                : null,
           ),
         ),
       ),
@@ -634,7 +692,10 @@ class LizTheme {
         backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        shape: LizRadius.shape(LizRadius.lg),
+        shape: LizRadius.shape(
+          LizRadius.lg,
+          side: BorderSide(color: p.hairlineStrong),
+        ),
         titleTextStyle: LizText.title3.copyWith(color: p.textPrimary),
         contentTextStyle: LizText.callout.copyWith(color: p.textSecondary),
       ),
@@ -645,49 +706,57 @@ class LizTheme {
         elevation: 0,
         showDragHandle: true,
         dragHandleColor: p.hairlineStrong,
-        dragHandleSize: const Size(36, 5),
-        shape: const RoundedSuperellipseBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        dragHandleSize: const Size(36, 4),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+          side: BorderSide(color: p.accent.withValues(alpha: 0.5)),
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: p.surface,
+        color: p.surfaceMuted,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
-        shadowColor: p.shadow.withValues(alpha: 0.4),
+        shadowColor: p.shadow,
         shape: LizRadius.shape(
           LizRadius.md,
-          side: BorderSide(color: p.hairline),
+          side: BorderSide(color: p.hairlineStrong),
         ),
         textStyle: LizText.callout.copyWith(color: p.textPrimary),
       ),
       menuTheme: MenuThemeData(
         style: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(p.surface),
+          backgroundColor: WidgetStatePropertyAll(p.surfaceMuted),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
           shape: WidgetStatePropertyAll(
-            LizRadius.shape(LizRadius.md, side: BorderSide(color: p.hairline)),
+            LizRadius.shape(
+              LizRadius.md,
+              side: BorderSide(color: p.hairlineStrong),
+            ),
           ),
         ),
       ),
       tooltipTheme: TooltipThemeData(
         decoration: ShapeDecoration(
-          color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFF1D1D1F),
-          shape: LizRadius.shape(LizRadius.xs),
+          color: p.surfaceHover,
+          shape: LizRadius.shape(
+            LizRadius.xs,
+            side: BorderSide(color: p.hairlineStrong),
+          ),
         ),
-        textStyle: LizText.footnote.copyWith(color: Colors.white),
+        textStyle: LizText.footnote.copyWith(color: p.textPrimary),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         waitDuration: const Duration(milliseconds: 500),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: isDark
-            ? const Color(0xFF2C2C2E)
-            : const Color(0xFF1D1D1F),
-        contentTextStyle: LizText.callout.copyWith(color: Colors.white),
-        actionTextColor: isDark ? p.accentHover : const Color(0xFFA5A4FF),
+        backgroundColor: p.surfaceHover,
+        contentTextStyle: LizText.callout.copyWith(color: p.textPrimary),
+        actionTextColor: p.accentHover,
         elevation: 0,
-        shape: LizRadius.shape(LizRadius.sm),
+        shape: LizRadius.shape(
+          LizRadius.sm,
+          side: BorderSide(color: p.hairlineStrong),
+        ),
         width: null,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -696,18 +765,26 @@ class LizTheme {
         circularTrackColor: Colors.transparent,
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: const WidgetStatePropertyAll(Colors.white),
-        trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? p.positive : p.surfaceHover,
+        thumbColor: WidgetStateProperty.resolveWith(
+          (s) =>
+              s.contains(WidgetState.selected) ? Colors.white : p.textSecondary,
         ),
-        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? p.accentFill : p.surface,
+        ),
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? Colors.transparent
+              : p.hairlineStrong,
+        ),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? p.accent : null,
+          (s) => s.contains(WidgetState.selected) ? p.accentFill : null,
         ),
+        checkColor: const WidgetStatePropertyAll(Colors.white),
         side: BorderSide(color: p.hairlineStrong, width: 1.5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
       ),
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith(
@@ -725,9 +802,49 @@ class LizTheme {
         overlayColor: overlay(p.textPrimary),
       ),
       badgeTheme: BadgeThemeData(
-        backgroundColor: p.danger,
+        backgroundColor: p.accentFill,
         textColor: Colors.white,
         textStyle: LizText.caption.copyWith(letterSpacing: 0),
+      ),
+    );
+  }
+}
+
+/// A thin red light line, brightest in the middle and fading to nothing at
+/// both ends, with a glow — the signature of the Signal look (the seams of
+/// light on the TRON: Ares suits it was drawn from). Use it sparingly: under
+/// the top bar, over the tab bar, under a section that matters.
+class GlowLine extends StatelessWidget {
+  const GlowLine({super.key, this.vertical = false, this.strength = 1});
+
+  final bool vertical;
+
+  /// 0–1: how bright. 1 for the bars, less inside content.
+  final double strength;
+
+  @override
+  Widget build(BuildContext context) {
+    final glow = context.liz.glow;
+    final fade = glow.withValues(alpha: 0);
+    final lit = glow.withValues(alpha: strength.clamp(0, 1));
+    return ExcludeSemantics(
+      child: Container(
+        width: vertical ? 1 : double.infinity,
+        height: vertical ? double.infinity : 1,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: vertical ? Alignment.topCenter : Alignment.centerLeft,
+            end: vertical ? Alignment.bottomCenter : Alignment.centerRight,
+            colors: [fade, lit, lit, fade],
+            stops: const [0, 0.3, 0.7, 1],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: glow.withValues(alpha: 0.55 * strength),
+              blurRadius: 8,
+            ),
+          ],
+        ),
       ),
     );
   }

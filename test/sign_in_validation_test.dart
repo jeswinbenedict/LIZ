@@ -11,7 +11,7 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: const Scaffold(body: SignInView()),
       ),
     ),

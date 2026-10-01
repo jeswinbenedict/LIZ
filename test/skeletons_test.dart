@@ -17,7 +17,7 @@ Future<void> _pump(
     MediaQuery(
       data: MediaQueryData(disableAnimations: disableAnimations),
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: Scaffold(body: CustomScrollView(slivers: [sliver])),
       ),
     ),

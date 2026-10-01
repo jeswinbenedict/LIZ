@@ -16,7 +16,7 @@ Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
     ProviderScope(
       overrides: overrides,
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: const Scaffold(body: WelcomeCard()),
       ),
     ),
@@ -76,7 +76,7 @@ void main() {
       ProviderScope(
         overrides: [sharedPreferencesProvider.overrideWith((_) => prefs)],
         child: MaterialApp(
-          theme: LizTheme.dark(),
+          theme: LizTheme.app(),
           home: const MediaQuery(
             data: MediaQueryData(
               size: Size(320, 700),

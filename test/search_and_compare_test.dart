@@ -8,7 +8,7 @@ import 'package:liz/features/discover/search_screen.dart';
 Future<void> _pump(WidgetTester tester, Widget screen) async {
   await tester.pumpWidget(
     ProviderScope(
-      child: MaterialApp(theme: LizTheme.light(), home: screen),
+      child: MaterialApp(theme: LizTheme.app(), home: screen),
     ),
   );
   await tester.pumpAndSettle(const Duration(seconds: 2));

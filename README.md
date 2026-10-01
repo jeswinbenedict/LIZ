@@ -142,7 +142,7 @@ type check of every Edge Function, and `flutter analyze` fails on infos too.
 Beyond behaviour, `test/screen_sweep_test.dart` puts every screen, signed out
 and signed in, through a 320-pixel phone, 1.5× text and a tablet, and through
 Flutter's accessibility guidelines — labelled controls, 48-pixel tap targets
-and contrast in light and dark. A new screen goes in that list. Every Edge
+and contrast. A new screen goes in that list. Every Edge
 Function has tests; their decisions live in `logic.ts` files so the tests need
 no network.
 

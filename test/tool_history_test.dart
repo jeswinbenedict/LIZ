@@ -36,6 +36,18 @@ void main() {
     expect(s.values, [100, 120, 150]);
   });
 
+  test('a line runs oldest to newest, whatever order the days arrive in', () {
+    // The live query once returned newest first, and every rising tool was
+    // drawn falling.
+    final s = SignalSeries.pick([
+      _p(30, stars: 150),
+      _p(29, stars: 120),
+      _p(28, stars: 100),
+    ])!;
+    expect(s.values, [100, 120, 150]);
+    expect(s.last > s.first, isTrue);
+  });
+
   test('flat stars give way to what did move', () {
     final s = SignalSeries.pick([
       _p(28, stars: 100, saves: 0),
@@ -56,7 +68,7 @@ void main() {
     await t.pumpWidget(
       ProviderScope(
         child: MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: Scaffold(
             body: ToolTimelineSection(
               tool: sampleTool(

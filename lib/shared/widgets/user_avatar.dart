@@ -4,23 +4,13 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../models/profile.dart';
 
-/// Circular avatar with a deterministic color + initials fallback.
+/// Circular avatar: the person's picture, or their initials on a dark disc
+/// ringed in red. One look for everyone — a colour per person made every
+/// list a confetti that fought the one red that means something.
 class UserAvatar extends StatelessWidget {
   const UserAvatar({super.key, required this.profile, this.radius = 18});
   final Profile profile;
   final double radius;
-
-  Color _color() {
-    final palette = [
-      const Color(0xFF5B5BF5),
-      const Color(0xFFFF7A45),
-      const Color(0xFF12B76A),
-      const Color(0xFFEE46BC),
-      const Color(0xFF0BA5EC),
-      const Color(0xFFF79009),
-    ];
-    return palette[profile.id.hashCode.abs() % palette.length];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,17 +20,26 @@ class UserAvatar extends StatelessWidget {
         backgroundImage: CachedNetworkImageProvider(profile.avatarUrl!),
       );
     }
-    return CircleAvatar(
-      radius: radius,
-      // White initials on the palette's lighter members (green, amber, cyan)
-      // measured as low as 2.4:1; darken each just enough to read.
-      backgroundColor: LizColors.legibleOn(_color(), Colors.white),
+    final p = context.liz;
+    return Container(
+      width: radius * 2,
+      height: radius * 2,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: p.surfaceHover,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: p.accent.withValues(alpha: 0.7),
+          width: radius >= 30 ? 2 : 1.2,
+        ),
+      ),
       child: Text(
         profile.initials,
-        style: TextStyle(
-          color: Colors.white,
+        style: LizText.headline.copyWith(
+          color: p.textPrimary,
           fontWeight: FontWeight.w700,
           fontSize: radius * 0.8,
+          height: 1,
         ),
       ),
     );

@@ -62,7 +62,7 @@ Future<void> _expectFits(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp.router(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         routerConfig: router,
         builder: (context, child) => MediaQuery.withClampedTextScaling(
           minScaleFactor: textScale,

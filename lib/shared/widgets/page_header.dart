@@ -15,12 +15,16 @@ class PageHeader extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.bottom = 20,
+    this.eyebrow,
   });
 
   final String title;
   final String? subtitle;
   final Widget? trailing;
   final double bottom;
+
+  /// A short monospace line above the title; see [Eyebrow].
+  final String? eyebrow;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +45,10 @@ class PageHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (eyebrow != null) ...[
+                  Eyebrow(eyebrow!),
+                  const SizedBox(height: 10),
+                ],
                 Semantics(
                   header: true,
                   child: Text(
@@ -75,12 +83,16 @@ class SectionHeader extends StatelessWidget {
     this.subtitle,
     this.action,
     this.padding,
+    this.eyebrow,
   });
 
   final String title;
   final String? subtitle;
   final Widget? action;
   final EdgeInsetsGeometry? padding;
+
+  /// A short monospace line above the title; see [Eyebrow].
+  final String? eyebrow;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +107,10 @@ class SectionHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (eyebrow != null) ...[
+                  Eyebrow(eyebrow!),
+                  const SizedBox(height: 6),
+                ],
                 Semantics(
                   header: true,
                   child: Text(
@@ -114,6 +130,26 @@ class SectionHeader extends StatelessWidget {
           ),
           ?action,
         ],
+      ),
+    );
+  }
+}
+
+/// The small monospace line above a title ("// MOMENTUM, NOT HYPE"), in red
+/// with a faint glow: Signal's instrument-label voice. Capitals as written.
+class Eyebrow extends StatelessWidget {
+  const Eyebrow(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Text(
+      text,
+      style: LizText.label.copyWith(
+        color: p.accent,
+        letterSpacing: 1.6,
+        shadows: [Shadow(color: p.glow.withValues(alpha: 0.7), blurRadius: 8)],
       ),
     );
   }
@@ -198,8 +234,8 @@ class SearchLauncher extends StatelessWidget {
   }
 }
 
-/// A segmented control (docs/DESIGN.md §7): a muted track, with the chosen
-/// segment as a white thumb. Drawn 36px tall, but each segment's hit area is
+/// A segmented control (docs/DESIGN.md §7): an outlined track, with the
+/// chosen segment lit — a red edge on a faint red fill. Drawn 36px tall, but each segment's hit area is
 /// the full 48 — the platform minimum for a finger.
 class LizSegmented<T> extends StatelessWidget {
   const LizSegmented({
@@ -231,8 +267,11 @@ class LizSegmented<T> extends StatelessWidget {
               bottom: 6,
               child: DecoratedBox(
                 decoration: ShapeDecoration(
-                  color: p.surfaceMuted,
-                  shape: LizRadius.shape(LizRadius.sm),
+                  color: p.surface,
+                  shape: LizRadius.shape(
+                    LizRadius.sm,
+                    side: BorderSide(color: p.hairline),
+                  ),
                 ),
               ),
             ),
@@ -293,21 +332,15 @@ class _Segment extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 alignment: Alignment.center,
                 decoration: ShapeDecoration(
-                  color: selected ? p.surface : Colors.transparent,
+                  color: selected ? p.accentSoft : Colors.transparent,
                   shape: LizRadius.shape(
-                    8,
+                    LizRadius.xs,
                     side: selected
-                        ? BorderSide(color: p.hairline)
+                        ? BorderSide(color: p.accent)
                         : BorderSide.none,
                   ),
                   shadows: selected
-                      ? [
-                          BoxShadow(
-                            color: p.shadow.withValues(alpha: 0.06),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ]
+                      ? LizShadows.glow(p, strength: 0.35)
                       : const [],
                 ),
                 child: Text(
@@ -347,9 +380,8 @@ class PhoneTopBar extends StatelessWidget {
   }
 }
 
-/// A filter pill (docs/DESIGN.md §7): muted when off, inverted to the text
-/// colour when on — monochrome, so filters never compete with the accent.
-/// Drawn 32px tall with a 48px hit area.
+/// A filter pill (docs/DESIGN.md §7): an outline when off, lit when on — a
+/// red edge on a faint red fill. Drawn 32px tall with a 48px hit area.
 class LizFilterPill extends StatelessWidget {
   const LizFilterPill({
     super.key,
@@ -371,7 +403,7 @@ class LizFilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    final fg = selected ? p.canvas : p.textPrimary;
+    final fg = selected ? p.textPrimary : p.textSecondary;
     final duration = LizMotion.of(context, LizMotion.quick);
     return Semantics(
       button: true,
@@ -397,12 +429,16 @@ class LizFilterPill extends StatelessWidget {
                   right: trailingIcon != null ? 10 : 14,
                 ),
                 decoration: ShapeDecoration(
-                  color: selected ? p.textPrimary : p.surfaceMuted,
-                  shape: StadiumBorder(
+                  color: selected ? p.accentSoft : p.surface,
+                  shape: LizRadius.shape(
+                    LizRadius.xs,
                     side: BorderSide(
-                      color: selected ? p.textPrimary : p.hairline,
+                      color: selected ? p.accent : p.hairlineStrong,
                     ),
                   ),
+                  shadows: selected
+                      ? LizShadows.glow(p, strength: 0.3)
+                      : const [],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

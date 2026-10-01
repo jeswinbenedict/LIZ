@@ -70,7 +70,6 @@ Future<ProviderContainer> _pump(
   required bool signedIn,
   Size size = const Size(390, 844),
   double textScale = 1.0,
-  bool dark = false,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -93,7 +92,7 @@ Future<ProviderContainer> _pump(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp.router(
-        theme: dark ? LizTheme.dark() : LizTheme.light(),
+        theme: LizTheme.app(),
         routerConfig: router,
         builder: (context, child) => MediaQuery.withClampedTextScaling(
           minScaleFactor: textScale,
@@ -154,35 +153,16 @@ void main() {
           await _finish(tester, c);
         });
 
-        for (final dark in [false, true]) {
-          testWidgets(
-            'meets the accessibility guidelines, ${dark ? 'dark' : 'light'}',
-            (tester) async {
-              final handle = tester.ensureSemantics();
-              final c = await _pump(
-                tester,
-                entry.value,
-                signedIn: signedIn,
-                dark: dark,
-              );
-              await expectLater(tester, meetsGuideline(textContrastGuideline));
-              await expectLater(
-                tester,
-                meetsGuideline(labeledTapTargetGuideline),
-              );
-              // 48x48 is the platform minimum for something a finger has to
-              // hit. Theme-independent, so checked once.
-              if (!dark) {
-                await expectLater(
-                  tester,
-                  meetsGuideline(androidTapTargetGuideline),
-                );
-              }
-              await _finish(tester, c);
-              handle.dispose();
-            },
-          );
-        }
+        testWidgets('meets the accessibility guidelines', (tester) async {
+          final handle = tester.ensureSemantics();
+          final c = await _pump(tester, entry.value, signedIn: signedIn);
+          await expectLater(tester, meetsGuideline(textContrastGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          // 48x48 is the platform minimum for something a finger has to hit.
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await _finish(tester, c);
+          handle.dispose();
+        });
       });
     }
   }

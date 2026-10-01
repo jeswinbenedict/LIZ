@@ -16,7 +16,7 @@ Future<ProviderContainer> _pump(WidgetTester tester) async {
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: const Scaffold(body: NewsTab()),
       ),
     ),

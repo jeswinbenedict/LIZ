@@ -167,5 +167,5 @@ def test_badge_says_rising_only_while_ranked():
 
 
 def test_dark_badge_uses_dark_surfaces():
-    assert "#161618" in badge_svg({"name": "X"}, "dark")
-    assert "#161618" not in badge_svg({"name": "X"})
+    assert "#0D0E11" in badge_svg({"name": "X"}, "dark")
+    assert "#0D0E11" not in badge_svg({"name": "X"})

@@ -43,7 +43,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       child: MaterialApp.router(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         routerConfig: router,
         builder: (context, child) => MediaQuery.withClampedTextScaling(
           minScaleFactor: textScale,

@@ -214,13 +214,43 @@ class MockContentRepository implements ContentRepository {
   Future<List<SignalPoint>> signalHistory(
     String toolId, {
     int days = 30,
-  }) async => const [];
+  }) async => (await signalHistories([toolId], days: days))[toolId] ?? const [];
 
   @override
   Future<Map<String, List<SignalPoint>>> signalHistories(
     List<String> toolIds, {
     int days = 14,
-  }) async => const {};
+  }) async {
+    // Demo only: a rising line for each tool the demo ranks as moving, so
+    // the movers table and tool pages draw as they do live. Deterministic,
+    // so screenshots and tests see the same lines every run.
+    final today = DateTime.now();
+    final out = <String, List<SignalPoint>>{};
+    for (final id in toolIds) {
+      final tool = _store.tools.where((t) => t.id == id).firstOrNull;
+      if (tool == null || tool.trendReason == null) continue;
+      final seed = id.codeUnits.fold<int>(0, (a, c) => a * 31 + c) & 0x7fff;
+      final base = 400 + seed % 3000;
+      // Each tool its own shape: some climb steadily, some take off late,
+      // some step up after a launch.
+      final shape = seed % 3;
+      var stars = base;
+      out[id] = [
+        for (var d = 0; d < days; d++)
+          SignalPoint(
+            day: today.subtract(Duration(days: days - 1 - d)),
+            ghStars: stars +=
+                switch (shape) {
+                  0 => 6 + d * 3,
+                  1 => d * d ~/ 2,
+                  _ => d < 8 ? 4 : 40 - d,
+                } +
+                (seed >> (d % 12)) % 9,
+          ),
+      ];
+    }
+    return out;
+  }
 
   @override
   Future<List<ToolChange>> toolChanges(String toolId) async => const [];

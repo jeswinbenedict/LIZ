@@ -152,6 +152,11 @@ class MockData {
       sourceUrl: 'https://$source.example.com',
       launchedAt: _ago(days: ageDays),
       trendScore: trend,
+      // Demo only: the strongest movers get a reason in words, as the live
+      // ranking gives them (migration 0037), so demo mode shows the movers
+      // table as it really looks. These tools and figures are fictional.
+      momentum: trend >= 70 ? trend / 10 : 0,
+      trendReason: trend >= 70 ? _demoReason(source, trend) : null,
       viewCount: views,
       saveCount: saves,
       avgRating: rating,
@@ -160,6 +165,16 @@ class MockData {
       createdAt: _ago(days: ageDays),
       holdReason: holdReason,
     );
+  }
+
+  static String _demoReason(String source, double trend) {
+    String k(num n) =>
+        n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : n.round().toString();
+    return switch (source) {
+      'github' => '+${k(trend * 23)} GitHub stars this week',
+      'hackernews' => '${k(trend * 4)} points on Hacker News',
+      _ => '${k(trend * 3)} saves on Liz this week',
+    };
   }
 
   static final List<Tool> tools = [

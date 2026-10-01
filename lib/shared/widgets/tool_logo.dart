@@ -5,23 +5,11 @@ import '../../app/theme.dart';
 import '../../core/config/env.dart';
 import '../models/tool.dart';
 
-/// Square tool logo with a branded gradient + initial fallback when no image.
+/// Square tool logo, with a monochrome initial tile when there is no image.
 class ToolLogo extends StatelessWidget {
   const ToolLogo({super.key, required this.tool, this.size = 48});
   final Tool tool;
   final double size;
-
-  // Hues for tools without a logo. Shown as a soft tint with a coloured
-  // initial rather than a saturated gradient, which used to be the loudest
-  // thing on a grid and pulled the eye away from the tools that had logos.
-  static const _hues = <Color>[
-    Color(0xFF5856D6),
-    Color(0xFFFF6B35),
-    Color(0xFF28A745),
-    Color(0xFFD63384),
-    Color(0xFF0A84FF),
-    Color(0xFFB8860B),
-  ];
 
   /// App-icon squircle: 22.5% of the side, like the icons it stands for.
   ShapeBorder _shape(BuildContext context, {bool outlined = true}) =>
@@ -83,19 +71,26 @@ class ToolLogo extends StatelessWidget {
     return _fallback(context);
   }
 
+  // Tools without a logo get a monochrome tile: a hue per tool used to make
+  // every grid a confetti of colours, which on black fought the one red that
+  // means something.
   Widget _fallback(BuildContext context) {
     final p = context.liz;
-    final hue = _hues[tool.id.hashCode.abs() % _hues.length];
-    final tile = Color.alphaBlend(hue.withValues(alpha: 0.14), p.surface);
     return Container(
       width: size,
       height: size,
-      decoration: ShapeDecoration(color: tile, shape: _shape(context)),
+      decoration: ShapeDecoration(
+        color: p.surfaceHover,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(size * 0.225),
+          side: BorderSide(color: p.hairlineStrong),
+        ),
+      ),
       alignment: Alignment.center,
       child: Text(
         tool.name.isNotEmpty ? tool.name[0].toUpperCase() : '?',
         style: LizText.title2.copyWith(
-          color: LizColors.legibleOn(hue, tile, minimum: 3),
+          color: p.textPrimary,
           fontWeight: FontWeight.w700,
           fontSize: size * 0.42,
           height: 1,

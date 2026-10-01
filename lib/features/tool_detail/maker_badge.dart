@@ -155,13 +155,13 @@ class _BadgeSheetState extends State<_BadgeSheet> {
           padding: const EdgeInsets.symmetric(vertical: 24),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _dark ? LizPalette.dark.canvas : LizPalette.light.canvas,
+            color: _dark ? LizPalette.ares.canvas : LizPalette.lightSite.canvas,
             borderRadius: BorderRadius.circular(LizRadius.md),
             border: Border.all(color: p.hairline),
           ),
           child: BadgePreview(
             rising: tool.isRising,
-            palette: _dark ? LizPalette.dark : LizPalette.light,
+            palette: _dark ? LizPalette.ares : LizPalette.lightSite,
           ),
         ),
         const SizedBox(height: 20),

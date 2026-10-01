@@ -34,7 +34,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp(theme: LizTheme.light(), home: const AlertsScreen()),
+      child: MaterialApp(theme: LizTheme.app(), home: const AlertsScreen()),
     ),
   );
   await tester.pumpAndSettle(const Duration(seconds: 2));
@@ -90,7 +90,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: const Scaffold(appBar: null, body: Center(child: AlertsBell())),
         ),
       ),
@@ -114,7 +114,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
-          theme: LizTheme.light(),
+          theme: LizTheme.app(),
           home: const Scaffold(body: Center(child: AlertsBell())),
         ),
       ),

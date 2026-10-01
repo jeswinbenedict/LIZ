@@ -55,26 +55,28 @@ PRICING_LABEL = {"free": "Free", "freemium": "Freemium", "paid": "Paid"}
 # instead of watching a logo. It replaces the splash image on these pages, and
 # once the app has drawn its first frame it becomes visually hidden (still in
 # the document for crawlers) and hidden from screen readers, so nothing is
-# shown or read twice. Colours follow the app's own surfaces (docs/DESIGN.md).
+# shown or read twice. Colours and type follow the app's Signal theme
+# (docs/DESIGN.md): black, red light, Space Grotesk — the app's own bundled
+# font file, so loading it here also warms the cache for the app.
 _PAGE_STYLE = """<style id="liz-page-style">
+    @font-face { font-family: "Space Grotesk"; font-weight: 300 700;
+      font-display: swap;
+      src: url("assets/assets/fonts/SpaceGrotesk-Latin.ttf") format("truetype"); }
     #liz-page ~ #splash { display: none; }
     #liz-page { box-sizing: border-box; max-width: 760px; margin: 0 auto;
-      padding: 24px 20px 48px; color: #1C1B22; background: #FAF9FD;
-      font: 16px/1.55 Inter, -apple-system, "Segoe UI", system-ui, sans-serif; }
-    #liz-page nav a { color: #1C1B22; font-weight: 700; font-size: 20px;
-      text-decoration: none; }
+      padding: 24px 20px 48px; color: #F4F5F7; background: #050506;
+      font: 16px/1.55 "Space Grotesk", -apple-system, "Segoe UI", system-ui,
+        sans-serif; }
+    #liz-page nav { padding-bottom: 14px; border-bottom: 1px solid #FF2A2A;
+      box-shadow: 0 6px 12px -10px #FF2A2A; }
+    #liz-page nav a { color: #F4F5F7; font-weight: 700; font-size: 20px;
+      letter-spacing: 3px; text-decoration: none; }
     #liz-page h1 { font-size: 30px; line-height: 1.15; margin: 28px 0 6px; }
     #liz-page h2 { font-size: 20px; margin: 28px 0 8px; }
-    #liz-page p, #liz-page li { color: #4A4857; }
-    #liz-page a { color: #4F4DC9; }
+    #liz-page p, #liz-page li { color: #A3A7B1; }
+    #liz-page a { color: #FF4D4D; }
     #liz-page ul { padding-left: 20px; }
-    #liz-page .liz-loading { margin-top: 32px; font-size: 14px; color: #6E6C7B; }
-    @media (prefers-color-scheme: dark) {
-      #liz-page { color: #ECEBF2; background: #131318; }
-      #liz-page nav a { color: #ECEBF2; }
-      #liz-page p, #liz-page li { color: #B9B7C6; }
-      #liz-page a { color: #A9A7FA; }
-    }
+    #liz-page .liz-loading { margin-top: 32px; font-size: 14px; color: #A3A7B1; }
     #liz-page.liz-hidden { position: absolute; width: 1px; height: 1px;
       padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
       white-space: nowrap; border: 0; }
@@ -396,9 +398,9 @@ def sitemap(site: Site, tools: list[dict], categories: list[dict],
 # trend that has passed for more than a day.
 _BADGE_THEMES = {
     "light": {"bg": "#FFFFFF", "line": "#D2D2D7", "caption": "#6E6E73",
-              "word": "#1D1D1F", "accent": "#5856D6", "rising": "#C93400"},
-    "dark": {"bg": "#161618", "line": "#3A3A3C", "caption": "#A1A1A6",
-             "word": "#F5F5F7", "accent": "#7B79FF", "rising": "#FF7A45"},
+              "word": "#1D1D1F", "accent": "#D7141A", "rising": "#D7141A"},
+    "dark": {"bg": "#0D0E11", "line": "#2E313A", "caption": "#A3A7B1",
+             "word": "#F4F5F7", "accent": "#FF3B3B", "rising": "#FF3B3B"},
 }
 BADGE_WIDTH, BADGE_HEIGHT = 136, 48
 

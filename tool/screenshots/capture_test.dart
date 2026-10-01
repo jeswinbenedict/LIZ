@@ -1,5 +1,5 @@
 // Renders every main screen to PNG, through the app's real router and shell,
-// with the real fonts, at a phone and a desktop size, in light and dark.
+// with the real fonts, at a phone and a desktop size.
 //
 //   flutter test tool/screenshots/capture_test.dart --dart-define=SHOT=after
 //
@@ -42,9 +42,14 @@ const _sizes = <String, Size>{
 };
 
 Future<void> _loadFonts() async {
-  final inter = FontLoader('Inter')
-    ..addFont(rootBundle.load('assets/fonts/Inter-Latin.ttf'));
-  await inter.load();
+  for (final (family, file) in [
+    ('SpaceGrotesk', 'SpaceGrotesk-Latin.ttf'),
+    ('JetBrainsMono', 'JetBrainsMono-Latin.ttf'),
+  ]) {
+    await (FontLoader(
+      family,
+    )..addFont(rootBundle.load('assets/fonts/$file'))).load();
+  }
   // Material icons from the SDK, so icons draw as icons rather than boxes.
   final sdk =
       Platform.environment['FLUTTER_ROOT'] ??
@@ -62,10 +67,10 @@ Future<void> _loadFonts() async {
 void main() {
   setUpAll(_loadFonts);
 
-  for (final dark in [false, true]) {
+  {
     for (final size in _sizes.entries) {
       for (final screen in _screens.entries) {
-        final name = '${screen.key}-${size.key}-${dark ? 'dark' : 'light'}';
+        final name = '${screen.key}-${size.key}';
         testWidgets(name, (tester) async {
           tester.view.physicalSize = size.value * 2;
           tester.view.devicePixelRatio = 2;
@@ -89,9 +94,7 @@ void main() {
                 container: container,
                 child: MaterialApp.router(
                   debugShowCheckedModeBanner: false,
-                  theme: LizTheme.light(),
-                  darkTheme: LizTheme.dark(),
-                  themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+                  theme: LizTheme.app(),
                   routerConfig: router,
                 ),
               ),

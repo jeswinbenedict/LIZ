@@ -49,10 +49,7 @@ void main() {
     await t.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp.router(
-          theme: LizTheme.light(),
-          routerConfig: router,
-        ),
+        child: MaterialApp.router(theme: LizTheme.app(), routerConfig: router),
       ),
     );
     await t.tap(find.text('open'));

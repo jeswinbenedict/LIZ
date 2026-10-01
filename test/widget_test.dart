@@ -11,10 +11,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
-          theme: LizTheme.light(),
-          home: const DiscoverScreen(),
-        ),
+        child: MaterialApp(theme: LizTheme.app(), home: const DiscoverScreen()),
       ),
     );
 

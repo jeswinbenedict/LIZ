@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/settings_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/providers.dart';
 import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
@@ -55,7 +56,7 @@ class BookmarkController extends _IdSetController {
   /// window): saving then needs an account, as it always used to.
   Future<GuestSaves?> _guest() async {
     try {
-      return GuestSaves(await ref.read(sharedPreferencesProvider.future));
+      return GuestSaves(await SharedPreferences.getInstance());
     } catch (_) {
       return null;
     }
@@ -63,10 +64,13 @@ class BookmarkController extends _IdSetController {
 
   @override
   Future<Set<String>> fetch() async {
-    final guest = await _guest();
-    if (!ref.read(isSignedInProvider)) return guest?.read() ?? {};
-
+    // Read from ref before any await: a provider rebuilt or disposed
+    // meanwhile must not be touched after it.
+    final signedIn = ref.read(isSignedInProvider);
     final repo = ref.read(trackRepositoryProvider);
+    final guest = await _guest();
+    if (!signedIn) return guest?.read() ?? {};
+
     final saved = await repo.bookmarkedToolIds();
     if (guest == null) return saved;
     final pending = guest.read().difference(saved);
@@ -87,11 +91,12 @@ class BookmarkController extends _IdSetController {
 
   @override
   Future<bool> write(String id) async {
+    final repo = ref.read(trackRepositoryProvider);
     final guest = ref.read(isSignedInProvider) ? null : await _guest();
     // No storage and no account: toggleBookmark raises AuthRequiredException
     // and the button offers sign-in.
     final added = guest == null
-        ? await ref.read(trackRepositoryProvider).toggleBookmark(id)
+        ? await repo.toggleBookmark(id)
         : await guest.toggle(id);
     // Saves are one of the signals Rising ranks by.
     Analytics.track(added ? 'save' : 'unsave', toolId: id);

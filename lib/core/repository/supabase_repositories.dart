@@ -57,7 +57,10 @@ class SupabaseContentRepository implements ContentRepository {
 
   @override
   Future<List<Category>> categories() async {
-    final rows = await _client.from('categories').select().order('name');
+    final rows = await _client
+        .from('categories')
+        .select()
+        .order('name', ascending: true);
     return (rows as List).map((e) => Category.fromJson(e)).toList();
   }
 
@@ -207,7 +210,10 @@ class SupabaseContentRepository implements ContentRepository {
         .select(_snapshotCols)
         .eq('tool_id', toolId)
         .gte('day', _since(days))
-        .order('day');
+        // Oldest first: the line is drawn left to right. supabase-dart
+        // orders descending unless told otherwise, which drew every
+        // rising tool falling.
+        .order('day', ascending: true);
     return (rows as List).map((e) => SignalPoint.fromJson(e)).toList();
   }
 
@@ -222,7 +228,10 @@ class SupabaseContentRepository implements ContentRepository {
         .select(_snapshotCols)
         .inFilter('tool_id', toolIds)
         .gte('day', _since(days))
-        .order('day');
+        // Oldest first: the line is drawn left to right. supabase-dart
+        // orders descending unless told otherwise, which drew every
+        // rising tool falling.
+        .order('day', ascending: true);
     final out = <String, List<SignalPoint>>{};
     for (final r in (rows as List).whereType<Map<String, dynamic>>()) {
       out
@@ -387,7 +396,7 @@ class SupabaseCommunityRepository implements CommunityRepository {
         )
         .eq('post_id', postId)
         .eq('status', 'active')
-        .order('created_at');
+        .order('created_at', ascending: true);
     return (rows as List)
         .map((e) => Comment.fromJson({...e, 'author': e['profiles']}))
         .toList();

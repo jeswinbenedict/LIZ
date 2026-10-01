@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../app/settings_controller.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/user_prefs.dart';
@@ -29,7 +28,7 @@ class PreferencesController extends Notifier<UserPrefs> {
 
   Future<SharedPreferences?> _prefs() async {
     try {
-      return await ref.read(sharedPreferencesProvider.future);
+      return await SharedPreferences.getInstance();
     } catch (_) {
       return null;
     }
@@ -37,18 +36,23 @@ class PreferencesController extends Notifier<UserPrefs> {
 
   Future<void> _load() async {
     final generation = ++_generation;
+    // Everything from ref is read before the first await: this provider is
+    // rebuilt on sign-in and disposed with its screen, and a Ref used after
+    // that throws.
+    final signedIn = ref.read(isSignedInProvider);
+    final track = ref.read(trackRepositoryProvider);
     final local = await _prefs();
     final guest = UserPrefs(
       interests: local?.getStringList(_interestsKey) ?? const [],
     );
     var loaded = guest;
-    if (ref.read(isSignedInProvider)) {
+    if (signedIn) {
       try {
-        final saved = await ref.read(trackRepositoryProvider).preferences();
+        final saved = await track.preferences();
         if (saved != null) {
           loaded = saved;
         } else if (guest.hasInterests) {
-          await ref.read(trackRepositoryProvider).savePreferences(guest);
+          await track.savePreferences(guest);
         }
       } catch (_) {
         // Keep what the browser knows; the screen still works.
@@ -59,11 +63,11 @@ class PreferencesController extends Notifier<UserPrefs> {
 
   Future<void> _save(UserPrefs next) async {
     state = next;
+    final signedIn = ref.read(isSignedInProvider);
+    final track = ref.read(trackRepositoryProvider);
     final local = await _prefs();
     await local?.setStringList(_interestsKey, next.interests);
-    if (ref.read(isSignedInProvider)) {
-      await ref.read(trackRepositoryProvider).savePreferences(next);
-    }
+    if (signedIn) await track.savePreferences(next);
   }
 
   Future<void> setInterests(List<String> slugs) =>

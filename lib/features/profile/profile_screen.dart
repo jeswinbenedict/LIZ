@@ -142,21 +142,18 @@ class _ProfileBody extends ConsumerWidget {
                 ),
                 LizGroupRow(
                   icon: Icons.notifications,
-                  iconColor: p.caution,
                   title: 'Alerts',
                   value: unread == 0 ? null : '$unread new',
                   onTap: () => context.push('/alerts'),
                 ),
                 LizGroupRow(
                   icon: Icons.settings,
-                  iconColor: p.textSecondary,
                   title: 'Settings',
                   onTap: () => context.push('/profile/settings'),
                 ),
                 if (profile.role == UserRole.admin)
                   LizGroupRow(
                     icon: Icons.shield_outlined,
-                    iconColor: p.positive,
                     title: 'Admin console',
                     subtitle: 'Catalog, news, moderation and health',
                     onTap: () => context.push('/admin'),

@@ -13,7 +13,7 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         // In the app this sits inside the admin Scaffold; ListTile needs the
         // Material that provides.
         home: const Scaffold(body: HealthTab()),

@@ -11,7 +11,7 @@ import 'package:liz/features/ask_liz/ask_liz_screen.dart';
 Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
     ProviderScope(
-      child: MaterialApp(theme: LizTheme.light(), home: const AskLizScreen()),
+      child: MaterialApp(theme: LizTheme.app(), home: const AskLizScreen()),
     ),
   );
   await tester.pumpAndSettle(const Duration(seconds: 1));

@@ -23,7 +23,7 @@ void main() {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(theme: LizTheme.light(), home: const AskLizScreen()),
+        child: MaterialApp(theme: LizTheme.app(), home: const AskLizScreen()),
       ),
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
@@ -59,43 +59,39 @@ void main() {
     });
   });
 
-  for (final dark in [false, true]) {
-    testWidgets(
-      'every badge colour reads on its own tint, ${dark ? 'dark' : 'light'}',
-      (tester) async {
-        final handle = tester.ensureSemantics();
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: dark ? LizTheme.dark() : LizTheme.light(),
-            home: Scaffold(
-              body: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final pricing in PricingType.values)
-                    PricingBadge(pricing),
-                  const LizPill(label: '#12', color: LizColors.rising),
-                  const LizPill(label: 'agents'),
-                  const LizPill(
-                    label: 'NEW',
-                    color: LizColors.positive,
-                    filled: true,
-                  ),
-                  const LizPill(
-                    label: 'HOT',
-                    color: LizColors.rising,
-                    filled: true,
-                  ),
-                ],
-              ),
+  {
+    testWidgets('every badge colour reads on its own tint', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LizTheme.app(),
+          home: Scaffold(
+            body: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final pricing in PricingType.values) PricingBadge(pricing),
+                const LizPill(label: '#12', color: LizColors.rising),
+                const LizPill(label: 'agents'),
+                const LizPill(
+                  label: 'NEW',
+                  color: LizColors.positive,
+                  filled: true,
+                ),
+                const LizPill(
+                  label: 'HOT',
+                  color: LizColors.rising,
+                  filled: true,
+                ),
+              ],
             ),
           ),
-        );
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        await expectLater(tester, meetsGuideline(textContrastGuideline));
-        handle.dispose();
-      },
-    );
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+      handle.dispose();
+    });
   }
 }

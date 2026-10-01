@@ -76,7 +76,8 @@ Color pricingColor(BuildContext context, PricingType pricing) {
   final p = context.liz;
   return switch (pricing) {
     PricingType.free => p.positive,
-    PricingType.freemium => p.accent,
+    // Not red: red is for what can be acted on and what is rising.
+    PricingType.freemium => p.textSecondary,
     PricingType.paid => p.caution,
     PricingType.unknown => p.textTertiary,
   };
@@ -183,7 +184,7 @@ class ToolMeta extends StatelessWidget {
     }
     if (tool.ratingCount > 0) {
       sep();
-      // An icon, not "★": the bundled Inter subset has no star glyph, and a
+      // An icon, not "★": the bundled font subsets have no star glyph, and a
       // missing glyph makes Flutter web fetch a fallback font from Google.
       parts.add(
         WidgetSpan(

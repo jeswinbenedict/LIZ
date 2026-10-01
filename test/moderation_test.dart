@@ -27,7 +27,7 @@ Future<ProviderContainer> _signedIn(WidgetTester tester) async {
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
-        theme: LizTheme.light(),
+        theme: LizTheme.app(),
         home: const Scaffold(body: ModerationTab()),
       ),
     ),
