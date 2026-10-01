@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 import '../models/tool.dart';
-import 'time_ago.dart';
 
 /// A small status word ("New", "Beta") or tag on a tint of its colour
 /// (docs/DESIGN.md §7, Badge). Never more than one status badge on a card.
@@ -126,24 +125,6 @@ class _Dot extends StatelessWidget {
     height: 7,
     decoration: BoxDecoration(color: color, shape: BoxShape.circle),
   );
-}
-
-/// Where a tool stands on the leaderboard — "#3", with the trend arrow.
-class TrendBadge extends StatelessWidget {
-  const TrendBadge(this.tool, {super.key});
-  final Tool tool;
-
-  @override
-  Widget build(BuildContext context) {
-    // Live: a unique leaderboard position. Demo data has no rank, so the
-    // compact trend score stands in.
-    final rank = tool.trendRank;
-    return LizPill(
-      label: rank != null ? '#$rank' : compactCount(tool.trendScore.round()),
-      color: context.liz.rising,
-      icon: Icons.trending_up,
-    );
-  }
 }
 
 /// A category slug as a reader would say it: `ai-video` → "Video".

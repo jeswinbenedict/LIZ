@@ -141,7 +141,20 @@ class Env {
     // Some logo_url values are already proxy links (/logo?domain=…). Wrapping
     // one again works but spends two function invocations to fetch one image.
     if (url.contains('/logo?')) return url;
+    // Logos stored in Liz's own Storage bucket (migration 0048) come straight
+    // from its CDN, with CORS and a year-long cache — no function call.
+    if (isOwnStorage(url)) return url;
     return buildProxyUrl(base, url, fallbackDomain: fallbackDomain);
+  }
+
+  /// Whether [url] is a public object in this project's Storage.
+  static bool isOwnStorage(String url) => isOwnStorageIn(supabaseUrl, url);
+
+  @visibleForTesting
+  static bool isOwnStorageIn(String base, String url) {
+    final clean = _normalizeBase(base);
+    return clean.isNotEmpty &&
+        url.startsWith('$clean/storage/v1/object/public/');
   }
 
   /// The proxy URL itself, split out from the platform check so it can be

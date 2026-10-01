@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +13,7 @@ import 'core/config/env.dart';
 import 'core/notifications/push_service.dart';
 import 'core/telemetry/analytics.dart';
 import 'core/telemetry/crash_reporter.dart';
+import 'core/telemetry/page_timing.dart';
 import 'core/providers.dart';
 import 'shared/widgets/page_title.dart';
 
@@ -59,13 +62,32 @@ class LizApp extends ConsumerStatefulWidget {
   ConsumerState<LizApp> createState() => _LizAppState();
 }
 
+/// Whether the accessibility tree is built from the start on the web.
+///
+/// Flutter web draws on a canvas and, by default, builds the tree a screen
+/// reader reads only after someone finds and presses a hidden "Enable
+/// accessibility" button — so a blind visitor met an empty page.
+const _semanticsAtStart = bool.fromEnvironment('SEMANTICS', defaultValue: true);
+
 class _LizAppState extends ConsumerState<LizApp> {
+  SemanticsHandle? _semantics;
+
+  @override
+  void dispose() {
+    _semantics?.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    if (kIsWeb && _semanticsAtStart) {
+      _semantics = SemanticsBinding.instance.ensureSemantics();
+    }
     // Resume push after the first frame, for a browser that turned it on
     // before. Nobody is asked for permission here (see PushService).
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      Analytics.firstFrame(millisSinceNavigation());
       final prefs = await ref.read(sharedPreferencesProvider.future);
       await PushService.instance.init(
         prefs: prefs,

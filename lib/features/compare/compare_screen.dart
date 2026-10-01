@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
+import '../../core/config/env.dart';
 import '../../core/providers.dart';
 import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
@@ -36,6 +38,25 @@ class CompareScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Compare'),
+        actions: [
+          // The address already holds the comparison (/compare?ids=…), so a
+          // copied link opens the same table for whoever receives it.
+          IconButton(
+            tooltip: 'Copy link to this comparison',
+            icon: const Icon(Icons.link),
+            onPressed: () {
+              final link =
+                  Env.permalink('/compare?ids=${toolIds.join(',')}') ?? '';
+              if (link.isEmpty) return;
+              Clipboard.setData(ClipboardData(text: link));
+              Analytics.track('share', props: {'what': 'compare'});
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(const SnackBar(content: Text('Link copied')));
+            },
+          ),
+          const SizedBox(width: 4),
+        ],
         leading: BackButton(
           onPressed: () {
             if (context.canPop()) {

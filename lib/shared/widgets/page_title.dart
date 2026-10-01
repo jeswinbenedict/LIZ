@@ -25,6 +25,10 @@ class PageTitle extends StatefulWidget {
     return '${_clip(text, 70)} | Liz';
   }
 
+  /// The alternatives page's title, as the prerendered page carries it.
+  static String forAlternatives(String name) =>
+      '${_clip('Alternatives to $name', 70)} | Liz';
+
   static String _clip(String text, int limit) {
     final t = text.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (t.length <= limit) return t;

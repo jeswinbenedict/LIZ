@@ -74,4 +74,29 @@ void main() {
       expect(Env.buildDomainLogoUrl(_base, site), isNull, reason: '$site');
     }
   });
+
+  test('logos in our own Storage are not sent through the proxy', () {
+    const base = 'https://ref.supabase.co';
+    expect(
+      Env.isOwnStorageIn(
+        base,
+        'https://ref.supabase.co/storage/v1/object/public/logos/t-1.webp',
+      ),
+      isTrue,
+    );
+    expect(
+      Env.isOwnStorageIn(
+        base,
+        'https://other.supabase.co/storage/v1/object/public/x',
+      ),
+      isFalse,
+    );
+    expect(
+      Env.isOwnStorageIn(
+        '',
+        'https://ref.supabase.co/storage/v1/object/public/x',
+      ),
+      isFalse,
+    );
+  });
 }

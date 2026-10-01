@@ -12,6 +12,7 @@ import '../features/auth/sign_in_screen.dart';
 import '../features/community/community_screen.dart';
 import '../features/community/post_detail_screen.dart';
 import '../features/compare/compare_screen.dart';
+import '../features/tool_detail/alternatives_screen.dart';
 import '../features/discover/discover_screen.dart';
 import '../features/discover/search_screen.dart';
 import '../features/legal/legal_screen.dart';
@@ -131,6 +132,11 @@ GoRouter buildRouter() {
         path: '/tools/:slug',
         parentNavigatorKey: _rootKey,
         builder: (c, s) => ToolDetailScreen(slug: s.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/alternatives/:slug',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => AlternativesScreen(slug: s.pathParameters['slug']!),
       ),
       GoRoute(
         path: '/tool/:id',

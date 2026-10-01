@@ -21,9 +21,12 @@ import '../../shared/widgets/tool_logo.dart';
 import '../community/community_controller.dart';
 import '../community/community_widgets.dart';
 import '../community/composers.dart';
+import '../compare/compare_sheet.dart';
 import '../track/bookmark_button.dart';
+import 'maker_badge.dart';
 import 'similar_tools.dart';
 import 'tool_history.dart';
+import 'tool_news.dart';
 import 'tool_updates.dart';
 
 class ToolDetailScreen extends ConsumerWidget {
@@ -234,6 +237,17 @@ class _ToolBody extends ConsumerWidget {
                     filledStyle: true,
                     compact: true,
                   ),
+                  const SizedBox(width: 10),
+                  IconButton.filled(
+                    style: LizButtons.tonal(context.liz).merge(
+                      const ButtonStyle(
+                        minimumSize: WidgetStatePropertyAll(Size(44, 44)),
+                      ),
+                    ),
+                    tooltip: 'Compare with similar tools',
+                    onPressed: () => showCompareSheet(context, tool),
+                    icon: const Icon(Icons.compare_arrows, size: 20),
+                  ),
                 ],
               )
             else
@@ -243,6 +257,14 @@ class _ToolBody extends ConsumerWidget {
                 children: [
                   if (tool.websiteUrl != null) _VisitButton(tool: tool),
                   BookmarkButton(toolId: tool.id, filledStyle: true),
+                  FilledButton.icon(
+                    style: LizButtons.tonal(
+                      context.liz,
+                    ).merge(LizButtons.capsule),
+                    onPressed: () => showCompareSheet(context, tool),
+                    icon: const Icon(Icons.compare_arrows, size: 18),
+                    label: const Text('Compare'),
+                  ),
                 ],
               ),
             const SizedBox(height: 24),
@@ -302,7 +324,10 @@ class _ToolBody extends ConsumerWidget {
             ToolTimelineSection(tool: tool),
 
             // Related products, matched on the embeddings already in the table.
-            SimilarToolsSection(toolId: tool.id),
+            SimilarToolsSection(toolId: tool.id, slug: tool.slug),
+
+            // Headlines from the news feed that name this tool.
+            ToolNewsSection(toolId: tool.id, name: tool.name),
 
             // Live "what's new" for this tool — real releases / feature updates.
             ToolUpdatesSection(
@@ -389,6 +414,9 @@ class _ToolBody extends ConsumerWidget {
                       ),
               ),
             ),
+
+            // For the people who made it: a badge linking back here.
+            MakerBadgeRow(tool: tool),
           ],
         ),
       ),

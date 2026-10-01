@@ -17,7 +17,15 @@ class CrashReporter {
   CrashReporter._();
 
   static const _maxReportsPerSession = 25;
-  static const _appVersion = '1.0.0';
+
+  /// Which build crashed: the commit, stamped by the deploy workflow
+  /// (`--dart-define=APP_VERSION=<sha>`). It used to be a fixed "1.0.0", so
+  /// a report could not be matched to the source maps of the build that
+  /// raised it (tool/symbolicate.py).
+  static const _appVersion = String.fromEnvironment(
+    'APP_VERSION',
+    defaultValue: 'dev',
+  );
 
   static int _sent = 0;
   static final Set<String> _seen = <String>{};

@@ -21,3 +21,9 @@
   Cache-Control: no-cache
 /flutter_bootstrap.js
   Cache-Control: no-cache
+
+# Makers embed these on their own sites. Rebuilt daily with the pages, so an
+# hour's caching keeps "Rising on Liz" no more than an hour stale.
+/badge/*
+  Cache-Control: public, max-age=3600
+  Cross-Origin-Resource-Policy: cross-origin

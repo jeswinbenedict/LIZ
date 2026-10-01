@@ -43,6 +43,7 @@ class Analytics {
     'share',
     'sign_up',
     'sign_in',
+    'perf',
   };
 
   /// Loads this browser's id, creating it on first visit.
@@ -83,6 +84,17 @@ class Analytics {
     track('page_view', path: path);
   }
 
+  /// Reports, once per page load, how long after navigation the app drew its
+  /// first frame — real visitors' speed, which a lab test cannot stand in for
+  /// (usage_summary, migration 0051).
+  static void firstFrame(double? millisSinceNavigation) {
+    if (millisSinceNavigation == null || _reportedFirstFrame) return;
+    _reportedFirstFrame = true;
+    track('perf', props: {'first_frame_ms': millisSinceNavigation.round()});
+  }
+
+  static bool _reportedFirstFrame = false;
+
   static void track(
     String name, {
     String? toolId,
@@ -120,6 +132,7 @@ class Analytics {
   static void resetForTest() {
     _anonId = null;
     _lastPath = null;
+    _reportedFirstFrame = false;
   }
 }
 

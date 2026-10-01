@@ -20,6 +20,7 @@ import 'package:liz/features/news/news_screen.dart';
 import 'package:liz/features/profile/profile_screen.dart';
 import 'package:liz/features/profile/settings_screen.dart';
 import 'package:liz/features/profile/user_profile_screen.dart';
+import 'package:liz/features/tool_detail/alternatives_screen.dart';
 import 'package:liz/features/tool_detail/tool_detail_screen.dart';
 import 'package:liz/features/track/saved_screen.dart';
 
@@ -46,6 +47,7 @@ final _screens = <String, Widget>{
   'Ask Liz': const AskLizScreen(),
   'Tool detail': const ToolDetailScreen(toolId: 't-1'),
   'Compare': const CompareScreen(toolIds: ['t-1', 't-2']),
+  'Alternatives': const AlternativesScreen(slug: 'scriptly'),
   'News': const NewsScreen(),
   'Saved': const SavedScreen(),
   'Alerts': const AlertsScreen(),

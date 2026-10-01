@@ -53,6 +53,7 @@ dependencies:
   # The QR code an authenticator app scans when a moderator turns on
   # two-step verification (features/admin/two_step_gate.dart).
   qr_flutter: ^4.1.0
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

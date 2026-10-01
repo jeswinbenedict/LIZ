@@ -10,6 +10,7 @@ import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/models/tool_history.dart';
+import '../../shared/models/user_prefs.dart';
 import '../auth/auth_repository.dart';
 import '../data/mock_data.dart';
 import '../errors.dart';
@@ -31,7 +32,6 @@ class MockStore {
   final Map<String, List<Comment>> commentsByPost = {};
 
   final Set<String> bookmarks = {};
-  final Set<String> follows = {}; // followed tool ids
   final Set<String> userFollows = {}; // followed user ids
   final Set<String> likes = {}; // "$type:$id"
 
@@ -114,6 +114,9 @@ class MockContentRepository implements ContentRepository {
 
     if (q.categorySlug != null) {
       list = list.where((t) => t.category == q.categorySlug);
+    }
+    if (q.categorySlugs != null && q.categorySlugs!.isNotEmpty) {
+      list = list.where((t) => q.categorySlugs!.contains(t.category));
     }
     if (q.tag != null) {
       list = list.where((t) => t.tags.contains(q.tag));
@@ -221,6 +224,24 @@ class MockContentRepository implements ContentRepository {
 
   @override
   Future<List<ToolChange>> toolChanges(String toolId) async => const [];
+
+  @override
+  Future<List<Tool>> alternativeTools(String toolId) => similarTools(toolId);
+
+  @override
+  Future<List<NewsItem>> newsForTool(String toolId, {int limit = 5}) async {
+    final tool = _store.tools.where((t) => t.id == toolId).firstOrNull;
+    if (tool == null || tool.name.length < 4) return const [];
+    // The same rule as link_news_item: the name, case and all, as a word.
+    final name = RegExp('\\b${RegExp.escape(tool.name)}\\b');
+    return (_store.news
+            .where((n) => n.status == PublishStatus.published)
+            .where((n) => name.hasMatch(n.title))
+            .toList()
+          ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt)))
+        .take(limit)
+        .toList();
+  }
 
   @override
   Future<List<Tool>> similarTools(String toolId) async {
@@ -746,21 +767,6 @@ class MockTrackRepository implements TrackRepository {
   }
 
   @override
-  Future<Set<String>> followedToolIds() async => {..._store.follows};
-
-  @override
-  Future<bool> toggleFollowTool(String toolId) async {
-    _requireUser();
-    final added = !_store.follows.contains(toolId);
-    if (added) {
-      _store.follows.add(toolId);
-    } else {
-      _store.follows.remove(toolId);
-    }
-    return added;
-  }
-
-  @override
   Future<Set<String>> followedUserIds() async => {..._store.userFollows};
 
   @override
@@ -795,4 +801,12 @@ class MockTrackRepository implements TrackRepository {
       _store.notifications[i] = _store.notifications[i].copyWith(read: true);
     }
   }
+
+  UserPrefs? _prefs;
+
+  @override
+  Future<UserPrefs?> preferences() async => _prefs;
+
+  @override
+  Future<void> savePreferences(UserPrefs prefs) async => _prefs = prefs;
 }

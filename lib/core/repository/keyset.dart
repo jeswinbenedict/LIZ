@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// Paging for feeds that grow at the top: News, and the newest-first Community
 /// feed.
 ///
@@ -44,4 +46,71 @@ class Keyset {
   /// and `+` would otherwise be read as filter syntax.
   String filter(String column) =>
       '$column.lt."$at",and($column.eq."$at",id.lt.$id)';
+}
+
+/// Keyset paging over several sort columns, all descending, with the id last
+/// — for the catalog grid, ordered by momentum and then age.
+///
+/// The ranking is recomputed nightly and the scraper adds tools daily, so an
+/// offset page read after either repeated or skipped tools. Only for columns
+/// whose values survive a JSON round trip exactly: timestamps, and momentum,
+/// which is stored rounded to four places. Not for `avg_rating`, an
+/// unrounded average whose double form may not equal the stored numeric.
+class SortKeyset {
+  const SortKeyset(this.values, this.id);
+
+  /// The last row's value for each sort column, in order.
+  final List<Object> values;
+  final String id;
+
+  static const _prefix = 'k2:';
+
+  /// The cursor for the page after [rows], or null when [rows] was the last
+  /// or a sort value is missing (paging then simply ends).
+  static String? after(List<dynamic> rows, List<String> columns, int limit) {
+    if (rows.length < limit || rows.isEmpty) return null;
+    final last = rows.last as Map<String, dynamic>;
+    final values = [for (final c in columns) last[c]];
+    if (values.any((v) => v is! num && v is! String)) return null;
+    return SortKeyset(values.cast<Object>(), last['id'] as String).encode();
+  }
+
+  /// A cursor this class wrote, or null for anything else (an offset cursor
+  /// from before, or one for a different number of columns).
+  static SortKeyset? decode(String? cursor, int columns) {
+    if (cursor == null || !cursor.startsWith(_prefix)) return null;
+    try {
+      final list =
+          jsonDecode(utf8.decode(base64Url.decode(cursor.substring(3))))
+              as List;
+      if (list.length != columns + 1 || list.last is! String) return null;
+      final values = list.sublist(0, columns);
+      if (values.any((v) => v is! num && v is! String)) return null;
+      return SortKeyset(values.cast<Object>(), list.last as String);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  String encode() =>
+      _prefix + base64Url.encode(utf8.encode(jsonEncode([...values, id])));
+
+  /// A PostgREST `or` filter for rows after this one in
+  /// `columns[0] desc, …, id desc` order: a smaller first value, or an equal
+  /// first and a smaller second, and so on down to the id.
+  String filter(List<String> columns) {
+    assert(columns.length == values.length);
+    String lit(Object v) => v is num ? '$v' : '"$v"';
+    final terms = <String>[];
+    for (var i = 0; i <= columns.length; i++) {
+      final eqs = [
+        for (var j = 0; j < i; j++) '${columns[j]}.eq.${lit(values[j])}',
+      ];
+      final lt = i < columns.length
+          ? '${columns[i]}.lt.${lit(values[i])}'
+          : 'id.lt.$id';
+      terms.add(eqs.isEmpty ? lt : 'and(${[...eqs, lt].join(',')})');
+    }
+    return terms.join(',');
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../core/providers.dart';
@@ -24,8 +25,11 @@ final similarToolsProvider = FutureProvider.autoDispose
 /// while it loads. The page is complete without this section, so a spinner or
 /// an apology in its place would be worse than its absence.
 class SimilarToolsSection extends ConsumerWidget {
-  const SimilarToolsSection({super.key, required this.toolId});
+  const SimilarToolsSection({super.key, required this.toolId, this.slug});
   final String toolId;
+
+  /// For "See all", which opens the alternatives page.
+  final String? slug;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,12 +43,23 @@ class SimilarToolsSection extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Semantics(
-            header: true,
-            child: Text(
-              'Similar tools',
-              style: LizText.title2.copyWith(color: p.textPrimary),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    'Similar tools',
+                    style: LizText.title2.copyWith(color: p.textPrimary),
+                  ),
+                ),
+              ),
+              if (slug != null)
+                TextButton(
+                  onPressed: () => context.push('/alternatives/$slug'),
+                  child: const Text('See all'),
+                ),
+            ],
           ),
           const SizedBox(height: 14),
           SizedBox(

@@ -114,6 +114,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                     ),
                     const WelcomeCard(),
                     const RisingCarousel(),
+                    const ForYou(),
                     NewThisWeek(
                       onSeeAll: () => ref
                           .read(discoverSortProvider.notifier)

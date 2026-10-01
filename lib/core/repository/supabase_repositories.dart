@@ -11,6 +11,7 @@ import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/models/tool_history.dart';
+import '../../shared/models/user_prefs.dart';
 import '../auth/auth_repository.dart';
 import '../errors.dart';
 import 'keyset.dart';
@@ -62,11 +63,13 @@ class SupabaseContentRepository implements ContentRepository {
 
   @override
   Future<Paginated<Tool>> tools(ToolQuery q) async {
-    final offset = _decodeCursor(q.cursor);
     final cols = q.includeProse ? _toolCols : _toolCardCols;
     var query = _client.from('tools').select(cols).eq('status', 'published');
 
     if (q.categorySlug != null) query = query.eq('category', q.categorySlug!);
+    if (q.categorySlugs != null && q.categorySlugs!.isNotEmpty) {
+      query = query.inFilter('category', q.categorySlugs!);
+    }
     if (q.pricing != null) {
       query = query.eq('pricing_type', q.pricing!.name);
     }
@@ -85,19 +88,35 @@ class SupabaseContentRepository implements ContentRepository {
     // zero would list them in no meaningful order under "Top rated".
     if (q.sort == ToolSort.topRated) query = query.gt('rating_count', 0);
 
-    final ordered = switch (q.sort) {
-      ToolSort.rising =>
-        query
-            .order('momentum', ascending: false)
-            .order('created_at', ascending: false),
-      ToolSort.newest => query.order('created_at', ascending: false),
-      ToolSort.topRated =>
-        query
-            .order('avg_rating', ascending: false)
-            .order('rating_count', ascending: false),
+    // Rising and Newest page by "rows after this one" (SortKeyset): the
+    // ranking changes nightly and new tools arrive daily, either of which
+    // shifted an offset page. Top rated is a short list of rated tools whose
+    // averages do not round-trip exactly, so it keeps offsets.
+    final keys = switch (q.sort) {
+      ToolSort.rising => const ['momentum', 'created_at'],
+      ToolSort.newest => const ['created_at'],
+      ToolSort.topRated => null,
     };
+    if (keys != null) {
+      final after = SortKeyset.decode(q.cursor, keys.length);
+      if (after != null) query = query.or(after.filter(keys));
+      var ordered = query.order(keys.first, ascending: false);
+      for (final k in keys.skip(1)) {
+        ordered = ordered.order(k, ascending: false);
+      }
+      final rows = await ordered.order('id', ascending: false).limit(q.limit);
+      return Paginated(
+        items: (rows as List).map((e) => Tool.fromJson(e)).toList(),
+        cursor: SortKeyset.after(rows, keys, q.limit),
+      );
+    }
 
-    final rows = await ordered.range(offset, offset + q.limit - 1);
+    final offset = _decodeCursor(q.cursor);
+    final rows = await query
+        .order('avg_rating', ascending: false)
+        .order('rating_count', ascending: false)
+        .order('id', ascending: false)
+        .range(offset, offset + q.limit - 1);
     final items = (rows as List).map((e) => Tool.fromJson(e)).toList();
     return Paginated(
       items: items,
@@ -222,6 +241,38 @@ class SupabaseContentRepository implements ContentRepository {
         .order('changed_at', ascending: false)
         .limit(20);
     return (rows as List).map((e) => ToolChange.fromJson(e)).toList();
+  }
+
+  @override
+  Future<List<NewsItem>> newsForTool(String toolId, {int limit = 5}) async {
+    final rows = await _client
+        .from('news')
+        .select('*, news_tools!inner(tool_id)')
+        .eq('news_tools.tool_id', toolId)
+        .eq('status', 'published')
+        .order('published_at', ascending: false)
+        .limit(limit);
+    return (rows as List).map((e) => NewsItem.fromJson(e)).toList();
+  }
+
+  @override
+  Future<List<Tool>> alternativeTools(String toolId) async {
+    final rows = await _client.rpc<dynamic>(
+      'similar_tools',
+      params: {
+        'source_id': toolId,
+        'match_count': 12,
+        // Above the ~0.83 that any two product descriptions score with
+        // gte-small (see ALTERNATIVE_FLOOR in liz_scraper/prerender.py).
+        'min_similarity': 0.86,
+        'window_size': 0.08,
+      },
+    );
+    if (rows is! List) return const [];
+    return rows
+        .whereType<Map>()
+        .map((e) => Tool.fromJson(e.cast<String, dynamic>()))
+        .toList();
   }
 
   @override
@@ -777,12 +828,6 @@ class SupabaseTrackRepository implements TrackRepository {
   }
 
   @override
-  Future<Set<String>> followedToolIds() => _followedIds('tool');
-
-  @override
-  Future<bool> toggleFollowTool(String toolId) => _toggleFollow('tool', toolId);
-
-  @override
   Future<Set<String>> followedUserIds() => _followedIds('user');
 
   @override
@@ -856,5 +901,27 @@ class SupabaseTrackRepository implements TrackRepository {
         .update({'read': true})
         .eq('user_id', uid)
         .eq('read', false);
+  }
+
+  @override
+  Future<UserPrefs?> preferences() async {
+    final uid = _auth.currentUserId;
+    if (uid == null) return null;
+    final row = await _client
+        .from('user_preferences')
+        .select('interests,alert_prefs')
+        .eq('user_id', uid)
+        .maybeSingle();
+    return row == null ? null : UserPrefs.fromJson(row);
+  }
+
+  @override
+  Future<void> savePreferences(UserPrefs prefs) async {
+    final uid = _requireUser();
+    await _client.from('user_preferences').upsert({
+      'user_id': uid,
+      ...prefs.toJson(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
   }
 }

@@ -188,6 +188,10 @@ class _Usage extends ConsumerWidget {
     ('saves', 'Saves'),
     ('visitors_who_saved', 'Visitors who saved something'),
     ('sign_ups', 'Sign-ups'),
+    ('came_back_this_week', 'Visited last week and again this week'),
+    ('visitors_last_week', 'Visitors last week'),
+    ('first_frame_ms_median', 'First screen, median (ms)'),
+    ('first_frame_ms_p90', 'First screen, slowest 10% (ms)'),
   ];
 
   @override

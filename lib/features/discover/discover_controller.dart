@@ -17,6 +17,7 @@ class FeedKey {
     this.pricing,
     this.movingOnly = false,
     this.newWithinDays,
+    this.categories,
   });
   final ToolSort sort;
   final String? category;
@@ -30,6 +31,9 @@ class FeedKey {
   final bool movingOnly;
   final int? newWithinDays;
 
+  /// Several categories, comma-joined so the key compares by value.
+  final String? categories;
+
   ToolQuery toQuery({String? cursor}) => ToolQuery(
     sort: sort,
     categorySlug: category,
@@ -39,6 +43,7 @@ class FeedKey {
     pricing: pricing,
     movingOnly: movingOnly,
     newWithinDays: newWithinDays,
+    categorySlugs: categories?.split(','),
   );
 
   @override
@@ -50,7 +55,8 @@ class FeedKey {
       other.search == search &&
       other.pricing == pricing &&
       other.movingOnly == movingOnly &&
-      other.newWithinDays == newWithinDays;
+      other.newWithinDays == newWithinDays &&
+      other.categories == categories;
 
   @override
   int get hashCode => Object.hash(
@@ -61,6 +67,7 @@ class FeedKey {
     pricing,
     movingOnly,
     newWithinDays,
+    categories,
   );
 }
 

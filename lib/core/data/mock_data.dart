@@ -946,6 +946,23 @@ class MockData {
   ];
 
   static final List<NewsItem> news = [
+    // Names a catalog tool, so its page has an "In the news" section in demo
+    // mode as live pages do.
+    NewsItem(
+      id: 'n-0',
+      title: 'Scriptly adds a storyboard view for short-form video teams',
+      url: 'https://example.com/news/scriptly-storyboards',
+      snippet:
+          'The script tool now lays a draft out shot by shot, with timings.',
+      aiSummary: const [
+        'Drafts can be viewed as a storyboard.',
+        'Each shot carries an estimated duration.',
+      ],
+      source: 'techcrunch',
+      category: 'ai-writing',
+      publishedAt: _ago(days: 1),
+      status: PublishStatus.published,
+    ),
     NewsItem(
       id: 'n-1',
       title:

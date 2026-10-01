@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../auth/guard.dart';
 import '../auth/sign_in_view.dart';
+import '../profile/preferences.dart';
 import 'track_controller.dart';
 
 /// Save/bookmark toggle. Saving is also watching: a saved tool's price
@@ -38,6 +39,17 @@ class BookmarkButton extends ConsumerWidget {
       prompt: 'Sign in to save tools to your list.',
       action: () async {
         final added = await controller.toggle(toolId);
+        if (!context.mounted) return;
+        if (added) {
+          final count = ref.read(bookmarkControllerProvider).length;
+          final ask = await ref
+              .read(preferencesProvider.notifier)
+              .shouldAskAfterSave(count);
+          if (ask && context.mounted) {
+            await showInterestPicker(context);
+            return;
+          }
+        }
         if (!context.mounted) return;
         final guest = !ref.read(isSignedInProvider);
         ScaffoldMessenger.of(context)

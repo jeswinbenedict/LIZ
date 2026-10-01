@@ -8,6 +8,7 @@ import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/models/tool_history.dart';
+import '../../shared/models/user_prefs.dart';
 
 /// How a tool feed is ordered. `rising` implements the "rising early" idea:
 /// high velocity but still low absolute popularity.
@@ -32,9 +33,13 @@ class ToolQuery {
     this.pricing,
     this.movingOnly = false,
     this.newWithinDays,
+    this.categorySlugs,
   });
 
   final ToolSort sort;
+
+  /// Any of these categories (the For you shelf). Null means no filter.
+  final List<String>? categorySlugs;
   final String? categorySlug;
   final String? tag;
   final String? search;
@@ -76,6 +81,7 @@ class ToolQuery {
     pricing: pricing,
     movingOnly: movingOnly,
     newWithinDays: newWithinDays,
+    categorySlugs: categorySlugs,
   );
 }
 
@@ -94,6 +100,14 @@ abstract interface class ContentRepository {
   /// Tools close to this one by meaning, nearest first. May be empty when
   /// nothing in the catalog is genuinely close — see migration 0023.
   Future<List<Tool>> similarTools(String toolId);
+
+  /// A longer list for "Alternatives to X" and the compare picker: up to
+  /// twelve neighbours with a wider similarity window than the strip.
+  Future<List<Tool>> alternativeTools(String toolId);
+
+  /// Published articles whose headline names this tool, newest first.
+  /// Linked in Postgres as each article arrives (migrations 0052–0053).
+  Future<List<NewsItem>> newsForTool(String toolId, {int limit = 5});
 
   /// One point per day for the last [days] days, oldest first
   /// (tool_signal_snapshots). History starts on 29 September 2026.
@@ -347,14 +361,12 @@ abstract interface class AdminRepository {
   Future<List<ErrorGroup>> recentErrors({int limit = 20});
 }
 
-/// Track / follow: bookmarks and follows.
+/// Track / follow: saved tools (which are also what alerts watch) and the
+/// people someone follows.
 abstract interface class TrackRepository {
   Future<Set<String>> bookmarkedToolIds();
   Future<List<Tool>> bookmarkedTools();
   Future<bool> toggleBookmark(String toolId);
-
-  Future<Set<String>> followedToolIds();
-  Future<bool> toggleFollowTool(String toolId);
 
   Future<Set<String>> followedUserIds();
   Future<bool> toggleFollowUser(String userId);
@@ -364,4 +376,11 @@ abstract interface class TrackRepository {
   Future<List<AppNotification>> notifications({int limit = 50});
   Future<void> markNotificationRead(String id);
   Future<void> markAllNotificationsRead();
+
+  /// The signed-in user's private preferences, or null when they have set
+  /// none (or nobody is signed in).
+  Future<UserPrefs?> preferences();
+
+  /// Saves the signed-in user's preferences. Requires a session.
+  Future<void> savePreferences(UserPrefs prefs);
 }

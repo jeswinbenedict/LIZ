@@ -10,6 +10,8 @@ import '../../core/providers.dart';
 import '../../shared/widgets/grouped_list.dart';
 import '../../shared/widgets/page_header.dart';
 import '../auth/auth_controller.dart';
+import 'data_export.dart';
+import 'preferences.dart';
 
 /// Settings as grouped lists (docs/DESIGN.md §8, Profile & Settings).
 class SettingsScreen extends ConsumerWidget {
@@ -20,6 +22,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final signedIn = ref.watch(isSignedInProvider);
     final isLive = ref.watch(isLiveBackendProvider);
+    final prefs = ref.watch(preferencesProvider);
     final p = context.liz;
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
@@ -67,6 +70,44 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 28),
             LizGroup(
+              title: 'Discover',
+              children: [
+                LizGroupRow(
+                  icon: Icons.interests_outlined,
+                  title: 'Your interests',
+                  value: prefs.hasInterests
+                      ? '${prefs.interests.length} chosen'
+                      : 'None',
+                  onTap: () => showInterestPicker(context),
+                ),
+              ],
+            ),
+            if (signedIn) ...[
+              const SizedBox(height: 28),
+              LizGroup(
+                title: 'Alerts for saved tools',
+                children: [
+                  _SwitchRow(
+                    icon: Icons.sell_outlined,
+                    title: 'Price changes',
+                    value: prefs.pricingAlerts,
+                    onChanged: (v) => ref
+                        .read(preferencesProvider.notifier)
+                        .setPricingAlerts(v),
+                  ),
+                  _SwitchRow(
+                    icon: Icons.trending_up,
+                    title: 'Rising into the top ten',
+                    value: prefs.risingAlerts,
+                    onChanged: (v) => ref
+                        .read(preferencesProvider.notifier)
+                        .setRisingAlerts(v),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 28),
+            LizGroup(
               title: 'About',
               children: [
                 LizGroupRow(
@@ -95,6 +136,12 @@ class SettingsScreen extends ConsumerWidget {
                     'Deleting your account removes your profile, saves, '
                     'follows, reviews and posts. It cannot be undone.',
                 children: [
+                  LizGroupRow(
+                    icon: Icons.download_outlined,
+                    title: 'Download my data',
+                    showChevron: false,
+                    onTap: () => _export(context, ref),
+                  ),
                   LizGroupRow(
                     icon: Icons.logout,
                     iconColor: p.textSecondary,
@@ -126,6 +173,32 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _export(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final saved = await ref.read(exportMyDataProvider)();
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              saved
+                  ? 'Your data was downloaded as a JSON file.'
+                  : 'Downloading is only available in the browser.',
+            ),
+          ),
+        );
+    } catch (_) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text("We couldn't put your data together. Try again."),
+          ),
+        );
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
@@ -169,5 +242,42 @@ class SettingsScreen extends ConsumerWidget {
       return;
     }
     if (context.mounted) context.go('/');
+  }
+}
+
+/// A grouped-list row with a switch, at the same height and spacing as
+/// LizGroupRow.
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    // Its own transparent Material: the group behind it is a coloured box,
+    // which would otherwise hide the row's ink.
+    return Material(
+      type: MaterialType.transparency,
+      child: MergeSemantics(
+        child: SwitchListTile(
+          secondary: Icon(icon, color: p.accent),
+          title: Text(
+            title,
+            style: LizText.body.copyWith(color: p.textPrimary),
+          ),
+          value: value,
+          onChanged: onChanged,
+        ),
+      ),
+    );
   }
 }

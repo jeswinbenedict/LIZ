@@ -44,4 +44,41 @@ void main() {
       reason: 'the next page starts after the last row',
     );
   });
+
+  // The catalog grid (momentum, then age). Checked against the live tools
+  // table on 1 October: 27 keyset pages of 24 matched one full ordered read
+  // row for row, for both Rising and Newest.
+  group('over several columns', () {
+    const cols = ['momentum', 'created_at'];
+
+    test('a cursor survives the round trip', () {
+      final c = const SortKeyset([3.25, at], 'id-9').encode();
+      final back = SortKeyset.decode(c, 2)!;
+      expect(back.values, [3.25, at]);
+      expect(back.id, 'id-9');
+    });
+
+    test('anything else starts from the top', () {
+      expect(SortKeyset.decode('24', 2), isNull);
+      expect(SortKeyset.decode('k2:not-base64!', 2), isNull);
+      final one = const SortKeyset([at], 'x').encode();
+      expect(SortKeyset.decode(one, 2), isNull, reason: 'wrong column count');
+    });
+
+    test('the filter walks the columns down to the id', () {
+      expect(
+        const SortKeyset([0, at], 'b7').filter(cols),
+        'momentum.lt.0,'
+        'and(momentum.eq.0,created_at.lt."$at"),'
+        'and(momentum.eq.0,created_at.eq."$at",id.lt.b7)',
+      );
+    });
+
+    test('a missing sort value ends paging rather than guessing', () {
+      final rows = [
+        {'id': 'a', 'momentum': null, 'created_at': at},
+      ];
+      expect(SortKeyset.after(rows, cols, 1), isNull);
+    });
+  });
 }

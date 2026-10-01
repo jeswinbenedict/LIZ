@@ -99,7 +99,7 @@ class LegalDocument {
 
   static const privacy = LegalDocument(
     title: 'Privacy policy',
-    updated: '29 September 2026',
+    updated: '1 October 2026',
     summary:
         'Liz keeps what it needs to run your account, to keep the service '
         'working, and to learn which tools people find useful. Nothing is kept '
@@ -111,14 +111,17 @@ class LegalDocument {
             'counts which pages and tools are viewed, which tool websites '
             'you visit from Liz, what is saved, and what is searched for or '
             'asked. This is how "Rising" knows what people are interested in, '
-            'and how Liz learns what its catalog is missing. The ID is not '
+            'and how Liz learns what its catalog is missing. It also records '
+            'how long the first screen took to appear, so Liz can tell when '
+            'it has become slow. The ID is not '
             'linked to your name, it is not a cookie, and no IP address is '
             'stored with it. Clearing your browser\'s site data resets it.',
         'The words you type into search or ask Liz are kept for 90 days and '
             'then deleted. The counts are kept for 13 months.',
-        'Tools you save without an account, and your light or dark theme '
-            'choice, are kept in your own browser. If you sign in, your saved '
-            'tools move into your account.',
+        'Tools you save without an account, the kinds of tools you say you '
+            'are interested in, and your light or dark theme choice are kept '
+            'in your own browser. If you sign in, your saved tools and '
+            'interests move into your account.',
         'If the app crashes, it sends an error report: the error message, where '
             'in the code it happened, which screen you were on, the app version '
             'and the kind of browser. Reports are deleted after 30 days.',
@@ -130,9 +133,10 @@ class LegalDocument {
       LegalSection('If you have an account', [
         'Your email address and password. The password is stored only as a '
             'hash by the sign-in service; nobody can read it.',
-        'What you choose to add: a display name, a bio and a picture, and the '
-            'tools you save and follow, the reviews, posts, comments and likes '
-            'you leave, and anything you report.',
+        'What you choose to add: a display name, a bio and a picture; the '
+            'tools you save and the people you follow; the kinds of tools you '
+            'are interested in and which alerts you want; the reviews, posts, '
+            'comments and likes you leave; and anything you report.',
         'Notifications sent to you inside Liz. If you turn on browser '
             'notifications, a token that lets Liz send them to that browser.',
         'While you are signed in, the usage counts above are linked to your '
@@ -144,24 +148,35 @@ class LegalDocument {
         'Your display name, bio, picture and role, and the reviews, posts and '
             'comments you write, are public — anyone can read them without an '
             'account.',
-        'What you save, what you follow, your notifications and what you '
-            'report are visible only to you. Reports are also visible to '
-            'moderators.',
+        'What you save, who you follow, your interests and alert choices, '
+            'your notifications and what you report are visible only to you. '
+            'Reports are also visible to moderators.',
       ]),
       LegalSection('Who else handles it', [
         'Supabase hosts the database, sign-in and server functions, and keeps '
             'its own short-lived request logs.',
         'Firebase Cloud Messaging delivers browser notifications, and only if '
             'you turn them on.',
-        'Tool summaries are written by open-source models on Groq. Only the '
-            'public description of a tool is sent — never anything about you.',
-        'Logos are fetched by Liz\'s own server, so the sites of the tools you '
-            'browse do not see your address.',
+        'Tool summaries are written by open-source models on Groq, or on '
+            'another host of open-source models when Groq is unavailable. Only '
+            'the public description of a tool is sent — never anything about '
+            'you.',
+        'Logos are copied to Liz\'s own storage or fetched by Liz\'s own '
+            'server, so the sites of the tools you browse do not see your '
+            'address.',
+      ]),
+      LegalSection('Getting a copy', [
+        'Settings > Download my data saves a file with what your account '
+            'holds: your profile, interests and alert choices, saved tools, '
+            'the people you follow, your reviews, posts and notifications. '
+            'Usage counts are not in it, because they are tied to a random '
+            'browser ID rather than to you.',
       ]),
       LegalSection('Deleting your account', [
         'Settings > Delete account removes your account at once, together with '
-            'your profile, saves, follows, reviews, posts, comments, likes, '
-            'notifications and notification tokens.',
+            'your profile, interests and alert choices, saves, follows, '
+            'reviews, posts, comments, likes, notifications and notification '
+            'tokens.',
         'Three things are kept without your name on them: reports you filed, '
             'so moderation decisions still make sense; usage counts, which '
             'expire as described above; and error reports, which expire after '

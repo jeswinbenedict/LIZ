@@ -6,27 +6,29 @@ import '../../app/theme.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/tool_card.dart';
+import '../profile/preferences.dart';
 import 'discover_controller.dart';
 
-/// Tools Liz first saw in the last seven days, newest first — the plainest
-/// form of "before everyone else". A shelf that scrolls sideways, so it
-/// previews the week without pushing the full catalog off the screen.
-class NewThisWeek extends ConsumerWidget {
-  const NewThisWeek({super.key, this.onSeeAll});
+/// A titled shelf of tool cards that scrolls sideways, so it previews a list
+/// without pushing the full catalog off the screen. Renders nothing while
+/// loading or when empty: the page is complete without it.
+class ToolShelf extends ConsumerWidget {
+  const ToolShelf({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.feedKey,
+    this.action,
+  });
 
-  /// Shows every new tool in the grid below.
-  final VoidCallback? onSeeAll;
-
-  static const days = 7;
+  final String title;
+  final String subtitle;
+  final FeedKey feedKey;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final key = FeedKey(
-      sort: ToolSort.newest,
-      pricing: ref.watch(discoverPricingProvider),
-      newWithinDays: days,
-    );
-    final state = ref.watch(toolFeedProvider(key));
+    final state = ref.watch(toolFeedProvider(feedKey));
     if (state.loading || state.items.isEmpty) return const SizedBox.shrink();
 
     final width = MediaQuery.sizeOf(context).width;
@@ -37,13 +39,7 @@ class NewThisWeek extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          title: 'New this week',
-          subtitle: 'First seen by Liz in the last seven days.',
-          action: onSeeAll == null
-              ? null
-              : TextButton(onPressed: onSeeAll, child: const Text('See all')),
-        ),
+        SectionHeader(title: title, subtitle: subtitle, action: action),
         SizedBox(
           height: toolCardExtent(context),
           child: ListView.separated(
@@ -58,6 +54,58 @@ class NewThisWeek extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Tools Liz first saw in the last seven days, newest first — the plainest
+/// form of "before everyone else".
+class NewThisWeek extends ConsumerWidget {
+  const NewThisWeek({super.key, this.onSeeAll});
+
+  /// Shows every new tool in the grid below.
+  final VoidCallback? onSeeAll;
+
+  static const days = 7;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ToolShelf(
+      title: 'New this week',
+      subtitle: 'First seen by Liz in the last seven days.',
+      feedKey: FeedKey(
+        sort: ToolSort.newest,
+        pricing: ref.watch(discoverPricingProvider),
+        newWithinDays: days,
+      ),
+      action: onSeeAll == null
+          ? null
+          : TextButton(onPressed: onSeeAll, child: const Text('See all')),
+    );
+  }
+}
+
+/// What is rising in the categories someone said they care about (the
+/// interest picker). Absent until they have picked some.
+class ForYou extends ConsumerWidget {
+  const ForYou({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final interests = ref.watch(preferencesProvider).interests;
+    if (interests.isEmpty) return const SizedBox.shrink();
+    return ToolShelf(
+      title: 'For you',
+      subtitle: 'Rising in the kinds of tools you follow.',
+      feedKey: FeedKey(
+        sort: ToolSort.rising,
+        pricing: ref.watch(discoverPricingProvider),
+        categories: ([...interests]..sort()).join(','),
+      ),
+      action: TextButton(
+        onPressed: () => showInterestPicker(context),
+        child: const Text('Edit'),
+      ),
     );
   }
 }
