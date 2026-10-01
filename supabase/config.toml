@@ -59,8 +59,12 @@ verify_jwt = true
 [functions.summarize-tools]
 verify_jwt = true
 
+# Both take a Firebase ID token and verify it themselves (migration 0055).
 [functions.delete-account]
-verify_jwt = true
+verify_jwt = false
+
+[functions.firebase-session]
+verify_jwt = false
 
 # Image requests from the browser carry no Authorization header, so the logo
 # proxy must not require a JWT; it rate-limits by address and can only fetch
@@ -76,3 +80,10 @@ verify_jwt = true
 # Called only by the database with the service role.
 [functions.send-notification]
 verify_jwt = true
+
+# Sign-in is Firebase Authentication (migration 0055). The hosted project needs
+# the same integration added in the dashboard: Authentication → Third-party
+# Auth → Firebase, project ID lizzy-50dc0.
+[auth.third_party.firebase]
+enabled = true
+project_id = "lizzy-50dc0"

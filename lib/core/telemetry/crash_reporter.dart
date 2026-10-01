@@ -39,6 +39,10 @@ class CrashReporter {
   /// current instead.
   static set currentRoute(String? value) => _route = value;
 
+  /// The signed-in person's Liz user id, set by the auth layer. Supabase's
+  /// own `auth.currentUser` is unavailable now that sign-in is Firebase's.
+  static String? userId;
+
   /// Installs the handlers and runs [body] inside a guarded zone.
   ///
   /// The three entry points catch different things: Flutter's own framework
@@ -114,7 +118,7 @@ class CrashReporter {
         'route': route,
         'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
         'app_version': _appVersion,
-        'user_id': client.auth.currentUser?.id,
+        'user_id': userId,
         'context': context,
       });
     } catch (_) {

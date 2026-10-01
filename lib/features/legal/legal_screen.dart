@@ -131,8 +131,9 @@ class LegalDocument {
             'a day.',
       ]),
       LegalSection('If you have an account', [
-        'Your email address and password. The password is stored only as a '
-            'hash by the sign-in service; nobody can read it.',
+        'Your email address and password, or the Google account you sign in '
+            'with. The password is stored only as a hash by the sign-in '
+            'service; nobody can read it.',
         'What you choose to add: a display name, a bio and a picture; the '
             'tools you save and the people you follow; the kinds of tools you '
             'are interested in and which alerts you want; the reviews, posts, '
@@ -153,8 +154,12 @@ class LegalDocument {
             'Reports are also visible to moderators.',
       ]),
       LegalSection('Who else handles it', [
-        'Supabase hosts the database, sign-in and server functions, and keeps '
-            'its own short-lived request logs.',
+        'Supabase hosts the database and server functions, and keeps its own '
+            'short-lived request logs.',
+        'Firebase Authentication, from Google, handles signing in: it holds '
+            'your email address, your password hash or Google sign-in, and '
+            'your authenticator setup if you have one, and sends the emails '
+            'for confirming an address and resetting a password.',
         'Firebase Cloud Messaging delivers browser notifications, and only if '
             'you turn them on.',
         'Tool summaries are written by open-source models on Groq, or on '
@@ -174,7 +179,7 @@ class LegalDocument {
       ]),
       LegalSection('Deleting your account', [
         'Settings > Delete account removes your account at once, together with '
-            'your profile, interests and alert choices, saves, follows, '
+            'your sign-in, profile, interests and alert choices, saves, follows, '
             'reviews, posts, comments, likes, notifications and notification '
             'tokens.',
         'Three things are kept without your name on them: reports you filed, '

@@ -136,7 +136,20 @@ names the tool. A name that is an everyday word ("Switch", "Ember") is on the
 stop list in `ambiguous_tool_name()`; add to it if a tool page shows headlines
 that are not about it, then rerun the back-fill at the end of 0053.
 
-## 7. Secrets
+## 7. Accounts
+
+Sign-in is Firebase Authentication; profiles and everything else are here.
+Setup, the claims, and how the pre-switch account is linked:
+[AUTH.md](AUTH.md). To find who a Firebase account is:
+
+```sql
+select p.* from firebase_accounts fa join profiles p on p.id = fa.user_id
+ where fa.email = 'someone@example.com';
+```
+
+To make someone an admin, set `profiles.role`; their next request sees it.
+
+## 8. Secrets
 
 | Secret | Lives in | Used by |
 |---|---|---|
@@ -149,7 +162,7 @@ that are not about it, then rerun the back-fill at the end of 0053.
 | `FCM_VAPID_KEY` | GitHub Actions | web build (browser notifications) |
 | `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` | Supabase function secrets | summaries (Groq by default) |
 | `AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_MODEL` | Supabase function secrets, optional | used when the first provider fails |
-| `FIREBASE_SERVICE_ACCOUNT` | Supabase function secrets | `send-notification` |
+| `FIREBASE_SERVICE_ACCOUNT` | Supabase function secrets | `send-notification`, `firebase-session`, `delete-account` (Admin SDK key of `lizzy-50dc0`) |
 | `ASK_EVAL_KEY` | Supabase function secrets | lets the Ask Liz evaluation skip the rate limit |
 | ntfy topic | `app_config.alert_ntfy_topic` | health pushes |
 

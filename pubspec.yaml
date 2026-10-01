@@ -54,6 +54,7 @@ dependencies:
   # two-step verification (features/admin/two_step_gate.dart).
   qr_flutter: ^4.1.0
   web: ^1.1.1
+  firebase_auth: ^6.7.0
 
 dev_dependencies:
   flutter_test:

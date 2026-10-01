@@ -1,4 +1,5 @@
 import '../../shared/models/profile.dart';
+import '../errors.dart';
 
 /// Where the signed-in moderator stands with two-step verification
 /// (migration 0042).
@@ -35,6 +36,14 @@ class TotpSetup {
 
   /// The same key, for typing in by hand.
   final String secret;
+}
+
+/// Thrown by a sign-in when the account has two-step verification: the
+/// password was right, and [AuthRepository.completeTwoStepSignIn] with a code
+/// from the authenticator app finishes the sign-in.
+class TwoStepRequiredException extends LizException {
+  const TwoStepRequiredException()
+    : super('Enter the code from your authenticator app.');
 }
 
 /// Authentication surface. Guest browsing is always allowed; only identity
@@ -97,4 +106,7 @@ abstract interface class AuthRepository {
   /// Checks a six-digit code. On success the session is upgraded, and the
   /// requirement is switched on for every moderator from then on.
   Future<void> verifyTwoStep(String factorId, String code);
+
+  /// Finishes a sign-in that threw [TwoStepRequiredException].
+  Future<Profile> completeTwoStepSignIn(String code);
 }

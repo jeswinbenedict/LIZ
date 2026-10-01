@@ -46,6 +46,10 @@ class AuthController extends Notifier<bool> {
   Future<Profile> signInWithApple() =>
       _run(() => ref.read(authRepositoryProvider).signInWithApple());
 
+  /// Finishes a sign-in that asked for an authenticator code.
+  Future<Profile> completeTwoStepSignIn(String code) =>
+      _run(() => ref.read(authRepositoryProvider).completeTwoStepSignIn(code));
+
   Future<Profile> signInAsDemo() =>
       _run(() => ref.read(authRepositoryProvider).signInAsDemo());
 

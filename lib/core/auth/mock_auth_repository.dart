@@ -22,6 +22,9 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<void> verifyTwoStep(String factorId, String code) async {}
 
+  @override
+  Future<Profile> completeTwoStepSignIn(String code) => signInAsDemo();
+
   final _controller = StreamController<Profile?>.broadcast();
   Profile? _current;
 

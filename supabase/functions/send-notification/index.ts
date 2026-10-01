@@ -14,75 +14,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
+import { accessToken, serviceAccount } from '../_shared/google.ts';
 import { fcmMessage, isDeadToken, targetIds } from './logic.ts';
 
-interface ServiceAccount {
-  client_email: string;
-  private_key: string;
-  project_id: string;
-}
-
-// --- Google OAuth2: sign a JWT with the SA key, exchange for an access token.
-let cachedToken: { token: string; exp: number } | null = null;
-
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const b64 = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s+/g, '');
-  const raw = atob(b64);
-  const buf = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
-  return buf.buffer;
-}
-
-function b64url(bytes: Uint8Array | string): string {
-  const str = typeof bytes === 'string'
-    ? bytes
-    : String.fromCharCode(...bytes);
-  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-async function getAccessToken(sa: ServiceAccount): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  if (cachedToken && cachedToken.exp - 60 > now) return cachedToken.token;
-
-  const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-  const claim = b64url(JSON.stringify({
-    iss: sa.client_email,
-    scope: 'https://www.googleapis.com/auth/firebase.messaging',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600,
-  }));
-  const signingInput = `${header}.${claim}`;
-
-  const key = await crypto.subtle.importKey(
-    'pkcs8',
-    pemToArrayBuffer(sa.private_key),
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  const sig = new Uint8Array(
-    await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key,
-      new TextEncoder().encode(signingInput)),
-  );
-  const jwt = `${signingInput}.${b64url(sig)}`;
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt,
-    }),
-  });
-  const tok = await res.json();
-  if (!tok.access_token) throw new Error(`OAuth failed: ${JSON.stringify(tok)}`);
-  cachedToken = { token: tok.access_token, exp: now + 3600 };
-  return tok.access_token;
-}
 
 Deno.serve(async (req) => {
   const pre = preflight(req);
@@ -95,12 +29,11 @@ Deno.serve(async (req) => {
   if (denied) return denied;
 
   try {
-    const raw = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
-    if (!raw) {
+    const sa = serviceAccount();
+    if (!sa) {
       // Push not configured — succeed quietly so triggers don't fail.
       return json({ data: { skipped: true, reason: 'push-not-configured' }, error: null });
     }
-    const sa = JSON.parse(raw) as ServiceAccount;
 
     const payload = await req.json();
     const { title, body, route, data = {} } = payload;
@@ -126,7 +59,7 @@ Deno.serve(async (req) => {
       return json({ data: { sent: 0, reason: 'no-devices' }, error: null });
     }
 
-    const accessToken = await getAccessToken(sa);
+    const bearer = await accessToken(sa, 'https://www.googleapis.com/auth/firebase.messaging');
     const endpoint =
       `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
 
@@ -138,7 +71,7 @@ Deno.serve(async (req) => {
       const r = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${bearer}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(message),

@@ -56,6 +56,8 @@ jobs:
       # Type-checks the handlers the tests do not import, so a broken function
       # is caught here rather than on deploy.
       - run: |
-          for f in ask-liz delete-account embed-tools fetch-news fetch-tools                    logo send-notification summarize-tools tool-updates; do
+          for f in ask-liz delete-account embed-tools fetch-news fetch-tools \
+                   firebase-session logo send-notification summarize-tools \
+                   tool-updates; do
             deno check "supabase/functions/$f/index.ts"
           done

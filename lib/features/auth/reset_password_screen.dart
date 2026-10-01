@@ -4,18 +4,23 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
+import '../../core/auth/firebase_auth_repository.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
 import 'password_validation.dart';
 
 /// Where a reset link lands: choose the new password.
 ///
-/// Arriving here means Supabase has already turned the token in the link into
-/// a session, so this screen only has to set a password on it. If there is no
-/// session, the link was stale or already used, and saying so is more useful
-/// than a form that fails on submit.
+/// Two ways to arrive: from a Firebase reset link, when its emails point here
+/// (Firebase console → Authentication → Templates → custom action URL), with
+/// the reset code in the address; or signed in, to change the password. With
+/// neither, the link was stale or opened somewhere else, and saying so is more
+/// useful than a form that fails on submit.
 class ResetPasswordScreen extends ConsumerStatefulWidget {
-  const ResetPasswordScreen({super.key});
+  const ResetPasswordScreen({super.key, this.resetCode});
+
+  /// The code from a reset link; read from the address when not given.
+  final String? resetCode;
 
   @override
   ConsumerState<ResetPasswordScreen> createState() =>
@@ -70,6 +75,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final signedIn = ref.watch(isSignedInProvider);
+    final viaLink = (widget.resetCode ?? passwordResetCodeIn(Uri.base)) != null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Choose a new password')),
@@ -78,8 +84,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(LizSpacing.lg),
           child: _done
-              ? _Done(scheme: scheme)
-              : !signedIn
+              ? _Done(scheme: scheme, signedIn: signedIn)
+              : !signedIn && !viaLink
               ? _Expired(scheme: scheme)
               : _form(scheme),
         ),
@@ -147,8 +153,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 }
 
 class _Done extends StatelessWidget {
-  const _Done({required this.scheme});
+  const _Done({required this.scheme, required this.signedIn});
   final ColorScheme scheme;
+  final bool signedIn;
 
   @override
   Widget build(BuildContext context) {
@@ -161,14 +168,16 @@ class _Done extends StatelessWidget {
             color: LizColors.positive.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(LizRadius.md),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.check_circle_outline, color: LizColors.positive),
-              SizedBox(width: 12),
+              const Icon(Icons.check_circle_outline, color: LizColors.positive),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Password changed. You are signed in.',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  signedIn
+                      ? 'Password changed. You are signed in.'
+                      : 'Password changed. Sign in with the new one.',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ],

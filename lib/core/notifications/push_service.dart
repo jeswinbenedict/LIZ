@@ -1,23 +1,12 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../firebase/firebase_app.dart';
+
 /// Web push needs a VAPID key. Provide it at build time:
 ///   --dart-define=FCM_VAPID_KEY=...   (from Firebase → Cloud Messaging → Web Push certificates)
 const _vapidKey = String.fromEnvironment('FCM_VAPID_KEY', defaultValue: '');
-
-/// Firebase web app config (public by design). Mobile reads its own config from
-/// google-services.json / GoogleService-Info.plist instead, so this is web-only.
-const _webOptions = FirebaseOptions(
-  apiKey: 'AIzaSyA9X8p7Bpg7DwRTRDUIz6VOjFKYvpUBB6w',
-  authDomain: 'lizzy-50dc0.firebaseapp.com',
-  projectId: 'lizzy-50dc0',
-  storageBucket: 'lizzy-50dc0.firebasestorage.app',
-  messagingSenderId: '828408834851',
-  appId: '1:828408834851:web:4a36206ab71ff2af3e3a96',
-  measurementId: 'G-VYG3P6976J',
-);
 
 /// Background isolate handler. The OS renders "notification" messages itself;
 /// this exists so background/terminated delivery is wired correctly.
@@ -84,14 +73,8 @@ class PushService {
   Future<void> _register({required bool ask}) async {
     final onToken = _onToken;
     if (onToken == null) return;
-    try {
-      // Web needs options passed explicitly; mobile reads them from its native
-      // config file (google-services.json / GoogleService-Info.plist). Throws if
-      // absent — caught below to keep push optional.
-      await Firebase.initializeApp(options: kIsWeb ? _webOptions : null);
-    } catch (_) {
-      return; // Not configured → push disabled, app unaffected.
-    }
+    // Not configured → push disabled, app unaffected.
+    if (!await ensureFirebase()) return;
 
     try {
       final messaging = FirebaseMessaging.instance;

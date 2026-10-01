@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../core/auth/auth_repository.dart';
 import '../../core/auth/enabled_providers.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
@@ -70,6 +71,12 @@ class _SignInViewState extends ConsumerState<SignInView> {
     try {
       await action();
       if (mounted && ref.read(isSignedInProvider)) widget.onSignedIn?.call();
+    } on TwoStepRequiredException {
+      // The password was right; the account also wants a code.
+      final done = mounted && await showTwoStepCodeDialog(context) == true;
+      if (done && mounted && ref.read(isSignedInProvider)) {
+        widget.onSignedIn?.call();
+      }
     } on LizException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
@@ -399,4 +406,93 @@ Future<bool> showSignInSheet(BuildContext context, {String? prompt}) async {
   );
   return context.mounted &&
       ProviderScope.containerOf(context).read(isSignedInProvider);
+}
+
+/// Asks for the six-digit code of an account with two-step verification, and
+/// finishes the sign-in with it. True once signed in.
+Future<bool?> showTwoStepCodeDialog(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const _TwoStepCodeDialog(),
+  );
+}
+
+class _TwoStepCodeDialog extends ConsumerStatefulWidget {
+  const _TwoStepCodeDialog();
+
+  @override
+  ConsumerState<_TwoStepCodeDialog> createState() => _TwoStepCodeDialogState();
+}
+
+class _TwoStepCodeDialogState extends ConsumerState<_TwoStepCodeDialog> {
+  final _code = TextEditingController();
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final code = _code.text.trim();
+    if (!RegExp(r'^\d{6}$').hasMatch(code)) {
+      setState(() => _error = 'Enter the 6-digit code.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(authControllerProvider.notifier)
+          .completeTwoStepSignIn(code);
+      if (mounted) Navigator.of(context).pop(true);
+    } on LizException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Two-step verification'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Enter the code from your authenticator app.'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _code,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            autofillHints: const [AutofillHints.oneTimeCode],
+            decoration: InputDecoration(
+              labelText: 'Code',
+              counterText: '',
+              errorText: _error,
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _submit,
+          child: const Text('Verify'),
+        ),
+      ],
+    );
+  }
 }

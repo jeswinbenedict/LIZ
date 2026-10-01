@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Recognises "your session is no longer valid" among everything else that can
@@ -12,6 +13,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Tokens last an hour and Liz is the kind of thing left open in a tab, so
 /// this is an ordinary Tuesday rather than an edge case.
 bool isSessionExpired(Object error) {
+  // Firebase, which signs people in now (migration 0055): a token it can no
+  // longer refresh, or an account removed or disabled since.
+  if (error is FirebaseAuthException) {
+    return const {
+      'user-token-expired',
+      'user-not-found',
+      'user-disabled',
+      'invalid-user-token',
+    }.contains(error.code);
+  }
+
   if (error is AuthException) {
     // Supabase reports these both ways depending on which endpoint answered.
     if (error.statusCode == '401' || error.statusCode == '403') return true;

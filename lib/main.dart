@@ -10,6 +10,7 @@ import 'app/router.dart';
 import 'app/settings_controller.dart';
 import 'app/theme.dart';
 import 'core/config/env.dart';
+import 'core/firebase/firebase_app.dart';
 import 'core/notifications/push_service.dart';
 import 'core/telemetry/analytics.dart';
 import 'core/telemetry/crash_reporter.dart';
@@ -35,6 +36,9 @@ Future<void> main() async {
         url: Env.supabaseUrl,
         // The same public key under the name Supabase now uses for it.
         publishableKey: Env.supabaseAnonKey,
+        // Sign-in is Firebase's (migration 0055): every request carries the
+        // Firebase ID token, or the public key for a guest.
+        accessToken: firebaseIdToken,
       );
     }
 

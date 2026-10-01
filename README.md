@@ -175,12 +175,12 @@ Everything left needs an account or a credential only the owner can create.
 
 - **Deployment.** The workflows are written and gated on CI; they need the
   Cloudflare and Supabase secrets listed in
-  [docs/OPERATIONS.md](docs/OPERATIONS.md#7-secrets). Set `site_url` in the
-  Supabase dashboard to the deployed origin, and add its `/reset-password` to
-  the redirect allowlist, at the same time.
-- **Email delivery.** No SMTP provider is configured, so password-reset links,
-  magic links and confirmation emails are built and tested but cannot be sent.
-- **Google and Apple sign-in** need OAuth credentials; only email works today.
+  [docs/OPERATIONS.md](docs/OPERATIONS.md#8-secrets). Add the deployed domain
+  to Firebase's authorized domains at the same time.
+- **Firebase sign-in setup.** Sign-in is Firebase Authentication in front of
+  Supabase; enabling its providers and registering it with Supabase are
+  console steps → [docs/AUTH.md](docs/AUTH.md). Firebase sends the sign-in
+  emails, so no SMTP provider is needed.
 - **A contact address** for the privacy policy and terms (`LEGAL_CONTACT`), and
   a legal read of both before launch.
 - **Search Console**: submit `sitemap.xml` once the site is live.

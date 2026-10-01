@@ -190,10 +190,19 @@ hidden with a Restore button.
 
 ## Accounts
 
+Since 1 October 2026 sign-in is Firebase Authentication in front of this
+database — see [AUTH.md](AUTH.md). In short: Firebase ID tokens are verified
+by Supabase (third-party auth) for data requests and by the functions
+themselves for `firebase-session` and `delete-account`; `current_uid()`
+replaces `auth.uid()` in every policy, because a Firebase user id is not a
+uuid; an email address that belongs to an existing account is linked to it
+only once Firebase says the address is verified.
+
 ### Deletion
 
-`delete-account` identifies the caller from their own JWT and removes the auth
-user with the service role; every table cascades from `profiles`.
+`delete-account` verifies the caller's Firebase ID token, deletes their
+profile with the service role — every table cascades from `profiles` — then
+any pre-switch Supabase login and the Firebase account itself.
 
 It had never been run until 26 September, and it failed for anyone who had used
 the product. A new account deleted fine; one that had bookmarked a single tool
@@ -217,10 +226,9 @@ this address has an account, a link is on its way" — whether or not it does. A
 reset form that says "no account found" is a way to find out who has one. Only a
 rate-limit refusal is passed back, because it says nothing about the address.
 
-The link returns to `/reset-password`, built from the running origin so one
-build works locally and deployed. That address has to be on the allowlist under
-Authentication → URL Configuration, or Supabase silently sends the reader to the
-project's default site instead.
+Firebase sends the email and, by default, hosts the page that sets the new
+password. Pointing its action URL at `/reset-password` (AUTH.md, step 6) uses
+Liz's own page instead, which reads the reset code from the address.
 
 ### Expired sessions
 
@@ -269,13 +277,13 @@ them, and treating them as expiry would send someone round a loop.
 
 ## Still open
 
-- **No SMTP provider.** Reset links, magic links and confirmation emails are all
-  built and tested but cannot actually be delivered. Email confirmation stays off
-  until a provider is configured.
-- **Google and Apple sign-in are disabled** on the live project; only email works.
-- **`site_url` still points at `localhost:3000`**, which will misdirect every auth
-  email the moment this is deployed. Add the deployed origin's
-  `/reset-password` to the redirect allowlist at the same time.
+- **Firebase setup is the owner's to do** (AUTH.md, "One-time setup"): enable
+  the providers, register Firebase under Supabase third-party auth, and add
+  the deployed domain to Firebase's authorized domains. Until then the new
+  sign-in cannot complete.
+- **Moderator two-step needs Identity Platform** and TOTP switched on
+  (`tool/firebase_enable_totp.ts`). Until a moderator enrols, the requirement
+  stays off, as it always has.
 - **Malware screening is one list.** New and existing tools are checked against
   URLhaus (`liz_scraper.threats`); a listed site is held back. Other lists
   would need an API key.

@@ -7,7 +7,7 @@ import 'auth/auth_repository.dart';
 // Re-export so widgets can import a single file for query types.
 export 'repository/repositories.dart' show ToolQuery, ToolSort;
 import 'auth/mock_auth_repository.dart';
-import 'auth/supabase_auth_repository.dart';
+import 'auth/firebase_auth_repository.dart';
 import 'config/env.dart';
 import 'storage/storage_service.dart';
 import 'repository/mock_repositories.dart';
@@ -26,7 +26,7 @@ final isLiveBackendProvider = Provider<bool>((ref) => Env.useSupabase);
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   if (client != null) {
-    final repo = SupabaseAuthRepository(client);
+    final repo = FirebaseAuthRepository(client);
     ref.onDispose(repo.dispose);
     return repo;
   }

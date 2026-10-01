@@ -1,10 +1,18 @@
-// POST /delete-account — permanently delete the caller's account. Uses the
-// service role to remove the auth user; ON DELETE CASCADE removes their
-// profile, posts, reviews, bookmarks and the rest (see migration 0033 for why
-// that cascade needs definer-rights counter triggers).
+// POST /delete-account — permanently delete the caller's account.
+//
+// The caller is identified by their Firebase ID token, verified here
+// (verify_jwt = false; see _shared/firebase.ts and migration 0055). Deleting
+// the profile row removes everything tied to it through ON DELETE CASCADE —
+// posts, reviews, saves, preferences, the Firebase link (see migration 0033
+// for why that cascade needs definer-rights counter triggers). Then the
+// sign-in itself goes: the Firebase account, and a Supabase Auth login if the
+// account predates the switch.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
+import { bearerToken } from '../_shared/auth.ts';
 import { corsHeaders, json } from '../_shared/cors.ts';
+import { deleteFirebaseUser, verifyFirebaseToken } from '../_shared/firebase.ts';
+import { serviceAccount } from '../_shared/google.ts';
 import { deleteCaller } from './logic.ts';
 
 Deno.serve(async (req) => {
@@ -12,26 +20,40 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
   try {
-    const authHeader = req.headers.get('Authorization') ?? '';
-    const url = Deno.env.get('SUPABASE_URL')!;
+    const sa = serviceAccount();
+    if (!sa) return json({ data: null, error: 'Firebase is not configured' }, 503);
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    let firebaseUid = '';
 
     const outcome = await deleteCaller({
-      // Identify the caller from their own JWT.
       callerId: async () => {
-        const asUser = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
-          global: { headers: { Authorization: authHeader } },
-        });
-        const { data } = await asUser.auth.getUser();
-        return data.user?.id ?? null;
+        const claims = await verifyFirebaseToken(bearerToken(req), sa.project_id);
+        if (!claims) return null;
+        firebaseUid = claims.sub;
+        const { data } = await admin
+          .from('firebase_accounts')
+          .select('user_id')
+          .eq('firebase_uid', claims.sub)
+          .maybeSingle();
+        return (data?.user_id as string | undefined) ?? null;
       },
       deleteUser: async (id) => {
-        const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-        const { error } = await admin.auth.admin.deleteUser(id);
-        return error?.message ?? null;
+        const { error } = await admin.from('profiles').delete().eq('id', id);
+        if (error) return error.message;
+        // A login from before the switch; most accounts have none.
+        const legacy = await admin.auth.admin.deleteUser(id);
+        if (legacy.error && legacy.error.status !== 404) {
+          console.warn('legacy auth user not deleted', legacy.error.message);
+        }
+        return await deleteFirebaseUser(sa, firebaseUid);
       },
     });
     return json(outcome.body, outcome.status);
   } catch (err) {
-    return json({ data: null, error: String(err) }, 500);
+    console.error('delete-account failed', err);
+    return json({ data: null, error: 'Could not delete the account' }, 500);
   }
 });
