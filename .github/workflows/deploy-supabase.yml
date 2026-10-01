@@ -4,7 +4,13 @@
 # `supabase functions deploy`), so the live project and the repository could
 # drift — a migration applied but never committed, or committed but never
 # applied. This runs after CI passes on main, only when something under
-# supabase/ changed, and can be started by hand.
+# supabase/ changed since the last successful deploy, and can be started by
+# hand.
+#
+# "Changed" is measured from the tag `supabase-deployed`, which this job moves
+# to each commit it deploys. It used to compare a commit with its parent, so a
+# push of several commits whose last one did not touch supabase/ deployed
+# nothing — which happened on 1 October, with four migrations in the push.
 #
 # Setup (one time), repository secrets:
 #   SUPABASE_ACCESS_TOKEN   supabase.com → Account → Access Tokens
@@ -21,6 +27,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write # to move the supabase-deployed tag
+
 concurrency:
   group: deploy-supabase
   cancel-in-progress: false # never interrupt a migration half way
@@ -33,15 +42,19 @@ jobs:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # The commit CI tested, not whatever main is by the time this runs.
+      - uses: actions/checkout@v7
         with:
-          fetch-depth: 2
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
 
       - name: Anything to deploy?
         id: changed
         run: |
+          git fetch --tags --force --quiet
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
-             || git diff --name-only HEAD~1 HEAD | grep -q '^supabase/'; then
+             || ! git rev-parse -q --verify refs/tags/supabase-deployed >/dev/null \
+             || git diff --name-only supabase-deployed HEAD | grep -q '^supabase/'; then
             echo "yes=true" >> "$GITHUB_OUTPUT"
           else
             echo "No changes under supabase/ — nothing to deploy."
@@ -62,7 +75,7 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         if: steps.secrets.outputs.ready == 'true'
         with:
           version: latest
@@ -82,3 +95,9 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase functions deploy --project-ref "$PROJECT_REF"
+
+      - name: Remember what was deployed
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          git tag -f supabase-deployed HEAD
+          git push -f origin refs/tags/supabase-deployed
