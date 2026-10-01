@@ -5,7 +5,7 @@
 // be behind a login either — a visitor asks a question or loads a page of
 // logos without an account, and that is the product working.
 
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 
 /// Who to charge a request to.
 ///

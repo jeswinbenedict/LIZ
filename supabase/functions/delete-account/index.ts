@@ -3,7 +3,7 @@
 // profile, posts, reviews, bookmarks and the rest (see migration 0033 for why
 // that cascade needs definer-rights counter triggers).
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { deleteCaller } from './logic.ts';
 

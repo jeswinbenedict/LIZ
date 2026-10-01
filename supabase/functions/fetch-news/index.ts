@@ -16,7 +16,7 @@
 //
 // Invoke hourly via GitHub Actions or pg_cron (see .github/workflows + docs).
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { parseFeed } from 'https://deno.land/x/rss@1.1.2/mod.ts';
 import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';

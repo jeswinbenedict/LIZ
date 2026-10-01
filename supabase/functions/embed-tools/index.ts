@@ -14,7 +14,7 @@
 //
 // Deploy: supabase functions deploy embed-tools
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
 import { clampLimit, embedBatch } from '../_shared/batch.ts';

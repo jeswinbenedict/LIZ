@@ -12,7 +12,7 @@
 
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { callerKey, InMemoryLimiter, tooManyRequests } from '../_shared/rate_limit.ts';
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import {
   cacheKey,
   cacheUse,

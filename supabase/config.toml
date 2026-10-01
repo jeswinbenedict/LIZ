@@ -61,3 +61,18 @@ verify_jwt = true
 
 [functions.delete-account]
 verify_jwt = true
+
+# Image requests from the browser carry no Authorization header, so the logo
+# proxy must not require a JWT; it rate-limits by address and can only fetch
+# images (see functions/logo/logic.ts). Listed explicitly so a deploy of every
+# function (`supabase functions deploy`, deploy-supabase.yml) cannot flip it.
+[functions.logo]
+verify_jwt = false
+
+# Called by the app with the public anon key.
+[functions.tool-updates]
+verify_jwt = true
+
+# Called only by the database with the service role.
+[functions.send-notification]
+verify_jwt = true

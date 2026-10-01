@@ -11,7 +11,7 @@
 // If FIREBASE_SERVICE_ACCOUNT is absent the function returns a clean 200 with
 // skipped:true, so callers/triggers never error just because push isn't set up.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
 import { fcmMessage, isDeadToken, targetIds } from './logic.ts';

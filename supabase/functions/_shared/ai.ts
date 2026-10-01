@@ -25,11 +25,43 @@
 //     AI_BASE_URL = https://generativelanguage.googleapis.com/v1beta/openai
 //     AI_MODEL    = gemini-2.0-flash
 //     AI_API_KEY  = AIza...            (free at aistudio.google.com)
+//
+// A second provider, optional, is tried when the first is down, out of quota
+// or has retired its model — the failure that once stopped summaries for
+// months. Same three settings with a FALLBACK prefix, for example OpenRouter:
+//     AI_FALLBACK_BASE_URL = https://openrouter.ai/api/v1
+//     AI_FALLBACK_MODEL    = meta-llama/llama-3.3-70b-instruct:free
+//     AI_FALLBACK_API_KEY  = sk-or-...
+// A reply that is merely unhelpful is not retried elsewhere: only a provider
+// that fails to answer.
 
-const AI_API_KEY = Deno.env.get('AI_API_KEY') ?? '';
-const AI_BASE_URL =
-  (Deno.env.get('AI_BASE_URL') ?? 'https://api.groq.com/openai/v1').replace(/\/$/, '');
-const AI_MODEL = Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-20b';
+export interface Provider {
+  name: string;
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+}
+
+/// The primary provider and, when all three of its settings are present, the
+/// fallback. Read through [env] so tests can supply their own.
+export function providersFrom(env: (key: string) => string | undefined): Provider[] {
+  const primary: Provider = {
+    name: 'primary',
+    baseUrl: (env('AI_BASE_URL') ?? 'https://api.groq.com/openai/v1').replace(/\/$/, ''),
+    model: env('AI_MODEL') ?? 'openai/gpt-oss-20b',
+    apiKey: env('AI_API_KEY') ?? '',
+  };
+  const fb = {
+    baseUrl: env('AI_FALLBACK_BASE_URL') ?? '',
+    model: env('AI_FALLBACK_MODEL') ?? '',
+    apiKey: env('AI_FALLBACK_API_KEY') ?? '',
+  };
+  const providers = primary.apiKey ? [primary] : [];
+  if (fb.baseUrl && fb.model && fb.apiKey) {
+    providers.push({ name: 'fallback', ...fb, baseUrl: fb.baseUrl.replace(/\/$/, '') });
+  }
+  return providers;
+}
 
 const MAX_RATE_LIMIT_RETRIES = 3;
 const DEFAULT_RETRY_MS = 4000;
@@ -51,32 +83,35 @@ export function retryAfterMs(header: string | null): number {
   return DEFAULT_RETRY_MS;
 }
 
-/// Calls the provider's Chat Completions endpoint and returns the text reply.
-export async function completeText({
-  system,
-  user,
-  maxTokens = 1024,
-}: {
+export interface CompleteOptions {
   system?: string;
   user: string;
   maxTokens?: number;
-}): Promise<string> {
-  if (!AI_API_KEY) {
-    throw new Error('AI_API_KEY is not configured (set a free Groq/OpenRouter/Gemini key).');
-  }
+}
 
+type Fetch = typeof fetch;
+type Sleep = (ms: number) => Promise<void>;
+const sleep: Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/// One provider's answer, or a thrown error saying why there was none.
+async function askOne(
+  p: Provider,
+  { system, user, maxTokens = 1024 }: CompleteOptions,
+  fetchFn: Fetch,
+  wait: Sleep,
+): Promise<string> {
   const request = () =>
-    fetch(`${AI_BASE_URL}/chat/completions`, {
+    fetchFn(`${p.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${AI_API_KEY}`,
+        Authorization: `Bearer ${p.apiKey}`,
         'Content-Type': 'application/json',
         // OpenRouter likes these; harmless elsewhere.
         'HTTP-Referer': 'https://liz.app',
         'X-Title': 'Liz',
       },
       body: JSON.stringify({
-        model: AI_MODEL,
+        model: p.model,
         messages: [
           ...(system ? [{ role: 'system', content: system }] : []),
           { role: 'user', content: user },
@@ -88,7 +123,7 @@ export async function completeText({
         // the thinking could use up the whole budget and leave no answer.
         // Summaries and rankings need little of it. Only sent to the models
         // that accept it; other providers reject unknown parameters.
-        ...(AI_MODEL.startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {}),
+        ...(p.model.startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {}),
       }),
     });
 
@@ -97,14 +132,13 @@ export async function completeText({
   // an unattended run has nobody to notice and retry it.
   let res = await request();
   for (let attempt = 0; attempt < MAX_RATE_LIMIT_RETRIES && res.status === 429; attempt++) {
-    const wait = retryAfterMs(res.headers.get('retry-after'));
-    await new Promise((resolve) => setTimeout(resolve, wait));
+    await wait(retryAfterMs(res.headers.get('retry-after')));
     res = await request();
   }
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`AI API error ${res.status}: ${body}`);
+    throw new Error(`AI API error ${res.status} (${p.name}): ${body.slice(0, 300)}`);
   }
 
   const data = await res.json();
@@ -114,9 +148,40 @@ export async function completeText({
   // Thrown rather than returned empty, so a caller that counts empty answers
   // against a row (summarize-tools, after three) does not write it off.
   if (!content && choice?.finish_reason === 'length') {
-    throw new Error('the model ran out of tokens before answering');
+    throw new Error(`the model ran out of tokens before answering (${p.name})`);
   }
   return content;
+}
+
+/// Asks each provider in turn until one answers. Split from [completeText]
+/// so tests can pass providers, a fake fetch and an instant sleep.
+export async function completeWith(
+  providers: Provider[],
+  options: CompleteOptions,
+  fetchFn: Fetch = fetch,
+  wait: Sleep = sleep,
+): Promise<string> {
+  if (providers.length === 0) {
+    throw new Error('AI_API_KEY is not configured (set a free Groq/OpenRouter/Gemini key).');
+  }
+  const errors: string[] = [];
+  for (const p of providers) {
+    try {
+      return await askOne(p, options, fetchFn, wait);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+      if (providers.length > 1) console.warn(`AI provider ${p.name} failed: ${errors.at(-1)}`);
+    }
+  }
+  throw new Error(errors.join(' | '));
+}
+
+const PROVIDERS = providersFrom((k) => Deno.env.get(k));
+
+/// Calls the configured provider (then the fallback, if one is set) and
+/// returns the text reply.
+export function completeText(options: CompleteOptions): Promise<string> {
+  return completeWith(PROVIDERS, options);
 }
 
 /// Extracts a JSON value from a model response that may be wrapped in prose or

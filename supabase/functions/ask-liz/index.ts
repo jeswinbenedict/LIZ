@@ -15,7 +15,7 @@
 //
 // Deploy: supabase functions deploy ask-liz
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { presentsEvalKey } from '../_shared/auth.ts';
 import { callerKey, tooManyRequests, withinRateLimit } from '../_shared/rate_limit.ts';

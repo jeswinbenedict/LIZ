@@ -8,7 +8,7 @@
 // Auth: call with any valid project JWT (anon or service role). The daily cron
 // uses the service role from Vault.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
 import { isNonProduct, websiteFor } from './logic.ts';
