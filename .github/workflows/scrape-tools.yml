@@ -123,3 +123,34 @@ jobs:
             exit 0
           fi
           python -m liz_scraper.signals
+
+      # New tools arrive with a logo on someone else's server, fetched through
+      # an Edge Function on every view. Store each once as a small WebP in the
+      # public `logos` bucket so the Storage CDN serves it (migration 0048).
+      - name: Store new logos
+        if: ${{ inputs.dry_run != true }}
+        working-directory: scrapers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets not set — skipping logos."
+            exit 0
+          fi
+          python -m liz_scraper.store_logos --apply --limit 200
+
+      # A site can be compromised after it was listed. Hold any published tool
+      # whose host is on abuse.ch URLhaus's malware list (liz_scraper.threats).
+      - name: Check sites against the malware list
+        if: ${{ inputs.dry_run != true }}
+        working-directory: scrapers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets not set — skipping."
+            exit 0
+          fi
+          python -m liz_scraper.threats --apply

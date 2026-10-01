@@ -47,7 +47,7 @@ lib/                Flutter web app
   app/              router, theme, responsive shell
   core/             auth, config, repositories (mock + Supabase), telemetry
   features/         discover, search, ask_liz, tool_detail, news, alerts,
-                    track (saved, follow), compare, profile, auth, admin,
+                    track (saved, follow people), compare, profile, auth, admin,
                     community (built, hidden from navigation — see below)
   shared/           models and widgets
 supabase/
@@ -88,13 +88,21 @@ estimated or seeded.
 Each tool page shows that history as a signal line, and a timeline of what
 happened to the tool: when Liz first saw it, its Hacker News launch, and every
 price change since 29 September 2026. Saving a tool is also watching it — its
-price changes and rises arrive in Alerts.
+price changes and rises arrive in Alerts, and Settings decides which. Headlines
+from the news feed that name a tool appear on its page, and people who pick
+the kinds of tools they follow get a "For you" shelf on Discover.
+
+Every tool can be compared with its closest alternatives, and has an
+"Alternatives to X" page when at least three are genuinely close. Makers get
+an embeddable "Listed on Liz" / "Rising on Liz" badge from their tool's page.
 
 ## Found by search engines
 
-The app is drawn on a canvas, so the deploy also writes one HTML page per tool
-and category — own title, description, structured data and text — plus a
-sitemap, so search engines and link previews see real content.
+The app is drawn on a canvas, so the deploy also writes one HTML page per tool,
+category and alternatives list — own title, description, structured data and
+text — plus a sitemap, so search engines and link previews see real content.
+The same text is shown as a plain page while the app loads, so a slow phone
+reads the tool in under a second instead of watching a logo.
 
 → [docs/SEO.md](docs/SEO.md)
 
@@ -104,8 +112,12 @@ sitemap, so search engines and link previews see real content.
 and news freshness, embedding and summary coverage, unexplained backlog, failed
 scheduled calls, crash reports, open reports, and whether the daily signal
 history and outside signals are still being written. It runs hourly and notifies admins
-when something fails, at most once every six hours. The admin console's
-**Health** tab shows all of it.
+— in the app and as a phone push through ntfy — when something fails, at most
+once every six hours. The admin console's **Health** tab shows all of it,
+along with real visitors' first-screen times and how many came back.
+
+Backups, crash-report symbolication, deploys, scheduled jobs and every secret
+→ [docs/OPERATIONS.md](docs/OPERATIONS.md)
 
 ## Security
 
@@ -120,11 +132,13 @@ problems fixed along the way.
 flutter analyze                                           # clean at every level
 flutter test                                              # app
 cd scrapers && python -m pytest tests                     # scraper
+ruff check scrapers tool --config scrapers/pyproject.toml # Python lint
 cd scrapers && python -m liz_scraper.eval_ask              # Ask Liz, 60 questions (live)
 deno test --allow-env --no-check supabase/functions/tests # Edge Functions
 ```
 
-All three run in CI on every push, and `flutter analyze` fails on infos too.
+All of these but the live evaluation run in CI on every push, along with a
+type check of every Edge Function, and `flutter analyze` fails on infos too.
 Beyond behaviour, `test/screen_sweep_test.dart` puts every screen, signed out
 and signed in, through a 320-pixel phone, 1.5× text and a tablet, and through
 Flutter's accessibility guidelines — labelled controls, 48-pixel tap targets
@@ -157,13 +171,16 @@ They were written from the code, not by a lawyer.
 
 ## Still to do
 
+Everything left needs an account or a credential only the owner can create.
+
+- **Deployment.** The workflows are written and gated on CI; they need the
+  Cloudflare and Supabase secrets listed in
+  [docs/OPERATIONS.md](docs/OPERATIONS.md#7-secrets). Set `site_url` in the
+  Supabase dashboard to the deployed origin, and add its `/reset-password` to
+  the redirect allowlist, at the same time.
 - **Email delivery.** No SMTP provider is configured, so password-reset links,
   magic links and confirmation emails are built and tested but cannot be sent.
 - **Google and Apple sign-in** need OAuth credentials; only email works today.
 - **A contact address** for the privacy policy and terms (`LEGAL_CONTACT`), and
   a legal read of both before launch.
-- **Deployment.** No host is configured yet, `site_url` still points at
-  `localhost:3000`, and URLs use `/#/` rather than clean paths. Build with
-  `--wasm` when it happens: evaluated, working and 30% smaller →
-  [docs/WEB_BUILD.md](docs/WEB_BUILD.md).
-  `toolBySlug()` is kept for the per-tool URLs that work will add.
+- **Search Console**: submit `sitemap.xml` once the site is live.

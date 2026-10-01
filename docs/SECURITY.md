@@ -276,6 +276,9 @@ them, and treating them as expiry would send someone round a loop.
 - **`site_url` still points at `localhost:3000`**, which will misdirect every auth
   email the moment this is deployed. Add the deployed origin's
   `/reset-password` to the redirect allowlist at the same time.
+- **Malware screening is one list.** New and existing tools are checked against
+  URLhaus (`liz_scraper.threats`); a listed site is held back. Other lists
+  would need an API key.
 - **The scraper machine holds the full service key** (`~/.liz/n8n.env`). A
   narrower credential that can only write the staging columns would limit what
   a compromised laptop exposes.

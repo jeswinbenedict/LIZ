@@ -8,13 +8,15 @@
 #   2. In GitHub → repo → Settings → Secrets and variables → Actions, add:
 #        SUPABASE_FUNCTIONS_URL   e.g. https://<ref>.functions.supabase.co
 #        SUPABASE_SERVICE_ROLE_KEY  your project's service role key (secret)
-#   3. That's it — it runs hourly, and you can trigger it manually below.
+#   3. Use the button to fetch news on demand; the hourly run is pg_cron's.
 
 name: fetch-news
 
+# Manual only. The hourly schedule lives in the database (pg_cron job
+# `fetch-news-hourly`, migration 0032), which already calls the function every
+# hour; this workflow called it a second time each hour and spent about 720 of
+# the 2,000 free Actions minutes a month doing so.
 on:
-  schedule:
-    - cron: '0 * * * *' # every hour (UTC)
   workflow_dispatch: {} # manual "Run workflow" button
 
 jobs:

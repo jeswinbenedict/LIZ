@@ -15,14 +15,22 @@ After `flutter build web`, `python -m liz_scraper.prerender` (in
 |---|---|---|
 | `tools/<slug>.html` | `/tools/<slug>` | the tool's title, description, canonical link, Open Graph and Twitter tags, schema.org `SoftwareApplication`, and its text: tagline, summary, description, price, category, signals, links |
 | `category/<slug>.html` | `/category/<slug>` | every tool in the category, linked, as a schema.org `ItemList` |
+| `alternatives/<slug>.html` | `/alternatives/<slug>` | the tool's closest alternatives — written only when at least three score 0.88 or more on meaning, so there are no thin pages |
+| `badge/<slug>.svg`, `-dark.svg` | | the embeddable maker badge, linking back to the tool page |
 | `index.html` | `/` | this week's rising tools and every category, linked |
 | `sitemap.xml`, `robots.txt` | | every page above; personal pages excluded |
 
 Each is a copy of the built `index.html`, so the app starts on it exactly as it
-would anywhere else. The text sits in a visually hidden `<main id="liz-page">`
-— behind the canvas in any case — and is hidden from screen readers once the
-app draws its first frame, so it is never read twice. It is the same content
-the app shows: a summary of the page, not cloaking.
+would anywhere else. The text sits in `<main id="liz-page">`, shown as a plain
+readable page while the app loads (largest contentful paint fell from 5.3 s to
+about 0.8 s), then visually hidden and hidden from screen readers once the app
+draws its first frame, so it is never read twice. It is the same content the
+app shows: a summary of the page, not cloaking.
+
+The app itself also builds its accessibility tree on the web from the start
+(`SEMANTICS`, on by default), so headings, links and buttons exist in the DOM
+for screen readers and crawlers that run script. Measured: no cost to
+interactivity.
 
 Once the app is running, `PageTitle` (lib/shared/widgets/page_title.dart)
 keeps the tab title the same as the static one. Google reads the title after

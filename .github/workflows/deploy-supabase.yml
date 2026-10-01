@@ -1,0 +1,84 @@
+# Applies database migrations and deploys Edge Functions from CI.
+#
+# Until now both were run by hand from one laptop (`supabase db push`,
+# `supabase functions deploy`), so the live project and the repository could
+# drift — a migration applied but never committed, or committed but never
+# applied. This runs after CI passes on main, only when something under
+# supabase/ changed, and can be started by hand.
+#
+# Setup (one time), repository secrets:
+#   SUPABASE_ACCESS_TOKEN   supabase.com → Account → Access Tokens
+#   SUPABASE_DB_PASSWORD    the project's database password
+# The project ref is not secret and is set below. Until both secrets exist
+# the job warns and does nothing.
+
+name: deploy-supabase
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-supabase
+  cancel-in-progress: false # never interrupt a migration half way
+
+env:
+  PROJECT_REF: yluabeijvbydxczfxclk
+
+jobs:
+  deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Anything to deploy?
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+             || git diff --name-only HEAD~1 HEAD | grep -q '^supabase/'; then
+            echo "yes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes under supabase/ — nothing to deploy."
+            echo "yes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check secrets
+        id: secrets
+        if: steps.changed.outputs.yes == 'true'
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$PASSWORD" ]; then
+            echo "::warning::SUPABASE_ACCESS_TOKEN / SUPABASE_DB_PASSWORD not set — not deployed."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: supabase/setup-cli@v1
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          version: latest
+
+      - name: Migrations
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Edge Functions
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy --project-ref "$PROJECT_REF"

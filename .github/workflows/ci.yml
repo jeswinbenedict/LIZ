@@ -38,7 +38,10 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-      - run: pip install -r scrapers/requirements.txt
+      - run: pip install -r scrapers/requirements.txt ruff==0.6.9
+      # Lint first: an unused import or an undefined name is cheaper to catch
+      # here than in a 3 a.m. scrape. Config in scrapers/pyproject.toml.
+      - run: ruff check scrapers tool --config scrapers/pyproject.toml
       - run: python -m pytest scrapers/tests -q
 
   edge-functions:
@@ -53,6 +56,6 @@ jobs:
       # Type-checks the handlers the tests do not import, so a broken function
       # is caught here rather than on deploy.
       - run: |
-          for f in ask-liz embed-tools fetch-news fetch-tools; do
+          for f in ask-liz delete-account embed-tools fetch-news fetch-tools                    logo send-notification summarize-tools tool-updates; do
             deno check "supabase/functions/$f/index.ts"
           done
