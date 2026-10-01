@@ -229,8 +229,8 @@ class LizMotion {
   /// [duration], or nothing when the reader has asked for reduced motion.
   static Duration of(BuildContext context, Duration duration) =>
       MediaQuery.maybeDisableAnimationsOf(context) == true
-          ? Duration.zero
-          : duration;
+      ? Duration.zero
+      : duration;
 }
 
 /// Shadows for the raised and floating materials (docs/DESIGN.md §5).
@@ -525,7 +525,10 @@ class LizTheme {
             final base = p.accentFill;
             // Hover darkens by a step in either theme, so white stays legible.
             if (s.contains(WidgetState.hovered)) {
-              return Color.alphaBlend(Colors.black.withValues(alpha: 0.1), base);
+              return Color.alphaBlend(
+                Colors.black.withValues(alpha: 0.1),
+                base,
+              );
             }
             return base;
           }),
@@ -729,4 +732,3 @@ class LizTheme {
     );
   }
 }
-

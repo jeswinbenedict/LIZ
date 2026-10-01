@@ -141,7 +141,11 @@ enum GlassEdge { top, bottom }
 /// The one signature material (docs/DESIGN.md §5): the surface at 72%
 /// over a 24px blur, so content shows through as it scrolls underneath.
 class GlassBar extends StatelessWidget {
-  const GlassBar({super.key, required this.child, this.edge = GlassEdge.bottom});
+  const GlassBar({
+    super.key,
+    required this.child,
+    this.edge = GlassEdge.bottom,
+  });
   final Widget child;
   final GlassEdge edge;
 
@@ -528,7 +532,9 @@ class _AccountItem extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      user == null ? 'Save and follow tools' : '@${user.username}',
+                      user == null
+                          ? 'Save and follow tools'
+                          : '@${user.username}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LizText.footnote.copyWith(color: p.textSecondary),

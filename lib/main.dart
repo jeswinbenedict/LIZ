@@ -63,10 +63,15 @@ class _LizAppState extends ConsumerState<LizApp> {
   @override
   void initState() {
     super.initState();
-    // Kick off push registration after first frame. Fully guarded: if Firebase
-    // isn't configured on this platform/build, it silently no-ops.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      PushService.instance.init(onToken: _persistToken, onOpen: _openRoute);
+    // Resume push after the first frame, for a browser that turned it on
+    // before. Nobody is asked for permission here (see PushService).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await ref.read(sharedPreferencesProvider.future);
+      await PushService.instance.init(
+        prefs: prefs,
+        onToken: _persistToken,
+        onOpen: _openRoute,
+      );
     });
   }
 

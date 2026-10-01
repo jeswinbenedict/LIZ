@@ -36,15 +36,14 @@ class NewsState {
     Object? error,
     bool clearError = false,
     bool? live,
-  }) =>
-      NewsState(
-        items: items ?? this.items,
-        loading: loading ?? this.loading,
-        loadingMore: loadingMore ?? this.loadingMore,
-        cursor: clearCursor ? null : (cursor ?? this.cursor),
-        error: clearError ? null : (error ?? this.error),
-        live: live ?? this.live,
-      );
+  }) => NewsState(
+    items: items ?? this.items,
+    loading: loading ?? this.loading,
+    loadingMore: loadingMore ?? this.loadingMore,
+    cursor: clearCursor ? null : (cursor ?? this.cursor),
+    error: clearError ? null : (error ?? this.error),
+    live: live ?? this.live,
+  );
 }
 
 /// Loads the tech-news feed and, when the live backend is connected, subscribes
@@ -84,8 +83,9 @@ class NewsController extends Notifier<NewsState> {
     if (state.loadingMore || !state.hasMore) return;
     state = state.copyWith(loadingMore: true);
     try {
-      final page =
-          await ref.read(contentRepositoryProvider).news(cursor: state.cursor);
+      final page = await ref
+          .read(contentRepositoryProvider)
+          .news(cursor: state.cursor);
       if (!ref.mounted) return;
       state = state.copyWith(
         items: [...state.items, ...page.items],
@@ -111,10 +111,10 @@ class NewsController extends Notifier<NewsState> {
           callback: _onInsert,
         )
         .subscribe((status, _) {
-      if (status == RealtimeSubscribeStatus.subscribed && ref.mounted) {
-        state = state.copyWith(live: true);
-      }
-    });
+          if (status == RealtimeSubscribeStatus.subscribed && ref.mounted) {
+            state = state.copyWith(live: true);
+          }
+        });
     ref.onDispose(() => client.removeChannel(channel));
   }
 

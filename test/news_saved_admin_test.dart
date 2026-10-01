@@ -35,13 +35,16 @@ void main() {
   });
 
   group('saved', () {
-    testWidgets('asks a guest to sign in rather than showing an empty list',
-        (tester) async {
+    testWidgets('asks a guest to sign in rather than showing an empty list', (
+      tester,
+    ) async {
       // A signed-out visitor has no list; "nothing saved" would be misleading.
       await _pump(tester, const SavedScreen());
 
-      expect(find.textContaining(RegExp('sign in', caseSensitive: false)),
-          findsWidgets);
+      expect(
+        find.textContaining(RegExp('sign in', caseSensitive: false)),
+        findsWidgets,
+      );
     });
   });
 
@@ -56,8 +59,10 @@ void main() {
       // screen would satisfy a weaker check while telling the visitor nothing.
       expect(find.text('Admins only'), findsOneWidget);
       expect(find.textContaining("don't have permission"), findsOneWidget);
-      expect(find.textContaining(RegExp('approve', caseSensitive: false)),
-          findsNothing);
+      expect(
+        find.textContaining(RegExp('approve', caseSensitive: false)),
+        findsNothing,
+      );
     });
   });
 }

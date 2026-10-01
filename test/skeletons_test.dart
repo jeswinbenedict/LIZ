@@ -34,15 +34,17 @@ void main() {
     expect(find.byType(SkeletonBox), findsAtLeast(6));
   });
 
-  testWidgets('the news list shows article-shaped placeholders',
-      (tester) async {
+  testWidgets('the news list shows article-shaped placeholders', (
+    tester,
+  ) async {
     await _pump(tester, const NewsListSkeletonSliver(count: 3));
 
     expect(find.byType(SkeletonBox), findsAtLeast(3));
   });
 
-  testWidgets('a screen reader hears one loading message, not the shapes',
-      (tester) async {
+  testWidgets('a screen reader hears one loading message, not the shapes', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     await _pump(tester, const ToolGridSkeletonSliver(count: 6));
 
@@ -50,9 +52,14 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('the shimmer stops when the platform asks for reduced motion',
-      (tester) async {
-    await _pump(tester, const ToolGridSkeletonSliver(), disableAnimations: true);
+  testWidgets('the shimmer stops when the platform asks for reduced motion', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const ToolGridSkeletonSliver(),
+      disableAnimations: true,
+    );
 
     // With no repeating animation there is no endlessly pending frame, so the
     // tester can settle. Under the shimmer this call would time out.
@@ -60,8 +67,9 @@ void main() {
     expect(find.byType(ToolCardSkeleton), findsWidgets);
   });
 
-  testWidgets('the placeholders occupy the space the cards will fill',
-      (tester) async {
+  testWidgets('the placeholders occupy the space the cards will fill', (
+    tester,
+  ) async {
     await _pump(tester, const ToolGridSkeletonSliver(count: 4));
 
     // The placeholder must be exactly as tall as the real card, or the page

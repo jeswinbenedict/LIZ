@@ -25,6 +25,8 @@ jobs:
       - run: flutter pub get
       # Clean at every level, infos included, since September 2026. Keeping it
       # fatal is what stops a backlog of 50 "only infos" from growing back.
+      # One formatting, so a diff shows what changed and nothing else.
+      - run: dart format --output=none --set-exit-if-changed lib test tool
       - run: flutter analyze
       - run: flutter test
 

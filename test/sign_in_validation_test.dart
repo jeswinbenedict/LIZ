@@ -32,8 +32,9 @@ void main() {
     expect(find.text('Enter your email address.'), findsOneWidget);
   });
 
-  testWidgets('a malformed address is caught before the network',
-      (tester) async {
+  testWidgets('a malformed address is caught before the network', (
+    tester,
+  ) async {
     await _pump(tester);
     await tester.enterText(find.byType(TextField).first, 'not-an-email');
     await _submit(tester);
@@ -41,8 +42,9 @@ void main() {
     expect(find.textContaining("doesn't look right"), findsOneWidget);
   });
 
-  testWidgets('a valid address with no password says which box is empty',
-      (tester) async {
+  testWidgets('a valid address with no password says which box is empty', (
+    tester,
+  ) async {
     await _pump(tester);
     await tester.enterText(find.byType(TextField).first, 'someone@example.com');
     await _submit(tester);
@@ -50,16 +52,23 @@ void main() {
     expect(find.text('Enter your password.'), findsOneWidget);
   });
 
-  testWidgets('addresses with plus tags and subdomains are accepted',
-      (tester) async {
+  testWidgets('addresses with plus tags and subdomains are accepted', (
+    tester,
+  ) async {
     // Over-strict patterns reject perfectly valid addresses; these are real.
-    for (final email in ['a+tag@example.co.uk', 'first.last@mail.example.com']) {
+    for (final email in [
+      'a+tag@example.co.uk',
+      'first.last@mail.example.com',
+    ]) {
       await _pump(tester);
       await tester.enterText(find.byType(TextField).first, email);
       await _submit(tester);
 
-      expect(find.textContaining("doesn't look right"), findsNothing,
-          reason: '$email should be accepted');
+      expect(
+        find.textContaining("doesn't look right"),
+        findsNothing,
+        reason: '$email should be accepted',
+      );
     }
   });
 }

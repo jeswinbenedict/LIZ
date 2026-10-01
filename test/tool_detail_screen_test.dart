@@ -37,12 +37,15 @@ void main() {
     expect(find.text('Visit website'), findsOneWidget);
   });
 
-  testWidgets('an unknown id fails visibly rather than hanging', (tester) async {
+  testWidgets('an unknown id fails visibly rather than hanging', (
+    tester,
+  ) async {
     await _pump(tester, 'does-not-exist');
 
     // A blank screen would leave someone waiting forever on a dead link.
-    final hasMessage = find.textContaining(RegExp("not found|couldn't|unavailable",
-        caseSensitive: false));
+    final hasMessage = find.textContaining(
+      RegExp("not found|couldn't|unavailable", caseSensitive: false),
+    );
     expect(hasMessage, findsWidgets);
   });
 

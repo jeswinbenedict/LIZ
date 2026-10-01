@@ -22,17 +22,22 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('an initial query is searched without retyping it',
-        (tester) async {
+    testWidgets('an initial query is searched without retyping it', (
+      tester,
+    ) async {
       await _pump(tester, const SearchScreen(initialQuery: 'script'));
 
       // Arriving from a link should show results, not an empty box.
       expect(find.text('Scriptly'), findsWidgets);
     });
 
-    testWidgets('a query with no matches says so rather than showing nothing',
-        (tester) async {
-      await _pump(tester, const SearchScreen(initialQuery: 'zzzz-no-such-tool'));
+    testWidgets('a query with no matches says so rather than showing nothing', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const SearchScreen(initialQuery: 'zzzz-no-such-tool'),
+      );
 
       expect(find.text('Scriptly'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -62,15 +67,18 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('explains when a shared link points at a withdrawn tool',
-        (tester) async {
+    testWidgets('explains when a shared link points at a withdrawn tool', (
+      tester,
+    ) async {
       // One id resolves, one does not — a comparison of one is meaningless, but
       // the reason has to be visible or the link looks simply broken.
       await _pump(tester, const CompareScreen(toolIds: ['t-1', 'nope']));
 
       expect(find.textContaining('no longer listed'), findsOneWidget);
-      expect(find.textContaining('Select tools from your Saved list'),
-          findsNothing);
+      expect(
+        find.textContaining('Select tools from your Saved list'),
+        findsNothing,
+      );
     });
 
     testWidgets('asks for a selection when given none', (tester) async {

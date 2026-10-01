@@ -138,10 +138,9 @@ class _ContentTabState extends ConsumerState<ContentTab> {
                       next.contains(id) ? next.remove(id) : next.add(id);
                       ref.read(adminSelectionProvider.notifier).set(next);
                     },
-                    onSelectAll: () =>
-                        ref.read(adminSelectionProvider.notifier).set({
-                          for (final t in result.items) t.id,
-                        }),
+                    onSelectAll: () => ref
+                        .read(adminSelectionProvider.notifier)
+                        .set({for (final t in result.items) t.id}),
                     onPage: (delta) {
                       ref
                           .read(adminQueryProvider.notifier)

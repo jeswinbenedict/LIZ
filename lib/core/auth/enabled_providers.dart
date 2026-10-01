@@ -37,8 +37,9 @@ class EnabledAuthProviders {
 /// Resolves once per app run. Failures resolve to "no social providers" rather
 /// than throwing: showing an email form is a working sign-in, while showing a
 /// button that cannot succeed is not.
-final enabledAuthProvidersProvider =
-    FutureProvider<EnabledAuthProviders>((ref) async {
+final enabledAuthProvidersProvider = FutureProvider<EnabledAuthProviders>((
+  ref,
+) async {
   if (!Env.useSupabase) return EnabledAuthProviders.none;
 
   final url = Uri.parse('${Env.supabaseUrl}/auth/v1/settings');

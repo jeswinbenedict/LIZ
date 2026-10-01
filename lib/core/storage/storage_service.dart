@@ -49,7 +49,9 @@ class SupabaseStorageService implements StorageService {
     final name =
         '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1 << 32)}.$safeExt';
     final path = '$uid/$name';
-    await _client.storage.from(bucket).uploadBinary(
+    await _client.storage
+        .from(bucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(contentType: contentType, upsert: true),
@@ -71,6 +73,7 @@ class MockStorageService implements StorageService {
     String contentType = 'image/jpeg',
   }) async {
     throw const LizException(
-        'Image upload needs the live backend (run in Supabase mode).');
+      'Image upload needs the live backend (run in Supabase mode).',
+    );
   }
 }

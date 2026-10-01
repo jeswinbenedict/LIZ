@@ -37,7 +37,10 @@ class LizPill extends StatelessWidget {
             minimum: 4.8,
           );
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: icon != null ? 6 : 7, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: icon != null ? 6 : 7,
+        vertical: 3,
+      ),
       decoration: ShapeDecoration(
         color: fill,
         shape: LizRadius.shape(LizRadius.xs),

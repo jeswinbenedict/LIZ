@@ -123,7 +123,10 @@ class _LiveBadge extends StatelessWidget {
               style: LizText.footnote.copyWith(
                 color: LizColors.legibleOn(
                   p.positive,
-                  Color.alphaBlend(p.positive.withValues(alpha: 0.12), p.canvas),
+                  Color.alphaBlend(
+                    p.positive.withValues(alpha: 0.12),
+                    p.canvas,
+                  ),
                 ),
                 fontWeight: FontWeight.w700,
               ),

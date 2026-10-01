@@ -19,8 +19,11 @@ void main() {
     // This is the live project's actual configuration.
     const providers = EnabledAuthProviders({'email'});
 
-    expect(providers.hasSocial, isFalse,
-        reason: 'an "or" divider with nothing above it reads as a missing button');
+    expect(
+      providers.hasSocial,
+      isFalse,
+      reason: 'an "or" divider with nothing above it reads as a missing button',
+    );
   });
 
   test('hasSocial is true as soon as one provider is enabled', () {

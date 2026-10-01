@@ -141,10 +141,10 @@ class _PointHolder extends StatelessWidget {
     ),
     _Point(
       icon: Icons.notifications_none,
-      title: 'Followed',
+      title: 'Watched',
       text:
-          'Sign in and follow a tool to hear when its price changes or it '
-          'breaks into the top ten.',
+          'Save a tool to hear when its price changes or it breaks into the '
+          'top ten.',
     ),
   ];
 

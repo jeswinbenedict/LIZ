@@ -23,24 +23,28 @@ class UserProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/community');
-          }
-        }),
+        leading: BackButton(
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/community');
+            }
+          },
+        ),
         title: const Text('Profile'),
       ),
       body: profileAsync.when(
         loading: () => const LoadingView(),
-        error: (_, _) =>
-            ErrorView(onRetry: () => ref.invalidate(profileByIdProvider(userId))),
+        error: (_, _) => ErrorView(
+          onRetry: () => ref.invalidate(profileByIdProvider(userId)),
+        ),
         data: (profile) => profile == null
             ? const EmptyView(
                 icon: Icons.person_off_outlined,
                 title: 'User not found',
-                message: 'This profile may have been removed.')
+                message: 'This profile may have been removed.',
+              )
             : _Body(profile: profile),
       ),
     );
@@ -80,19 +84,25 @@ class _Body extends ConsumerWidget {
                           Row(
                             children: [
                               Flexible(
-                                child: Text(profile.displayName,
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge),
+                                child: Text(
+                                  profile.displayName,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
                               ),
                               if (profile.role.canModerate) ...[
                                 const SizedBox(width: 8),
-                                Icon(Icons.verified,
-                                    size: 18, color: scheme.primary),
+                                Icon(
+                                  Icons.verified,
+                                  size: 18,
+                                  color: scheme.primary,
+                                ),
                               ],
                             ],
                           ),
-                          Text('@${profile.username}',
-                              style: TextStyle(color: scheme.onSurfaceVariant)),
+                          Text(
+                            '@${profile.username}',
+                            style: TextStyle(color: scheme.onSurfaceVariant),
+                          ),
                         ],
                       ),
                     ),
@@ -104,27 +114,37 @@ class _Body extends ConsumerWidget {
                   Text(profile.bio!, style: const TextStyle(height: 1.4)),
                 ],
                 const SizedBox(height: 12),
-                Text('Joined ${timeAgo(profile.createdAt)} ago',
-                    style: TextStyle(
-                        color: scheme.onSurfaceVariant, fontSize: 12.5)),
+                Text(
+                  'Joined ${timeAgo(profile.createdAt)} ago',
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 12.5,
+                  ),
+                ),
               ],
             ),
           ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text('Reviews',
-                style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              'Reviews',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           reviews.when(
             loading: () => const LoadingView(),
             error: (_, _) => const SizedBox.shrink(),
             data: (list) => list.isEmpty
                 ? Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: Text('No reviews yet.',
-                        style: TextStyle(color: scheme.onSurfaceVariant)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'No reviews yet.',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                   )
                 : Column(
                     children: [
@@ -138,8 +158,10 @@ class _Body extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child:
-                Text('Posts', style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              'Posts',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           posts.when(
             loading: () => const LoadingView(),
@@ -147,8 +169,10 @@ class _Body extends ConsumerWidget {
             data: (list) => list.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                    child: Text('No posts yet.',
-                        style: TextStyle(color: scheme.onSurfaceVariant)),
+                    child: Text(
+                      'No posts yet.',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                   )
                 : Column(
                     children: [

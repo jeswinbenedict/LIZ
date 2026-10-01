@@ -33,7 +33,7 @@ void main() {
     await _pump(tester, [sharedPreferencesProvider.overrideWith((_) => prefs)]);
 
     expect(find.text(title), findsOneWidget);
-    expect(find.textContaining('follow a tool'), findsOneWidget);
+    expect(find.textContaining('Save a tool'), findsOneWidget);
   });
 
   testWidgets('dismissing it is remembered by this browser', (tester) async {

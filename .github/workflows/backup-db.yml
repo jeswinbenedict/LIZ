@@ -1,0 +1,59 @@
+# A weekly copy of the database, kept outside Supabase.
+#
+# Supabase's free plan keeps no backups you can restore from. Without this, a
+# bad migration, a mistaken delete or a lost project means the catalog, every
+# account and — worst — the daily signal history are gone, and the history
+# cannot be collected again.
+#
+# pg_dump writes a compressed dump, uploaded as a workflow artifact and kept
+# for 90 days (so about thirteen restore points). The repository is private,
+# and so are its artifacts.
+#
+# Setup (one time): Supabase dashboard → Connect → "Session pooler" URI, with
+# your database password filled in. Add it to the repo as the secret
+# SUPABASE_DB_URL (Settings → Secrets and variables → Actions). Until then the
+# job warns and does nothing.
+#
+# Restore, into an empty database:
+#   pg_restore --no-owner --no-privileges -d "<connection string>" liz.dump
+
+name: backup-db
+
+on:
+  schedule:
+    - cron: '0 2 * * 0' # Sundays 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "::warning::SUPABASE_DB_URL not set — no backup was taken."
+            exit 0
+          fi
+          # The runner's pg_dump must be at least the server's version.
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" \
+            --format=custom --no-owner --no-privileges \
+            --schema=public --schema=auth --schema=storage \
+            --file=liz.dump
+          ls -lh liz.dump
+          echo "taken=true" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        if: env.taken == 'true'
+        with:
+          name: liz-db-${{ github.run_id }}
+          path: liz.dump
+          retention-days: 90

@@ -1,5 +1,5 @@
-# Builds the web app and publishes it to Cloudflare Pages on every push to
-# main. Free tier: unlimited static requests, served from Cloudflare's edge.
+# Builds the web app and publishes it to Cloudflare Pages whenever CI passes
+# on main, and once a day. Free tier: unlimited static requests, served from Cloudflare's edge.
 #
 # Setup (one time):
 #   1. Cloudflare dashboard → Workers & Pages → Create → Pages → "Direct
@@ -29,7 +29,11 @@
 name: deploy-web
 
 on:
-  push:
+  # After CI, not on push: a commit whose tests fail must not go live. The job
+  # below checks that the CI run it follows actually passed.
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [main]
   schedule:
     - cron: '30 5 * * *' # after scrape-tools (03:30) and snapshot-and-rank (04:50)
@@ -44,6 +48,7 @@ env:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

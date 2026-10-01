@@ -34,8 +34,11 @@ class _EditableAvatarState extends ConsumerState<EditableAvatar> {
       _toast('Avatar upload needs the live backend.');
       return;
     }
-    final picked = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, maxWidth: 512, imageQuality: 85);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      imageQuality: 85,
+    );
     if (picked == null) return;
     setState(() => _busy = true);
     try {
@@ -48,8 +51,8 @@ class _EditableAvatarState extends ConsumerState<EditableAvatar> {
         contentType: ext == 'png'
             ? 'image/png'
             : ext == 'webp'
-                ? 'image/webp'
-                : 'image/jpeg',
+            ? 'image/webp'
+            : 'image/jpeg',
       );
       await ref.read(authRepositoryProvider).updateProfile(avatarUrl: url);
       _toast('Photo updated');
@@ -73,10 +76,13 @@ class _EditableAvatarState extends ConsumerState<EditableAvatar> {
                 radius: widget.radius,
                 backgroundColor: Colors.black.withValues(alpha: 0.4),
                 child: const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white)),
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           Positioned(
@@ -89,8 +95,11 @@ class _EditableAvatarState extends ConsumerState<EditableAvatar> {
                 shape: BoxShape.circle,
                 border: Border.all(color: scheme.surface, width: 2),
               ),
-              child: const Icon(Icons.photo_camera,
-                  size: 13, color: Colors.white),
+              child: const Icon(
+                Icons.photo_camera,
+                size: 13,
+                color: Colors.white,
+              ),
             ),
           ),
         ],

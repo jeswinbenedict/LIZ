@@ -6,8 +6,9 @@ import 'package:liz/app/theme.dart';
 import 'package:liz/features/discover/discover_screen.dart';
 
 void main() {
-  testWidgets('Discover screen renders the rising chart on mock data',
-      (tester) async {
+  testWidgets('Discover screen renders the rising chart on mock data', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(

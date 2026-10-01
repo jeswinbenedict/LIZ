@@ -29,42 +29,42 @@ class Review {
   final bool likedByMe;
 
   factory Review.fromJson(Map<String, dynamic> j) => Review(
-        id: asString(j['id']),
-        userId: asString(j['user_id']),
-        toolId: asString(j['tool_id']),
-        rating: asInt(j['rating']).clamp(1, 5),
-        body: asString(j['body']),
-        status: asString(j['status'], 'active'),
-        createdAt: asDate(j['created_at']),
-        author: j['author'] is Map<String, dynamic>
-            ? Profile.fromJson(j['author'] as Map<String, dynamic>)
-            : (j['profiles'] is Map<String, dynamic>
-                ? Profile.fromJson(j['profiles'] as Map<String, dynamic>)
-                : null),
-        likeCount: asInt(j['like_count']),
-        likedByMe: asBool(j['liked_by_me']),
-      );
+    id: asString(j['id']),
+    userId: asString(j['user_id']),
+    toolId: asString(j['tool_id']),
+    rating: asInt(j['rating']).clamp(1, 5),
+    body: asString(j['body']),
+    status: asString(j['status'], 'active'),
+    createdAt: asDate(j['created_at']),
+    author: j['author'] is Map<String, dynamic>
+        ? Profile.fromJson(j['author'] as Map<String, dynamic>)
+        : (j['profiles'] is Map<String, dynamic>
+              ? Profile.fromJson(j['profiles'] as Map<String, dynamic>)
+              : null),
+    likeCount: asInt(j['like_count']),
+    likedByMe: asBool(j['liked_by_me']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'tool_id': toolId,
-        'rating': rating,
-        'body': body,
-        'status': status,
-        'created_at': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'user_id': userId,
+    'tool_id': toolId,
+    'rating': rating,
+    'body': body,
+    'status': status,
+    'created_at': createdAt.toIso8601String(),
+  };
 
   Review copyWith({int? likeCount, bool? likedByMe, String? status}) => Review(
-        id: id,
-        userId: userId,
-        toolId: toolId,
-        rating: rating,
-        body: body,
-        status: status ?? this.status,
-        createdAt: createdAt,
-        author: author,
-        likeCount: likeCount ?? this.likeCount,
-        likedByMe: likedByMe ?? this.likedByMe,
-      );
+    id: id,
+    userId: userId,
+    toolId: toolId,
+    rating: rating,
+    body: body,
+    status: status ?? this.status,
+    createdAt: createdAt,
+    author: author,
+    likeCount: likeCount ?? this.likeCount,
+    likedByMe: likedByMe ?? this.likedByMe,
+  );
 }

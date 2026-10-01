@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
+import '../../core/notifications/push_service.dart';
 import '../../core/providers.dart';
 import '../../shared/models/app_notification.dart';
 import '../../shared/widgets/page_header.dart';
@@ -108,6 +109,11 @@ class AlertsScreen extends ConsumerWidget {
                       )
                     : null,
               ),
+              if (signedIn)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
+                  child: const _PushPrompt(),
+                ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: gutter),
                 child: body,
@@ -256,6 +262,69 @@ class AlertsBell extends ConsumerWidget {
         label: Text(unread > 9 ? '9+' : '$unread'),
         child: Icon(
           unread > 0 ? Icons.notifications : Icons.notifications_none,
+        ),
+      ),
+    );
+  }
+}
+
+/// The one place Liz asks to send browser notifications: here, where the
+/// alerts are, and only when the button is pressed. Gone once they are on.
+class _PushPrompt extends StatefulWidget {
+  const _PushPrompt();
+
+  @override
+  State<_PushPrompt> createState() => _PushPromptState();
+}
+
+class _PushPromptState extends State<_PushPrompt> {
+  bool _busy = false;
+  bool _declined = false;
+
+  Future<void> _turnOn() async {
+    setState(() => _busy = true);
+    final on = await PushService.instance.enable();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _declined = !on;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (PushService.instance.enabled) return const SizedBox.shrink();
+    final p = context.liz;
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.surfaceMuted,
+        shape: LizRadius.shape(LizRadius.md),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(
+          children: [
+            Icon(
+              Icons.notifications_active_outlined,
+              size: 20,
+              color: p.textPrimary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _declined
+                    ? 'Notifications are blocked for this site in your '
+                          'browser settings.'
+                    : 'Get these as browser notifications too.',
+                style: LizText.callout.copyWith(color: p.textPrimary),
+              ),
+            ),
+            if (!_declined)
+              TextButton(
+                onPressed: _busy ? null : _turnOn,
+                child: const Text('Turn on'),
+              ),
+          ],
         ),
       ),
     );

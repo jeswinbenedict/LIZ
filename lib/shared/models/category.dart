@@ -14,16 +14,16 @@ class Category {
   final String? icon;
 
   factory Category.fromJson(Map<String, dynamic> j) => Category(
-        id: asString(j['id']),
-        name: asString(j['name']),
-        slug: asString(j['slug']),
-        icon: asStringOrNull(j['icon']),
-      );
+    id: asString(j['id']),
+    name: asString(j['name']),
+    slug: asString(j['slug']),
+    icon: asStringOrNull(j['icon']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'slug': slug,
-        'icon': icon,
-      };
+    'id': id,
+    'name': name,
+    'slug': slug,
+    'icon': icon,
+  };
 }

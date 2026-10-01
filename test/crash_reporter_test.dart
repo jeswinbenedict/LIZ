@@ -21,8 +21,12 @@ void main() {
     });
 
     test('line numbers moving between builds does not split the group', () {
-      final before = StackTrace.fromString('#0 Foo.bar (package:liz/foo.dart:12:5)');
-      final after = StackTrace.fromString('#0 Foo.bar (package:liz/foo.dart:98:2)');
+      final before = StackTrace.fromString(
+        '#0 Foo.bar (package:liz/foo.dart:12:5)',
+      );
+      final after = StackTrace.fromString(
+        '#0 Foo.bar (package:liz/foo.dart:98:2)',
+      );
 
       expect(
         CrashReporter.fingerprintOf(StateError('boom'), before),
@@ -32,7 +36,9 @@ void main() {
     });
 
     test('different faults stay apart', () {
-      final stack = StackTrace.fromString('#0 Foo.bar (package:liz/foo.dart:12:5)');
+      final stack = StackTrace.fromString(
+        '#0 Foo.bar (package:liz/foo.dart:12:5)',
+      );
       expect(
         CrashReporter.fingerprintOf(StateError('boom'), stack),
         isNot(CrashReporter.fingerprintOf(ArgumentError('bad'), stack)),
@@ -42,9 +48,15 @@ void main() {
     test('a different call site is a different fault', () {
       expect(
         CrashReporter.fingerprintOf(
-            StateError('x'), StackTrace.fromString('#0 A.a (package:liz/a.dart:1:1)')),
-        isNot(CrashReporter.fingerprintOf(
-            StateError('x'), StackTrace.fromString('#0 B.b (package:liz/b.dart:1:1)'))),
+          StateError('x'),
+          StackTrace.fromString('#0 A.a (package:liz/a.dart:1:1)'),
+        ),
+        isNot(
+          CrashReporter.fingerprintOf(
+            StateError('x'),
+            StackTrace.fromString('#0 B.b (package:liz/b.dart:1:1)'),
+          ),
+        ),
       );
     });
 

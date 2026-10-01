@@ -6,10 +6,10 @@ enum UserRole {
   admin;
 
   static UserRole parse(String? v) => switch (v) {
-        'admin' => UserRole.admin,
-        'moderator' => UserRole.moderator,
-        _ => UserRole.user,
-      };
+    'admin' => UserRole.admin,
+    'moderator' => UserRole.moderator,
+    _ => UserRole.user,
+  };
 
   bool get canModerate => this == UserRole.moderator || this == UserRole.admin;
 }
@@ -42,22 +42,22 @@ class Profile {
   }
 
   factory Profile.fromJson(Map<String, dynamic> j) => Profile(
-        id: asString(j['id']),
-        username: asString(j['username']),
-        displayName: asString(j['display_name'], asString(j['username'])),
-        avatarUrl: asStringOrNull(j['avatar_url']),
-        bio: asStringOrNull(j['bio']),
-        role: UserRole.parse(asStringOrNull(j['role'])),
-        createdAt: asDate(j['created_at']),
-      );
+    id: asString(j['id']),
+    username: asString(j['username']),
+    displayName: asString(j['display_name'], asString(j['username'])),
+    avatarUrl: asStringOrNull(j['avatar_url']),
+    bio: asStringOrNull(j['bio']),
+    role: UserRole.parse(asStringOrNull(j['role'])),
+    createdAt: asDate(j['created_at']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'username': username,
-        'display_name': displayName,
-        'avatar_url': avatarUrl,
-        'bio': bio,
-        'role': role.name,
-        'created_at': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'username': username,
+    'display_name': displayName,
+    'avatar_url': avatarUrl,
+    'bio': bio,
+    'role': role.name,
+    'created_at': createdAt.toIso8601String(),
+  };
 }

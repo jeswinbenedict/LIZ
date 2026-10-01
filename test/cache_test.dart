@@ -57,18 +57,20 @@ void main() {
     expect(_builds, 1);
   });
 
-  test('without the grace period, leaving discards the value at once',
-      () async {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+  test(
+    'without the grace period, leaving discards the value at once',
+    () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
 
-    container.listen(_uncached, (_, _) {}).close();
-    // Disposal is scheduled rather than immediate, so give it the same 20ms
-    // the cached provider survived above — the contrast is the point.
-    await Future<void>.delayed(const Duration(milliseconds: 20));
-    container.listen(_uncached, (_, _) {}).close();
+      container.listen(_uncached, (_, _) {}).close();
+      // Disposal is scheduled rather than immediate, so give it the same 20ms
+      // the cached provider survived above — the contrast is the point.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      container.listen(_uncached, (_, _) {}).close();
 
-    // This is the behaviour search results want: nothing outlives its query.
-    expect(_builds, 2);
-  });
+      // This is the behaviour search results want: nothing outlives its query.
+      expect(_builds, 2);
+    },
+  );
 }

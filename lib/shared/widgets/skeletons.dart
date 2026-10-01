@@ -135,7 +135,10 @@ class ToolCardSkeleton extends StatelessWidget {
     return DecoratedBox(
       decoration: ShapeDecoration(
         color: p.surface,
-        shape: LizRadius.shape(LizRadius.md, side: BorderSide(color: p.hairline)),
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairline),
+        ),
       ),
       child: const Padding(
         padding: EdgeInsets.all(16),

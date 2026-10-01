@@ -46,9 +46,12 @@ Future<void> _loadFonts() async {
     ..addFont(rootBundle.load('assets/fonts/Inter-Latin.ttf'));
   await inter.load();
   // Material icons from the SDK, so icons draw as icons rather than boxes.
-  final sdk = Platform.environment['FLUTTER_ROOT'] ??
+  final sdk =
+      Platform.environment['FLUTTER_ROOT'] ??
       File(Platform.resolvedExecutable).parent.parent.parent.parent.parent.path;
-  final icons = File('$sdk/bin/cache/artifacts/material_fonts/materialicons-regular.otf');
+  final icons = File(
+    '$sdk/bin/cache/artifacts/material_fonts/materialicons-regular.otf',
+  );
   if (icons.existsSync()) {
     final loader = FontLoader('MaterialIcons')
       ..addFont(Future.value(ByteData.sublistView(icons.readAsBytesSync())));
@@ -103,8 +106,9 @@ void main() {
           await tester.pumpAndSettle();
 
           await tester.runAsync(() async {
-            final render = boundary.currentContext!.findRenderObject()!
-                as RenderRepaintBoundary;
+            final render =
+                boundary.currentContext!.findRenderObject()!
+                    as RenderRepaintBoundary;
             final image = await render.toImage(pixelRatio: 1);
             final png = await image.toByteData(format: ui.ImageByteFormat.png);
             final file = File('build/screens/$_shot/$name.png');
