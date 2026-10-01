@@ -61,3 +61,24 @@ jobs:
                    tool-updates; do
             deno check "supabase/functions/$f/index.ts"
           done
+
+  # Every migration, in order, on an empty database — the database a restore
+  # or a new environment starts from. Migrations are applied to the live
+  # project one at a time as they are written, so one that only works on top
+  # of the live data (or on a function a later migration replaced) would
+  # otherwise go unnoticed until the day it mattered.
+  migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+      # Starts Postgres alone (not the whole stack), applies supabase/migrations
+      # and then seed.sql. Fails on the first statement that errors.
+      - run: supabase db start
+      - name: The schema is what the app expects
+        run: |
+          supabase db query --local "select public.current_uid() is null as guest,
+            (select count(*) from public.tools) as seeded_tools,
+            (select count(*) from pg_policies where schemaname = 'public') as policies"
