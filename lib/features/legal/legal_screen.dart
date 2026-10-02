@@ -105,7 +105,7 @@ class LegalDocument {
 
   static const privacy = LegalDocument(
     title: 'Privacy policy',
-    updated: '1 October 2026',
+    updated: '2 October 2026',
     summary:
         'Liz keeps what it needs to run your account, to keep the service '
         'working, and to learn which tools people find useful. Nothing is kept '
@@ -124,10 +124,9 @@ class LegalDocument {
             'stored with it. Clearing your browser\'s site data resets it.',
         'The words you type into search or ask Liz are kept for 90 days and '
             'then deleted. The counts are kept for 13 months.',
-        'Tools you save without an account, the kinds of tools you say you '
-            'are interested in, and your light or dark theme choice are kept '
-            'in your own browser. If you sign in, your saved tools and '
-            'interests move into your account.',
+        'Tools you save without an account and the kinds of tools you say '
+            'you are interested in are kept in your own browser. If you sign '
+            'in, your saved tools and interests move into your account.',
         'If the app crashes, it sends an error report: the error message, where '
             'in the code it happened, which screen you were on, the app version '
             'and the kind of browser. Reports are deleted after 30 days.',
@@ -165,13 +164,15 @@ class LegalDocument {
         'Firebase Authentication, from Google, handles signing in: it holds '
             'your email address, your password hash or Google sign-in, and '
             'your authenticator setup if you have one, and sends the emails '
-            'for confirming an address and resetting a password.',
+            'for confirming an address, resetting a password and signing in '
+            'with a link.',
         'Firebase Cloud Messaging delivers browser notifications, and only if '
             'you turn them on.',
-        'Tool summaries are written by open-source models on Groq, or on '
-            'another host of open-source models when Groq is unavailable. Only '
-            'the public description of a tool is sent — never anything about '
-            'you.',
+        'Tool summaries and the quick takes on news stories are written by '
+            'open-source models on Groq, or on another host of open-source '
+            'models when Groq is unavailable. Only public text is sent — a '
+            'tool\'s description, a story\'s headline and summary — never '
+            'anything about you.',
         'Logos are copied to Liz\'s own storage or fetched by Liz\'s own '
             'server, so the sites of the tools you browse do not see your '
             'address.',

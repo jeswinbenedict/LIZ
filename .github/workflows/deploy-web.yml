@@ -13,6 +13,8 @@
 #        SUPABASE_ANON_KEY        the public key (safe in the client)
 #        FCM_VAPID_KEY            optional; browser notifications
 #        SITE_URL                 e.g. https://liz.pages.dev — used for share links
+#      and, under the Variables tab (it is published, not secret):
+#        LEGAL_CONTACT            the address the privacy policy and terms name
 #
 # Until the Cloudflare secrets exist the job builds and stops, with a warning,
 # so the build itself stays checked on every push.
@@ -70,6 +72,7 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           FCM_VAPID_KEY: ${{ secrets.FCM_VAPID_KEY }}
           SITE_URL: ${{ secrets.SITE_URL }}
+          LEGAL_CONTACT: ${{ vars.LEGAL_CONTACT }}
         run: |
           VERSION="${GITHUB_SHA::7}"
           flutter build web --release --wasm --source-maps \
@@ -77,6 +80,7 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=FCM_VAPID_KEY="$FCM_VAPID_KEY" \
             --dart-define=SITE_URL="$SITE_URL" \
+            --dart-define=LEGAL_CONTACT="$LEGAL_CONTACT" \
             --dart-define=APP_VERSION="$VERSION"
           test -f build/web/_headers
           # Source maps turn a minified crash report back into Dart files and

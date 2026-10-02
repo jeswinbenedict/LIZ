@@ -172,6 +172,7 @@ from Settings and from sign-up. The privacy policy describes what the schema and
 Edge Functions actually store, and for how long — change one, change the other.
 Build with `--dart-define=LEGAL_CONTACT=you@example.com` to publish a contact
 address in both; without it they point to account deletion and Report instead.
+The deploy reads it from the repository variable `LEGAL_CONTACT`.
 They were written from the code, not by a lawyer.
 
 ## Still to do
@@ -182,10 +183,8 @@ Everything left needs an account or a credential only the owner can create.
   Cloudflare and Supabase secrets listed in
   [docs/OPERATIONS.md](docs/OPERATIONS.md#8-secrets). Add the deployed domain
   to Firebase's authorized domains at the same time.
-- **Firebase sign-in setup.** Sign-in is Firebase Authentication in front of
-  Supabase; enabling its providers and registering it with Supabase are
-  console steps → [docs/AUTH.md](docs/AUTH.md). Firebase sends the sign-in
-  emails, so no SMTP provider is needed.
-- **A contact address** for the privacy policy and terms (`LEGAL_CONTACT`), and
-  a legal read of both before launch.
+- **Backups and deploys from CI**: the `SUPABASE_DB_URL`,
+  `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` secrets
+  ([docs/OPERATIONS.md](docs/OPERATIONS.md#8-secrets)).
+- **A legal read** of the privacy policy and terms before launch.
 - **Search Console**: submit `sitemap.xml` once the site is live.
