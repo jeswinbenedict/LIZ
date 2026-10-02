@@ -8,6 +8,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/auth/enabled_providers.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import '../../shared/widgets/google_logo.dart';
 import '../../shared/widgets/page_header.dart';
 import 'auth_controller.dart';
 import 'password_validation.dart';
@@ -211,7 +212,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
             // dead-ends on an error.
             if (providers.google)
               _ProviderButton(
-                mark: const _GoogleMark(),
+                mark: const GoogleLogo(),
                 label: 'Continue with Google',
                 onPressed: busy ? null : () => _guard(auth.signInWithGoogle),
               ),
@@ -470,54 +471,6 @@ class _ProviderButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Google's "G", drawn in its four colours, as its sign-in guidelines ask
-/// for the button. Painted rather than shipped as an image: crisp at any
-/// size, no asset request.
-class _GoogleMark extends StatelessWidget {
-  const _GoogleMark();
-
-  @override
-  Widget build(BuildContext context) =>
-      const CustomPaint(painter: _GoogleMarkPainter());
-}
-
-class _GoogleMarkPainter extends CustomPainter {
-  const _GoogleMarkPainter();
-
-  static const _blue = Color(0xFF4285F4);
-  static const _green = Color(0xFF34A853);
-  static const _yellow = Color(0xFFFBBC05);
-  static const _red = Color(0xFFEA4335);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.shortestSide;
-    final stroke = s * 0.2;
-    final rect = Rect.fromCircle(
-      center: Offset(s / 2, s / 2),
-      radius: (s - stroke) / 2,
-    );
-    double rad(double deg) => deg * 3.1415926535 / 180;
-    Paint arc(Color c) => Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke;
-    // Angles clockwise from three o'clock; the opening is at the upper right.
-    canvas.drawArc(rect, rad(-20), rad(65), false, arc(_blue));
-    canvas.drawArc(rect, rad(45), rad(90), false, arc(_green));
-    canvas.drawArc(rect, rad(135), rad(70), false, arc(_yellow));
-    canvas.drawArc(rect, rad(205), rad(110), false, arc(_red));
-    // The bar.
-    canvas.drawRect(
-      Rect.fromLTWH(s / 2, s / 2 - stroke / 2, s / 2 - stroke * 0.05, stroke),
-      Paint()..color = _blue,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_GoogleMarkPainter old) => false;
 }
 
 /// Shows the sign-in sheet and resolves true if the user ends up signed in.
