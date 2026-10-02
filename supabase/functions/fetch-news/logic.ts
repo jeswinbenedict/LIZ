@@ -29,16 +29,33 @@ export function cleanTitle(raw: string): string {
   return decodeEntities(raw).replace(/\s+/g, ' ').trim();
 }
 
-export function stripHtml(html: string): string {
+/// A feed's HTML as plain text, whole.
+export function htmlToText(html: string): string {
   // Tags first, then entities. Decoding first would turn an article's own
   // "&lt;div&gt;" into markup that the tag pass then deletes, losing text the
   // author meant to show. Note the consequence: an encoded tag survives as
   // literal characters, so a snippet is plain text and must be rendered as
   // such — it is not sanitised HTML.
-  const text = decodeEntities(html.replace(/<[^>]*>/g, ' '))
+  return decodeEntities(html.replace(/<[^>]*>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/// A snippet is at most 300 characters.
+export function clip(text: string): string {
   return text.length > 300 ? `${text.slice(0, 297)}…` : text;
+}
+
+export function stripHtml(html: string): string {
+  return clip(htmlToText(html));
+}
+
+/// The snippet stored for a story. Hacker News's footer goes before the cut:
+/// a long article URL used to push the footer past character 300, the cut
+/// left half of it, and half a footer no longer matched.
+export function newsSnippet(html: string, source: string): string {
+  const text = htmlToText(html);
+  return clip(source === 'hackernews' ? stripHnFooter(text) : text);
 }
 
 /// hnrss.org describes every front-page story with the same footer — "Article
@@ -47,9 +64,8 @@ export function stripHtml(html: string): string {
 /// post keeps the text written above it.
 export function stripHnFooter(snippet: string): string {
   return snippet
-    .replace(
-      /\s*Article URL:\s*\S+\s*Comments URL:\s*\S+\s*Points:\s*\d+\s*#\s*Comments:\s*\d+\s*$/i,
-      '',
-    )
+    // From "Article URL: … Comments URL:" to the end is all footer, whole
+    // or cut short.
+    .replace(/\s*Article URL:\s*\S+\s*Comments URL:[\s\S]*$/i, '')
     .trim();
 }

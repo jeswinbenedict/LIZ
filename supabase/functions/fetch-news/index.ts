@@ -21,7 +21,7 @@ import { parseFeed } from 'https://deno.land/x/rss@1.1.2/mod.ts';
 import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
 import { json } from '../_shared/cors.ts';
-import { cleanTitle, stripHnFooter, stripHtml } from './logic.ts';
+import { cleanTitle, newsSnippet, stripHtml } from './logic.ts';
 
 interface Article {
   title: string;
@@ -72,8 +72,7 @@ async function fromRss(feed: { source: string; url: string }): Promise<Article[]
     const title: string = e.title?.value ?? '';
     const url: string = e.links?.[0]?.href ?? e.id ?? '';
     if (!title || !url) continue;
-    const raw = stripHtml(e.description?.value ?? e.content?.value ?? '');
-    const snippet = feed.source === 'hackernews' ? stripHnFooter(raw) : raw;
+    const snippet = newsSnippet(e.description?.value ?? e.content?.value ?? '', feed.source);
     const published =
       e.published instanceof Date
         ? e.published.toISOString()

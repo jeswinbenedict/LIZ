@@ -1,5 +1,11 @@
 import { assert, assertEquals } from 'jsr:@std/assert@1';
-import { cleanTitle, decodeEntities, stripHnFooter, stripHtml } from '../fetch-news/logic.ts';
+import {
+  cleanTitle,
+  decodeEntities,
+  newsSnippet,
+  stripHnFooter,
+  stripHtml,
+} from '../fetch-news/logic.ts';
 
 // Feeds encode punctuation in whichever form they please. Every string below
 // reached the live News page looking broken before these rules existed.
@@ -73,4 +79,20 @@ Deno.test("drops hnrss's footer, which is not a summary", () => {
     'What do you use for backups?',
   );
   assertEquals(stripHnFooter('A normal summary.'), 'A normal summary.');
+});
+
+Deno.test('a long article URL no longer leaves half a footer behind', () => {
+  const url = 'https://example.com/' + 'a-very-long-slug-'.repeat(16);
+  const html = `<p>Article URL: <a href="${url}">${url}</a></p>` +
+    '<p>Comments URL: <a href="https://news.ycombinator.com/item?id=1">x</a></p>' +
+    '<p>Points: 14</p><p># Comments: 3</p>';
+  // Footer first, then the cut: nothing is left.
+  assertEquals(newsSnippet(html, 'hackernews'), '');
+  // A footer already cut short (rows stored before this fix) still goes.
+  assertEquals(
+    stripHnFooter(`Article URL: ${url} Comments URL: https://news.ycombinator.com/item?id=4989…`),
+    '',
+  );
+  // Other sources are only cleaned and cut.
+  assertEquals(newsSnippet('<p>Hello &amp; welcome</p>', 'theverge'), 'Hello & welcome');
 });
