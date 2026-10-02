@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liz/core/telemetry/crash_reporter.dart';
 
@@ -7,6 +8,27 @@ import 'package:liz/core/telemetry/crash_reporter.dart';
 
 void main() {
   setUp(CrashReporter.resetForTest);
+
+  test('an image that will not load is not a crash', () {
+    expect(
+      CrashReporter.isExpected(
+        FlutterErrorDetails(
+          exception: Exception('Failed to create image from Image.decode'),
+          library: 'image resource service',
+        ),
+      ),
+      isTrue,
+    );
+    expect(
+      CrashReporter.isExpected(
+        FlutterErrorDetails(
+          exception: StateError('boom'),
+          library: 'widgets library',
+        ),
+      ),
+      isFalse,
+    );
+  });
 
   group('fingerprinting', () {
     test('the same fault in the same place groups together', () {

@@ -53,6 +53,7 @@ class CrashReporter {
     final flutterOnError = FlutterError.onError;
     FlutterError.onError = (details) {
       flutterOnError?.call(details);
+      if (isExpected(details)) return;
       report(details.exception, details.stack, context: {'source': 'flutter'});
     };
 
@@ -70,6 +71,13 @@ class CrashReporter {
       },
     );
   }
+
+  /// Failures that are about someone else's data, not Liz's code: a logo or
+  /// news image that will not load or decode. Every image already falls back
+  /// (a letter tile, no picture), so filing these as crashes only buried real
+  /// faults in the health panel's count.
+  static bool isExpected(FlutterErrorDetails details) =>
+      details.library == 'image resource service';
 
   /// Groups repeats of the same fault. Line numbers move between builds, so the
   /// key is the error type plus the first few frames' symbols.
