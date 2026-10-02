@@ -146,6 +146,11 @@ and contrast. A new screen goes in that list. Every Edge
 Function has tests; their decisions live in `logic.ts` files so the tests need
 no network.
 
+In a real browser, [`tool/qa`](tool/qa/README.md) walks 13 visitor journeys,
+audits every page's accessibility tree and sweeps every page at four widths
+for errors and overflow — in CI on the demo data, and locally in Chrome, Edge,
+Firefox and Safari's engine against the live catalog.
+
 ---
 
 ## Deliberate decisions

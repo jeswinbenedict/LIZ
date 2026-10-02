@@ -82,3 +82,39 @@ jobs:
           supabase db query --local "select public.current_uid() is null as guest,
             (select count(*) from public.tools) as seeded_tools,
             (select count(*) from pg_policies where schemaname = 'public') as policies"
+
+  # The app in a real browser, on the bundled demo data: visitor journeys, the
+  # accessibility tree of every page, and a sweep for errors and overflow
+  # (tool/qa/README.md). Each has caught a bug every widget test passed — the
+  # address bar not following the page, controls the keyboard could not
+  # reach, headings that swallowed their sections.
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - run: flutter build web --release
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.63.0
+      - run: python -m playwright install --with-deps chromium
+      - name: Serve the build
+        run: |
+          python tool/qa/serve.py build/web 8100 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8100/ >/dev/null && break; sleep 1; done
+      - run: python tool/qa/journeys.py chromium
+      - run: python tool/qa/journeys.py chromium --phone
+      - run: python tool/qa/a11y_audit.py
+      - run: python tool/qa/sweep.py chromium --key
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-checks
+          # The scripts' default: liz-qa in the system temp folder.
+          path: /tmp/liz-qa
+          retention-days: 14
