@@ -22,10 +22,14 @@ enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000", "io.supabase.liz://login-callback"]
 jwt_expiry = 3600
-enable_signup = true
+# Sign-in is Firebase's (docs/AUTH.md). Supabase's own sign-up stays off:
+# with it on, anyone could create an unverified Supabase account and act as a
+# signed-in user without going through Firebase at all. Sessions it issued
+# before the switch still work; current_uid() accepts them.
+enable_signup = false
 
 [auth.email]
-enable_signup = true
+enable_signup = false
 enable_confirmations = false
 
 # Fill these in for social sign-in (see README).
