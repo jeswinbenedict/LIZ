@@ -11,13 +11,13 @@
         "--web-port",
         "8099",
         "--web-hostname",
-        "127.0.0.1",
+        "localhost",
         "--dart-define=SUPABASE_URL=https://yluabeijvbydxczfxclk.supabase.co",
         "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWFiZWlqdmJ5ZHhjemZ4Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzODY4NTUsImV4cCI6MjEwMTk2Mjg1NX0.zvbMoLLaPxmXxCbtDsTQ8Io3UDy4lq-wA5TQ6g_l-sI",
-        "--dart-define=FCM_VAPID_KEY=BIitqxiFRR0cEvigb_4tP1W4kmhgCdTgV4mGvNU65dCYeGSre8u7HKfnDz8BS_V9sbI0nKRtidktjklXSR2J5AY"
+        "--dart-define=FCM_VAPID_KEY=BOcR26wRf5bMA6KGFDyHMQmUP_NLoPyMCXzlClJh7uvU-h7HX36pprb12lcXNb0ACDHMhBg94TtTBh67Q_nK5ng"
       ],
       "port": 8099,
-      "url": "http://127.0.0.1:8099"
+      "url": "http://localhost:8099"
     },
     {
       "name": "liz-web-release",
@@ -30,13 +30,13 @@
         "--web-port",
         "8100",
         "--web-hostname",
-        "127.0.0.1",
+        "localhost",
         "--dart-define=SUPABASE_URL=https://yluabeijvbydxczfxclk.supabase.co",
         "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWFiZWlqdmJ5ZHhjemZ4Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzODY4NTUsImV4cCI6MjEwMTk2Mjg1NX0.zvbMoLLaPxmXxCbtDsTQ8Io3UDy4lq-wA5TQ6g_l-sI",
-        "--dart-define=FCM_VAPID_KEY=BIitqxiFRR0cEvigb_4tP1W4kmhgCdTgV4mGvNU65dCYeGSre8u7HKfnDz8BS_V9sbI0nKRtidktjklXSR2J5AY"
+        "--dart-define=FCM_VAPID_KEY=BOcR26wRf5bMA6KGFDyHMQmUP_NLoPyMCXzlClJh7uvU-h7HX36pprb12lcXNb0ACDHMhBg94TtTBh67Q_nK5ng"
       ],
       "port": 8100,
-      "url": "http://127.0.0.1:8100"
+      "url": "http://localhost:8100"
     },
     {
       "name": "liz-web-demo",
@@ -48,10 +48,10 @@
         "--web-port",
         "8101",
         "--web-hostname",
-        "127.0.0.1"
+        "localhost"
       ],
       "port": 8101,
-      "url": "http://127.0.0.1:8101"
+      "url": "http://localhost:8101"
     },
     {
       "name": "liz-web-wasm",
@@ -65,13 +65,13 @@
         "--web-port",
         "8102",
         "--web-hostname",
-        "127.0.0.1",
+        "localhost",
         "--dart-define=SUPABASE_URL=https://yluabeijvbydxczfxclk.supabase.co",
         "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWFiZWlqdmJ5ZHhjemZ4Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzODY4NTUsImV4cCI6MjEwMTk2Mjg1NX0.zvbMoLLaPxmXxCbtDsTQ8Io3UDy4lq-wA5TQ6g_l-sI",
-        "--dart-define=FCM_VAPID_KEY=BIitqxiFRR0cEvigb_4tP1W4kmhgCdTgV4mGvNU65dCYeGSre8u7HKfnDz8BS_V9sbI0nKRtidktjklXSR2J5AY"
+        "--dart-define=FCM_VAPID_KEY=BOcR26wRf5bMA6KGFDyHMQmUP_NLoPyMCXzlClJh7uvU-h7HX36pprb12lcXNb0ACDHMhBg94TtTBh67Q_nK5ng"
       ],
       "port": 8102,
-      "url": "http://127.0.0.1:8102"
+      "url": "http://localhost:8102"
     }
   ]
 }

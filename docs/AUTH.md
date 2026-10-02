@@ -52,15 +52,15 @@ else's email and walk into their account.
 In order. Nothing changes for visitors until the new build is deployed.
 
 1. **Firebase console → Authentication → Get started** (project
-   `lizzy-50dc0`). Under *Sign-in method* enable **Email/Password**, and in the
+   `liz-f5f93`). Under *Sign-in method* enable **Email/Password**, and in the
    same panel **Email link (passwordless sign-in)**. Enable **Google**.
 2. **Authentication → Settings → Authorized domains**: add the domain Liz is
    deployed on (`localhost` is there already).
 3. **Supabase dashboard → Authentication → Third-party Auth → Add provider →
-   Firebase**, project ID `lizzy-50dc0`. Without this, Supabase rejects
+   Firebase**, project ID `liz-f5f93`. Without this, Supabase rejects
    Firebase tokens and signed-in requests fail.
 4. **Firebase service account**: the `FIREBASE_SERVICE_ACCOUNT` function
-   secret (already set for push) must be the Admin SDK key of `lizzy-50dc0`
+   secret (already set for push) must be the Admin SDK key of `liz-f5f93`
    (Firebase console → Project settings → Service accounts → Generate new
    private key). `firebase-session` uses it to set claims and
    `delete-account` to delete accounts.
@@ -94,7 +94,7 @@ sender and wording are under Authentication → Templates.
 | everything else | unchanged |
 
 Tokens are verified against Google's published keys, the issuer and audience
-for `lizzy-50dc0`, expiry, issue time and subject
+for `liz-f5f93`, expiry, issue time and subject
 (`supabase/functions/_shared/firebase.ts`, tested in
 `tests/firebase_auth_test.ts`). On the hosted platform Supabase also rejects
 tokens from Firebase projects other than the registered one before they reach

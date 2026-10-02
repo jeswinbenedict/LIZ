@@ -83,7 +83,7 @@ verify_jwt = true
 
 # Sign-in is Firebase Authentication (migration 0055). The hosted project needs
 # the same integration added in the dashboard: Authentication → Third-party
-# Auth → Firebase, project ID lizzy-50dc0.
+# Auth → Firebase, project ID liz-f5f93.
 [auth.third_party.firebase]
 enabled = true
-project_id = "lizzy-50dc0"
+project_id = "liz-f5f93"

@@ -12,11 +12,11 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: 'AIzaSyA9X8p7Bpg7DwRTRDUIz6VOjFKYvpUBB6w',
-  authDomain: 'lizzy-50dc0.firebaseapp.com',
-  projectId: 'lizzy-50dc0',
-  messagingSenderId: '828408834851',
-  appId: '1:828408834851:web:4a36206ab71ff2af3e3a96',
+  apiKey: 'AIzaSyCzsZChfi0nVuZc3G7KG0Wt6zgferaAdEw',
+  authDomain: 'liz-f5f93.firebaseapp.com',
+  projectId: 'liz-f5f93',
+  messagingSenderId: '729418856494',
+  appId: '1:729418856494:web:411c8bf91195ae055e07bf',
 });
 
 const messaging = firebase.messaging();

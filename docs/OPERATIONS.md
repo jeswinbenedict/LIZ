@@ -162,7 +162,7 @@ To make someone an admin, set `profiles.role`; their next request sees it.
 | `FCM_VAPID_KEY` | GitHub Actions | web build (browser notifications) |
 | `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` | Supabase function secrets | summaries (Groq by default) |
 | `AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_MODEL` | Supabase function secrets, optional | used when the first provider fails |
-| `FIREBASE_SERVICE_ACCOUNT` | Supabase function secrets | `send-notification`, `firebase-session`, `delete-account` (Admin SDK key of `lizzy-50dc0`) |
+| `FIREBASE_SERVICE_ACCOUNT` | Supabase function secrets | `send-notification`, `firebase-session`, `delete-account` (Admin SDK key of `liz-f5f93`) |
 | `ASK_EVAL_KEY` | Supabase function secrets | lets the Ask Liz evaluation skip the rate limit |
 | ntfy topic | `app_config.alert_ntfy_topic` | health pushes |
 
