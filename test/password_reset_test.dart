@@ -217,7 +217,7 @@ void main() {
 
       r.pop();
       await tester.pumpAndSettle();
-      expect(find.text('Welcome to Liz'), findsOneWidget);
+      expect(find.text('Welcome back'), findsOneWidget);
       expect(find.text('Discover home'), findsNothing);
     });
 

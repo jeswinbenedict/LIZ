@@ -243,16 +243,54 @@ class LizSegmented<T> extends StatelessWidget {
     required this.segments,
     required this.value,
     required this.onChanged,
+    this.expand = false,
   });
 
   final Map<T, String> segments;
   final T value;
   final ValueChanged<T> onChanged;
 
+  /// Fill the width with equal segments (a form's mode switch) instead of
+  /// sizing to the labels.
+  final bool expand;
+
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
     final duration = LizMotion.of(context, LizMotion.standard);
+    final segmentWidgets = [
+      for (final entry in segments.entries)
+        _Segment(
+          label: entry.value,
+          selected: entry.key == value,
+          duration: duration,
+          onTap: () => onChanged(entry.key),
+        ),
+    ];
+    if (expand) {
+      return SizedBox(
+        height: 48,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(
+              top: 6,
+              bottom: 6,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: p.surface,
+                  shape: LizRadius.shape(
+                    LizRadius.sm,
+                    side: BorderSide(color: p.hairline),
+                  ),
+                ),
+              ),
+            ),
+            Row(children: [for (final s in segmentWidgets) Expanded(child: s)]),
+          ],
+        ),
+      );
+    }
     // Scrolls sideways when it is wider than the room it is given: four
     // segments do not fit a 320-pixel phone, and overflowing is worse.
     return SingleChildScrollView(
@@ -275,18 +313,7 @@ class LizSegmented<T> extends StatelessWidget {
                 ),
               ),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final entry in segments.entries)
-                  _Segment(
-                    label: entry.value,
-                    selected: entry.key == value,
-                    duration: duration,
-                    onTap: () => onChanged(entry.key),
-                  ),
-              ],
-            ),
+            Row(mainAxisSize: MainAxisSize.min, children: segmentWidgets),
           ],
         ),
       ),

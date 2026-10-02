@@ -24,6 +24,8 @@ const _sizes = <String, (Size, double)>{
   '375x812 at 1.5x text': (Size(375, 812), 1.5),
   '800x450 landscape': (Size(800, 450), 1.0),
   '560x315 small window': (Size(560, 315), 1.0),
+  '1440x900 desktop': (Size(1440, 900), 1.0),
+  '1024x600 short laptop': (Size(1024, 600), 1.0),
 };
 
 Future<void> _expectFits(

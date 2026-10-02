@@ -78,7 +78,7 @@ void main() {
     // Signing in is not agreeing to anything new, so it stays quiet there.
     expect(find.textContaining('you agree to'), findsNothing);
 
-    await tester.tap(find.text('New here? Create an account'));
+    await tester.tap(find.text('Create account').first);
     await tester.pumpAndSettle();
     expect(find.textContaining('you agree to'), findsOneWidget);
 

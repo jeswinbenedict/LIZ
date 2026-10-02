@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,17 +8,34 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/auth/enabled_providers.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import '../../shared/widgets/page_header.dart';
 import 'auth_controller.dart';
+import 'password_validation.dart';
 
-/// Shared sign-in UI used by both the full [SignInScreen] and the modal sheet.
-/// Reflects the "explore first" principle — this only appears when an identity
-/// action needs it.
+/// The sign-in form, used by the full [SignInScreen] and by the sheet that
+/// opens when a visitor does something that needs an account. It only ever
+/// appears when an identity action needs it ("explore first").
+///
+/// One form for both ways in — a switch at the top chooses signing in or
+/// creating an account — with the details a web form is judged on: Enter
+/// submits, password managers fill it, the password can be shown, the error
+/// is read out, and the way back from a forgotten password sits next to the
+/// password field rather than under the button.
 class SignInView extends ConsumerStatefulWidget {
-  const SignInView({super.key, this.onSignedIn, this.prompt});
+  const SignInView({
+    super.key,
+    this.onSignedIn,
+    this.prompt,
+    this.padding = const EdgeInsets.all(LizSpacing.lg),
+  });
 
   /// Called after a successful sign-in (e.g. to pop a sheet and retry).
   final VoidCallback? onSignedIn;
+
+  /// Why sign-in is being asked for, in place of the default line.
   final String? prompt;
+
+  final EdgeInsetsGeometry padding;
 
   @override
   ConsumerState<SignInView> createState() => _SignInViewState();
@@ -28,8 +46,16 @@ class _SignInViewState extends ConsumerState<SignInView> {
   final _password = TextEditingController();
   final _name = TextEditingController();
   bool _isSignUp = false;
+  bool _showPassword = false;
   String? _error;
   String? _info;
+
+  @override
+  void initState() {
+    super.initState();
+    // The magic-link button depends on there being an address.
+    _email.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -39,27 +65,19 @@ class _SignInViewState extends ConsumerState<SignInView> {
     super.dispose();
   }
 
-  /// Supabase enforces all of this server-side, but a round trip to be told
-  /// "invalid credentials" for an empty box is a poor way to learn you left one
-  /// blank. Returns the first problem, or null when the form can be submitted.
-  ///
-  /// Deliberately permissive on the address: the only definitive test of an
-  /// email is sending to it, and an over-strict pattern rejects valid ones.
+  /// The server enforces all of this, but a round trip to be told "invalid
+  /// credentials" for an empty box is a poor way to learn you left one blank.
+  /// Returns the first problem, or null when the form can be submitted.
   String? _validate() {
-    final email = _email.text.trim();
-    if (email.isEmpty) return 'Enter your email address.';
-    if (!RegExp(r'^[^@\s]+@[^@\s.]+\.[^@\s]+$').hasMatch(email)) {
-      return "That email address doesn't look right.";
-    }
-    if (_password.text.isEmpty) return 'Enter your password.';
+    final emailProblem = validateEmail(_email.text);
+    if (emailProblem != null) return emailProblem;
     if (_isSignUp) {
-      if (_password.text.length < 6) {
-        return 'Use a password of at least 6 characters.';
-      }
       if (_name.text.trim().isEmpty) {
         return 'Enter a display name so people know who you are.';
       }
+      return validateNewPassword(_password.text);
     }
+    if (_password.text.isEmpty) return 'Enter your password.';
     return null;
   }
 
@@ -80,19 +98,54 @@ class _SignInViewState extends ConsumerState<SignInView> {
     } on LizException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) {
+        setState(() => _error = 'Something went wrong. Try again.');
+      }
     }
+  }
+
+  void _submit() {
+    if (ref.read(authControllerProvider)) return;
+    final problem = _validate();
+    if (problem != null) {
+      setState(() {
+        _error = problem;
+        _info = null;
+      });
+      return;
+    }
+    final auth = ref.read(authControllerProvider.notifier);
+    _guard(() async {
+      if (_isSignUp) {
+        await auth.signUp(
+          _email.text.trim(),
+          _password.text,
+          _name.text.trim(),
+        );
+      } else {
+        await auth.signInWithEmail(_email.text.trim(), _password.text);
+      }
+      // Lets the browser's password manager offer to save what was typed.
+      TextInput.finishAutofillContext();
+    });
+  }
+
+  void _setMode(bool signUp) {
+    if (signUp == _isSignUp) return;
+    setState(() {
+      _isSignUp = signUp;
+      _error = null;
+      _info = null;
+    });
   }
 
   /// Opens another page from this view.
   ///
   /// This view is shown both as a bottom sheet and as a full page. A sheet has
   /// to be dismissed first or it covers the screen being pushed; a page must
-  /// not be — it is where Back should return to. onSignedIn cannot tell the two
-  /// apart: on the page it means "signed in, leave", which is how the reset
-  /// link first sent people to Discover. [keepSheet] is for pages that are
-  /// read and closed, where dismissing would throw away the half-filled form;
-  /// those push above the sheet on the root navigator instead.
+  /// not be — it is where Back should return to. [keepSheet] is for pages that
+  /// are read and closed, where dismissing would throw away the half-filled
+  /// form; those push above the sheet on the root navigator instead.
   void _openPage(String path, {bool keepSheet = false}) {
     if (!keepSheet && ModalRoute.of(context) is PopupRoute) {
       Navigator.of(context).pop();
@@ -100,288 +153,371 @@ class _SignInViewState extends ConsumerState<SignInView> {
     context.push(path);
   }
 
+  void _forgotPassword() {
+    final email = _email.text.trim();
+    _openPage(
+      email.isEmpty
+          ? '/forgot-password'
+          : '/forgot-password?email=${Uri.encodeQueryComponent(email)}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final p = context.liz;
     final busy = ref.watch(authControllerProvider);
     final auth = ref.read(authControllerProvider.notifier);
     final isLive = ref.watch(isLiveBackendProvider);
-    final scheme = Theme.of(context).colorScheme;
     // While this resolves, and if it fails, no social buttons are shown: the
     // email form below is a complete sign-in on its own.
     final providers =
         ref.watch(enabledAuthProvidersProvider).value ??
         EnabledAuthProviders.none;
+    final small = LizText.footnote.copyWith(color: p.textSecondary);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(LizSpacing.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(
-              _isSignUp ? 'Create your account' : 'Welcome to Liz',
-              style: LizText.title1.copyWith(color: context.liz.textPrimary),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            widget.prompt ??
-                'Sign in to save tools, post, and follow what you love.',
-            style: LizText.body.copyWith(color: context.liz.textSecondary),
-          ),
-          const SizedBox(height: LizSpacing.lg),
-
-          // Only the providers this project has enabled. Offering one that is
-          // switched off dead-ends on Supabase's raw error JSON.
-          if (providers.google) ...[
-            _SocialButton(
-              icon: Icons.g_mobiledata,
-              label: 'Continue with Google',
-              onPressed: busy ? null : () => _guard(auth.signInWithGoogle),
-            ),
-          ],
-          if (providers.apple && shouldOfferApple) ...[
-            if (providers.google) const SizedBox(height: 10),
-            _SocialButton(
-              icon: Icons.apple,
-              label: 'Continue with Apple',
-              onPressed: busy ? null : () => _guard(auth.signInWithApple),
-            ),
-          ],
-          // A lone "or" above the email form reads as a missing button.
-          if (providers.hasSocial) ...[
-            const SizedBox(height: LizSpacing.md),
-            Row(
-              children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    'or',
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                ),
-                const Expanded(child: Divider()),
-              ],
-            ),
-            const SizedBox(height: LizSpacing.md),
-          ],
-
-          if (_isSignUp) ...[
-            TextField(
-              controller: _name,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Display name',
-                prefixIcon: Icon(Icons.person_outline),
+      padding: widget.padding,
+      child: AutofillGroup(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                _isSignUp ? 'Create your account' : 'Welcome back',
+                style: LizText.title1.copyWith(color: p.textPrimary),
               ),
-            ),
-            const SizedBox(height: 12),
-          ],
-          TextField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              prefixIcon: Icon(Icons.mail_outline),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _password,
-            obscureText: true,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Password',
-              prefixIcon: Icon(Icons.lock_outline),
-            ),
-          ),
-
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            _Message(text: _error!, color: context.liz.danger),
-          ],
-          if (_info != null) ...[
-            const SizedBox(height: 12),
-            _Message(text: _info!, color: context.liz.positive),
-          ],
-
-          const SizedBox(height: LizSpacing.md),
-          FilledButton(
-            style: const ButtonStyle(
-              minimumSize: WidgetStatePropertyAll(Size.fromHeight(48)),
-            ),
-            onPressed: busy
-                ? null
-                : () {
-                    final problem = _validate();
-                    if (problem != null) {
-                      setState(() {
-                        _error = problem;
-                        _info = null;
-                      });
-                      return;
-                    }
-                    _guard(() async {
-                      if (_isSignUp) {
-                        await auth.signUp(
-                          _email.text.trim(),
-                          _password.text,
-                          _name.text.trim(),
-                        );
-                      } else {
-                        await auth.signInWithEmail(
-                          _email.text.trim(),
-                          _password.text,
-                        );
-                      }
-                    });
-                  },
-            child: busy
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(_isSignUp ? 'Create account' : 'Sign in'),
-          ),
-          const SizedBox(height: 8),
-          // Say what signing up agrees to before it happens, and let it be
-          // read without losing what has been typed into the form.
-          if (_isSignUp)
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  'By creating an account you agree to the',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                TextButton(
-                  onPressed: () => _openPage('/terms', keepSheet: true),
-                  child: const Text('Terms'),
-                ),
-                Text('and', style: Theme.of(context).textTheme.bodySmall),
-                TextButton(
-                  onPressed: () => _openPage('/privacy', keepSheet: true),
-                  child: const Text('Privacy policy'),
-                ),
-              ],
-            ),
-          if (!_isSignUp)
-            TextButton(
-              onPressed: busy || _email.text.trim().isEmpty
-                  ? null
-                  : () => _guard(() async {
-                      await auth.sendMagicLink(_email.text.trim());
-                      if (mounted) {
-                        setState(
-                          () => _info = 'Magic link sent — check your email.',
-                        );
-                      }
-                    }),
-              child: const Text('Email me a magic link'),
-            ),
-          // The moment someone needs this is the moment a password fails, so
-          // it belongs here rather than behind a help page.
-          if (!_isSignUp)
-            TextButton(
-              onPressed: busy
-                  ? null
-                  : () {
-                      final email = _email.text.trim();
-                      _openPage(
-                        email.isEmpty
-                            ? '/forgot-password'
-                            : '/forgot-password?email='
-                                  '${Uri.encodeQueryComponent(email)}',
-                      );
-                    },
-              child: const Text('Forgot your password?'),
-            ),
-          TextButton(
-            onPressed: busy
-                ? null
-                : () => setState(() => _isSignUp = !_isSignUp),
-            child: Text(
-              _isSignUp
-                  ? 'Already have an account? Sign in'
-                  : "New here? Create an account",
-            ),
-          ),
-
-          if (!isLive) ...[
-            const SizedBox(height: 4),
-            OutlinedButton.icon(
-              onPressed: busy ? null : () => _guard(auth.signInAsDemo),
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Skip — continue as demo user'),
             ),
             const SizedBox(height: 6),
             Text(
-              'Running in demo mode (no backend connected). All actions work locally.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+              widget.prompt ??
+                  (_isSignUp
+                      ? 'Save tools, get alerts when they move, and write '
+                            'reviews.'
+                      : 'Sign in to your saved tools and alerts.'),
+              style: LizText.callout.copyWith(color: p.textSecondary),
             ),
+            const SizedBox(height: LizSpacing.lg),
+            LizSegmented<bool>(
+              segments: const {false: 'Sign in', true: 'Create account'},
+              value: _isSignUp,
+              onChanged: busy ? (_) {} : _setMode,
+              expand: true,
+            ),
+            const SizedBox(height: LizSpacing.md),
+
+            // Only the providers this project offers. A switched-off one
+            // dead-ends on an error.
+            if (providers.google)
+              _ProviderButton(
+                mark: const _GoogleMark(),
+                label: 'Continue with Google',
+                onPressed: busy ? null : () => _guard(auth.signInWithGoogle),
+              ),
+            if (providers.apple && shouldOfferApple) ...[
+              if (providers.google) const SizedBox(height: 10),
+              _ProviderButton(
+                mark: Icon(Icons.apple, size: 20, color: p.textPrimary),
+                label: 'Continue with Apple',
+                onPressed: busy ? null : () => _guard(auth.signInWithApple),
+              ),
+            ],
+            // A lone "or" above the email form reads as a missing button.
+            if (providers.hasSocial) ...[
+              const SizedBox(height: LizSpacing.md),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: p.hairline)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'OR WITH EMAIL',
+                      style: LizText.label.copyWith(color: p.textSecondary),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: p.hairline)),
+                ],
+              ),
+              const SizedBox(height: LizSpacing.md),
+            ],
+
+            if (_isSignUp) ...[
+              TextField(
+                controller: _name,
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.words,
+                autofillHints: const [AutofillHints.name],
+                decoration: const InputDecoration(
+                  labelText: 'Display name',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            TextField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autocorrect: false,
+              autofillHints: const [
+                AutofillHints.email,
+                AutofillHints.username,
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.mail_outline),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _password,
+              obscureText: !_showPassword,
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              enableSuggestions: false,
+              autofillHints: [
+                _isSignUp ? AutofillHints.newPassword : AutofillHints.password,
+              ],
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                helperText: _isSignUp
+                    ? 'At least $minPasswordLength characters. A phrase '
+                          'works well.'
+                    : null,
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  tooltip: _showPassword ? 'Hide password' : 'Show password',
+                  icon: Icon(
+                    _showPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _showPassword = !_showPassword),
+                ),
+              ),
+            ),
+            // The moment someone needs this is the moment a password fails,
+            // so it sits under the field rather than behind a help page.
+            if (!_isSignUp)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: busy ? null : _forgotPassword,
+                  child: const Text('Forgot your password?'),
+                ),
+              )
+            else
+              const SizedBox(height: 4),
+
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              _Message(
+                text: _error!,
+                color: p.danger,
+                icon: Icons.error_outline,
+              ),
+            ],
+            if (_info != null) ...[
+              const SizedBox(height: 8),
+              _Message(
+                text: _info!,
+                color: p.positive,
+                icon: Icons.check_circle_outline,
+              ),
+            ],
+
+            const SizedBox(height: LizSpacing.md),
+            FilledButton(
+              style: const ButtonStyle(
+                minimumSize: WidgetStatePropertyAll(Size.fromHeight(50)),
+              ),
+              onPressed: busy ? null : _submit,
+              child: busy
+                  ? Semantics(
+                      label: 'Working',
+                      child: const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : Text(_isSignUp ? 'Create account' : 'Sign in'),
+            ),
+            const SizedBox(height: 8),
+            // Say what signing up agrees to before it happens, and let it be
+            // read without losing what has been typed into the form.
+            if (_isSignUp)
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text('By creating an account you agree to the', style: small),
+                  TextButton(
+                    onPressed: () => _openPage('/terms', keepSheet: true),
+                    child: const Text('Terms'),
+                  ),
+                  Text('and', style: small),
+                  TextButton(
+                    onPressed: () => _openPage('/privacy', keepSheet: true),
+                    child: const Text('Privacy policy'),
+                  ),
+                ],
+              )
+            else
+              TextButton(
+                onPressed: busy || _email.text.trim().isEmpty
+                    ? null
+                    : () => _guard(() async {
+                        await auth.sendMagicLink(_email.text.trim());
+                        if (mounted) {
+                          setState(
+                            () => _info =
+                                'Sign-in link sent. Open it in this browser.',
+                          );
+                        }
+                      }),
+                child: const Text('Email me a sign-in link instead'),
+              ),
+
+            if (!isLive) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: busy ? null : () => _guard(auth.signInAsDemo),
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Skip — continue as demo user'),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Running in demo mode (no backend connected). All actions '
+                'work locally.',
+                textAlign: TextAlign.center,
+                style: small,
+              ),
+            ],
           ],
-        ],
-      ),
-    );
-  }
-}
-
-/// A form message — an error or a confirmation — as a tinted panel, so it
-/// reads as the form's answer rather than as stray coloured text.
-class _Message extends StatelessWidget {
-  const _Message({required this.text, required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.liz;
-    final fill = Color.alphaBlend(color.withValues(alpha: 0.10), p.surface);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: ShapeDecoration(
-        color: fill,
-        shape: LizRadius.shape(LizRadius.sm),
-      ),
-      child: Text(
-        text,
-        style: LizText.callout.copyWith(
-          color: LizColors.legibleOn(color, fill),
         ),
       ),
     );
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  const _SocialButton({
-    required this.icon,
+/// A form message — an error or a confirmation — as a tinted panel with an
+/// icon, announced to screen readers when it appears.
+class _Message extends StatelessWidget {
+  const _Message({required this.text, required this.color, required this.icon});
+  final String text;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final fill = Color.alphaBlend(color.withValues(alpha: 0.10), p.surface);
+    final ink = LizColors.legibleOn(color, fill);
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: ShapeDecoration(
+          color: fill,
+          shape: LizRadius.shape(
+            LizRadius.sm,
+            side: BorderSide(color: color.withValues(alpha: 0.4)),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: ink),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(text, style: LizText.callout.copyWith(color: ink)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Continue with …": an outlined button with the provider's own mark.
+class _ProviderButton extends StatelessWidget {
+  const _ProviderButton({
+    required this.mark,
     required this.label,
     this.onPressed,
   });
-  final IconData icon;
+  final Widget mark;
   final String label;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
+    return OutlinedButton(
       onPressed: onPressed,
-      icon: Icon(icon, size: 24),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(50),
-        alignment: Alignment.center,
+      style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ExcludeSemantics(child: SizedBox.square(dimension: 20, child: mark)),
+          const SizedBox(width: 12),
+          Text(label),
+        ],
       ),
     );
   }
+}
+
+/// Google's "G", drawn in its four colours, as its sign-in guidelines ask
+/// for the button. Painted rather than shipped as an image: crisp at any
+/// size, no asset request.
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark();
+
+  @override
+  Widget build(BuildContext context) =>
+      const CustomPaint(painter: _GoogleMarkPainter());
+}
+
+class _GoogleMarkPainter extends CustomPainter {
+  const _GoogleMarkPainter();
+
+  static const _blue = Color(0xFF4285F4);
+  static const _green = Color(0xFF34A853);
+  static const _yellow = Color(0xFFFBBC05);
+  static const _red = Color(0xFFEA4335);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.shortestSide;
+    final stroke = s * 0.2;
+    final rect = Rect.fromCircle(
+      center: Offset(s / 2, s / 2),
+      radius: (s - stroke) / 2,
+    );
+    double rad(double deg) => deg * 3.1415926535 / 180;
+    Paint arc(Color c) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke;
+    // Angles clockwise from three o'clock; the opening is at the upper right.
+    canvas.drawArc(rect, rad(-20), rad(65), false, arc(_blue));
+    canvas.drawArc(rect, rad(45), rad(90), false, arc(_green));
+    canvas.drawArc(rect, rad(135), rad(70), false, arc(_yellow));
+    canvas.drawArc(rect, rad(205), rad(110), false, arc(_red));
+    // The bar.
+    canvas.drawRect(
+      Rect.fromLTWH(s / 2, s / 2 - stroke / 2, s / 2 - stroke * 0.05, stroke),
+      Paint()..color = _blue,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_GoogleMarkPainter old) => false;
 }
 
 /// Shows the sign-in sheet and resolves true if the user ends up signed in.

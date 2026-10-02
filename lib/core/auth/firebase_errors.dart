@@ -19,7 +19,7 @@ String authErrorMessage(String code) {
     case 'invalid-email':
       return 'That doesn\'t look like an email address.';
     case 'weak-password':
-      return 'Choose a longer password — at least 6 characters.';
+      return 'Choose a longer password — at least 8 characters.';
     case 'too-many-requests':
       return 'Too many attempts. Wait a few minutes and try again.';
     case 'user-disabled':
