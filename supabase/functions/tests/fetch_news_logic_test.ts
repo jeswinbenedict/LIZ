@@ -1,5 +1,5 @@
 import { assert, assertEquals } from 'jsr:@std/assert@1';
-import { cleanTitle, decodeEntities, stripHtml } from '../fetch-news/logic.ts';
+import { cleanTitle, decodeEntities, stripHnFooter, stripHtml } from '../fetch-news/logic.ts';
 
 // Feeds encode punctuation in whichever form they please. Every string below
 // reached the live News page looking broken before these rules existed.
@@ -54,4 +54,23 @@ Deno.test('cleanTitle decodes headlines, which stripHtml never saw', () => {
 
 Deno.test('cleanTitle handles empty input', () => {
   assertEquals(cleanTitle(''), '');
+});
+
+Deno.test("drops hnrss's footer, which is not a summary", () => {
+  assertEquals(
+    stripHnFooter(
+      'Article URL: https://lwn.net/Articles/1097401/ Comments URL: ' +
+        'https://news.ycombinator.com/item?id=49928121 Points: 43 # Comments: 12',
+    ),
+    '',
+  );
+  // An Ask HN post keeps what was written above the footer.
+  assertEquals(
+    stripHnFooter(
+      'What do you use for backups? Article URL: https://news.ycombinator.com/item?id=1 ' +
+        'Comments URL: https://news.ycombinator.com/item?id=1 Points: 5 # Comments: 3',
+    ),
+    'What do you use for backups?',
+  );
+  assertEquals(stripHnFooter('A normal summary.'), 'A normal summary.');
 });

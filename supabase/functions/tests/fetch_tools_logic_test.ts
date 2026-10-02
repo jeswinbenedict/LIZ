@@ -1,5 +1,5 @@
 import { assert, assertEquals } from 'jsr:@std/assert@1';
-import { isNonProduct, websiteFor } from '../fetch-tools/logic.ts';
+import { clipTagline, isNonProduct, websiteFor } from '../fetch-tools/logic.ts';
 
 // GitHub's topic search returns plenty that isn't a product. These are real
 // repos that reached the live catalog and had to be hidden by hand, plus the
@@ -86,4 +86,23 @@ Deno.test('campaign tags are stripped, other parameters kept', () => {
     websiteFor('https://muapi.ai/open?utm_source=github&utm_medium=about&ref=x', REPO),
     'https://muapi.ai/open?ref=x',
   );
+});
+
+Deno.test('taglines are cut at a word, not mid-word', () => {
+  // Both reached the live movers table cut at character 140.
+  const reach =
+    'Give your AI agent eyes to see the entire internet. Read & search Twitter, ' +
+    'Reddit, YouTube, GitHub, Bilibili, XiaoHongShu — one CLI, zero API fees.';
+  assertEquals(
+    clipTagline(reach),
+    'Give your AI agent eyes to see the entire internet. Read & search Twitter, ' +
+      'Reddit, YouTube, GitHub, Bilibili, XiaoHongShu — one CLI, zero…',
+  );
+  const studio =
+    'VoiceStudio is the open-source, fully-local ElevenLabs alternative — voice ' +
+    'cloning, voice design, video dubbing, dictation, transcription & audiobooks.';
+  const clipped = clipTagline(studio);
+  assert(clipped.length <= 140, clipped);
+  assertEquals(clipped.endsWith('transcription…'), true, clipped);
+  assertEquals(clipTagline('Short and complete.'), 'Short and complete.');
 });

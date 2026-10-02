@@ -36,8 +36,8 @@ class NewsScreen extends ConsumerWidget {
                   title: 'Tech News',
                   subtitle: phone
                       ? null
-                      : 'The day in technology, with a quick take on each '
-                            'story. Updated hourly.',
+                      : 'The day in technology, from the outlets that '
+                            'cover it. Updated hourly.',
                   trailing: state.live ? const _LiveBadge() : null,
                   bottom: 4,
                 ),

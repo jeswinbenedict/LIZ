@@ -103,3 +103,17 @@ export function websiteFor(homepage: string | null | undefined, repoUrl: string)
   }
   return url.toString();
 }
+
+/// A repository description cut down to a tagline. Slicing at a fixed length
+/// left taglines ending mid-word ("one CLI, zero AP") or on a dangling "&";
+/// cut at a word instead, drop whatever joins the cut-off half, and say that
+/// there is more.
+export function clipTagline(text: string, limit = 140): string {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= limit) return clean;
+  const cut = clean.slice(0, limit - 1);
+  const atWord = cut.includes(' ') ? cut.slice(0, cut.lastIndexOf(' ')) : cut;
+  const tidy = atWord.replace(/(\s+(&|and|or|with|the|a|an|of|to|for))+$/i, '')
+    .replace(/[\s,;:&—–-]+$/, '');
+  return `${tidy}…`;
+}

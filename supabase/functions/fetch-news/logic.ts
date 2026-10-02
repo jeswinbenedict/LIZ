@@ -40,3 +40,16 @@ export function stripHtml(html: string): string {
     .trim();
   return text.length > 300 ? `${text.slice(0, 297)}…` : text;
 }
+
+/// hnrss.org describes every front-page story with the same footer — "Article
+/// URL: … Comments URL: … Points: 8 # Comments: 2" — which says nothing about
+/// the story and read as its summary on the News page. Drop it; an Ask HN
+/// post keeps the text written above it.
+export function stripHnFooter(snippet: string): string {
+  return snippet
+    .replace(
+      /\s*Article URL:\s*\S+\s*Comments URL:\s*\S+\s*Points:\s*\d+\s*#\s*Comments:\s*\d+\s*$/i,
+      '',
+    )
+    .trim();
+}
