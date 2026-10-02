@@ -1,5 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert@1';
-import { parseBullets } from '../_shared/summary.ts';
+import { NEWS_GROUNDING, parseBullets, summaryPrompt } from '../_shared/summary.ts';
 
 // The backfill first ran with a prompt asking for a bare JSON array. Nothing
 // parsed, so it reported "no usable bullets" for every tool and wrote nothing —
@@ -64,4 +64,16 @@ Deno.test('retryAfterMs falls back when the header is missing or junk', async ()
 Deno.test('retryAfterMs never waits past a function lifetime', async () => {
   const { retryAfterMs } = await import('../_shared/ai.ts');
   assertEquals(retryAfterMs('600'), 20000);
+});
+
+Deno.test('a news quick take is held to what the snippet says', () => {
+  const news = summaryPrompt({ title: 'T', description: 'D', kind: 'news' });
+  assertEquals(news.endsWith(NEWS_GROUNDING), true);
+  // Tool summaries are unchanged.
+  assertEquals(
+    summaryPrompt({ title: 'T', description: 'D' }),
+    'Kind: tool\nTitle: T\nDescription: D',
+  );
+  // "Nothing to say" parses to no bullets, which counts against the row.
+  assertEquals(parseBullets('{"bullets": []}'), []);
 });

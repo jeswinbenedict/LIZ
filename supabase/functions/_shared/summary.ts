@@ -30,18 +30,34 @@ export function parseBullets(text: string): string[] {
     .slice(0, 3);
 }
 
-export async function summarize(
+/// A news snippet is two or three sentences, and a model asked for three
+/// bullets will pad a thin one with things the story never said. For news,
+/// only what the snippet states, and nothing at all rather than a guess — an
+/// empty answer counts against the row and it leaves the queue.
+export const NEWS_GROUNDING =
+  'Use only facts stated in the description. Do not add background, ' +
+  'numbers or claims it does not contain. Two bullets are fine. If the ' +
+  'description is too thin for even one factual bullet, respond {"bullets": []}.';
+
+export function summaryPrompt(
   { title, description, kind = 'tool' }: {
     title?: string;
     description?: string;
     kind?: string;
   },
+): string {
+  const base = `Kind: ${kind}\nTitle: ${title ?? ''}\nDescription: ${description ?? ''}`;
+  return kind === 'news' ? `${base}\n\n${NEWS_GROUNDING}` : base;
+}
+
+export async function summarize(
+  input: { title?: string; description?: string; kind?: string },
 ): Promise<string[]> {
   const text = await completeText({
     system: SUMMARY_SYSTEM,
     // Room for a reasoning model to think briefly and still answer.
     maxTokens: 1000,
-    user: `Kind: ${kind}\nTitle: ${title ?? ''}\nDescription: ${description ?? ''}`,
+    user: summaryPrompt(input),
   });
   return parseBullets(text);
 }

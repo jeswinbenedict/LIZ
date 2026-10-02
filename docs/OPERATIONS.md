@@ -107,6 +107,7 @@ back: redeploy the previous commit from the Actions tab.
 | pg_cron | `fetch-tools-daily` (GitHub) | daily |
 | pg_cron | `snapshot-and-rank-daily` | daily, 04:50 UTC |
 | pg_cron | `backfill-embeddings`, `backfill-summaries` | every 15 minutes |
+| pg_cron | `backfill-news-summaries` (news quick takes, last 48 hours) | every 15 minutes |
 | pg_cron | `check-system-health-hourly` | hourly |
 | pg_cron | `prune-*`, `cap-news-rows` | daily housekeeping |
 | GitHub Actions | `scrape-tools.yml`: Hacker News scrape, logos, malware check | daily, 03:30 UTC |
