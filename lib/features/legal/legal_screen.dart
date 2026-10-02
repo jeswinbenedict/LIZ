@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
+import '../../shared/widgets/page_header.dart';
 
 /// Where questions about these documents go. Set at build time with
 /// `--dart-define=LEGAL_CONTACT=...` once there is an address to publish; until
@@ -29,7 +30,7 @@ class LegalScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(document.title)),
+      appBar: AppBar(title: PageHeading(document.title)),
       body: MaxWidth(
         maxWidth: 760,
         child: ListView(

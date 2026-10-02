@@ -411,6 +411,25 @@ class PhoneTopBar extends StatelessWidget {
   }
 }
 
+/// A page's own title as its one level-1 heading, for pages whose title sits
+/// in an app bar or a form rather than a [PageHeader]. Screen reader users
+/// jump to it to learn where they are; an app bar title alone is announced
+/// as a lesser heading.
+class PageHeading extends StatelessWidget {
+  const PageHeading(this.text, {super.key, this.style, this.textAlign});
+  final String text;
+  final TextStyle? style;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    header: true,
+    headingLevel: 1,
+    child: Text(text, style: style, textAlign: textAlign),
+  );
+}
+
 /// A filter pill (docs/DESIGN.md §7): an outline when off, lit when on — a
 /// red edge on a faint red fill. Drawn 32px tall with a 48px hit area.
 class LizFilterPill extends StatelessWidget {

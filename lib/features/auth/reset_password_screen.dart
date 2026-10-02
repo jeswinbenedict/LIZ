@@ -8,6 +8,7 @@ import '../../core/auth/firebase_auth_repository.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
 import 'password_validation.dart';
+import '../../shared/widgets/page_header.dart';
 
 /// Where a reset link lands: choose the new password.
 ///
@@ -78,7 +79,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final viaLink = (widget.resetCode ?? passwordResetCodeIn(Uri.base)) != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose a new password')),
+      appBar: AppBar(title: const PageHeading('Choose a new password')),
       body: MaxWidth(
         maxWidth: 440,
         child: SingleChildScrollView(

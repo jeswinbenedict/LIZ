@@ -241,6 +241,7 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                     Semantics(
                       container: true,
                       header: true,
+                      headingLevel: 1,
                       child: Text(
                         '“${_answered!}”',
                         style: (phone ? LizText.title2 : LizText.title1)
@@ -486,6 +487,7 @@ class _Intro extends StatelessWidget {
               Semantics(
                 container: true,
                 header: true,
+                headingLevel: 1,
                 child: Text(
                   'What do you want to do?',
                   textAlign: TextAlign.center,

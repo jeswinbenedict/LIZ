@@ -16,7 +16,7 @@ async function keys() {
     ['sign', 'verify'],
   ) as CryptoKeyPair;
   const jwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
-  return { pair, jwks: async () => ({ keys: [{ ...jwk, kid: 'k1' }], maxAgeSeconds: 3600 }) };
+  return { pair, jwks: () => Promise.resolve({ keys: [{ ...jwk, kid: 'k1' }], maxAgeSeconds: 3600 }) };
 }
 
 function claims(over: Record<string, unknown> = {}) {

@@ -186,6 +186,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
             Semantics(
               container: true,
               header: true,
+              headingLevel: 1,
               child: Text(
                 _isSignUp ? 'Create your account' : 'Welcome back',
                 style: LizText.title1.copyWith(color: p.textPrimary),

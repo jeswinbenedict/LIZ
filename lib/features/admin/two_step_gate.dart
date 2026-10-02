@@ -9,6 +9,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
 import '../../shared/widgets/states.dart';
+import '../../shared/widgets/page_header.dart';
 
 /// Where this session stands with two-step verification. Re-read after a
 /// code is accepted.
@@ -30,7 +31,7 @@ class TwoStepGate extends ConsumerWidget {
         .when(
           loading: () => const Scaffold(body: LoadingView()),
           error: (_, _) => Scaffold(
-            appBar: AppBar(title: const Text('Admin')),
+            appBar: AppBar(title: const PageHeading('Admin')),
             body: ErrorView(onRetry: () => ref.invalidate(twoStepProvider)),
           ),
           data: (state) => state.status == TwoStepStatus.verified
@@ -112,7 +113,7 @@ class _TwoStepPageState extends ConsumerState<_TwoStepPage> {
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin')),
+      appBar: AppBar(title: const PageHeading('Admin')),
       body: MaxWidth(
         maxWidth: 520 + gutter * 2,
         child: ListView(

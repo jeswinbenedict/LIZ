@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
 import 'password_validation.dart';
+import '../../shared/widgets/page_header.dart';
 
 /// Asks for the address to send a reset link to.
 ///
@@ -75,7 +76,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/signin'),
         ),
-        title: const Text('Reset your password'),
+        title: const PageHeading('Reset your password'),
       ),
       body: MaxWidth(
         maxWidth: 440,

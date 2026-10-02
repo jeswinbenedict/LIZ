@@ -93,6 +93,7 @@ class _ProfileBody extends ConsumerWidget {
                       child: Semantics(
                         container: true,
                         header: true,
+                        headingLevel: 1,
                         child: Text(
                           profile.displayName,
                           textAlign: TextAlign.center,

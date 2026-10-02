@@ -10,6 +10,7 @@ import 'health_tab.dart';
 import 'moderation_tab.dart';
 import 'news_tab.dart';
 import 'two_step_gate.dart';
+import '../../shared/widgets/page_header.dart';
 
 /// Web-focused moderation console. Role-gated: non-admins are turned away
 /// (defense-in-depth on top of RLS, which is the real enforcement), and a
@@ -22,7 +23,7 @@ class AdminScreen extends ConsumerWidget {
     final profile = ref.watch(currentUserProvider);
     if (profile == null || !profile.role.canModerate) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Admin')),
+        appBar: AppBar(title: const PageHeading('Admin')),
         body: EmptyView(
           icon: Icons.lock_outline,
           title: 'Admins only',
@@ -40,7 +41,7 @@ class AdminScreen extends ConsumerWidget {
         length: 4,
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Admin console'),
+            title: const PageHeading('Admin console'),
             bottom: const TabBar(
               isScrollable: true,
               tabs: [

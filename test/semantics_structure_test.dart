@@ -36,6 +36,20 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
 void main() {
   _pillKeyboardTests();
 
+  testWidgets('an app bar title is the page level-1 heading', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: LizTheme.app(),
+        home: Scaffold(appBar: AppBar(title: const PageHeading('Settings'))),
+      ),
+    );
+    final node = tester.getSemantics(find.text('Settings'));
+    expect(node.flagsCollection.isHeader, isTrue);
+    expect(node.getSemanticsData().headingLevel, 1);
+    handle.dispose();
+  });
+
   testWidgets('a news story is a link, apart from its controls', (
     tester,
   ) async {

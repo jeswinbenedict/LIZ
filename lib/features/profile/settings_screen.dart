@@ -10,6 +10,7 @@ import '../../shared/widgets/grouped_list.dart';
 import '../auth/auth_controller.dart';
 import 'data_export.dart';
 import 'preferences.dart';
+import '../../shared/widgets/page_header.dart';
 
 /// Settings as grouped lists (docs/DESIGN.md §8, Profile & Settings).
 class SettingsScreen extends ConsumerWidget {
@@ -24,7 +25,7 @@ class SettingsScreen extends ConsumerWidget {
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const PageHeading('Settings')),
       body: MaxWidth(
         maxWidth: 640 + gutter * 2,
         child: ListView(

@@ -21,9 +21,13 @@ class EmptyView extends StatelessWidget {
     required this.title,
     this.message,
     this.action,
+    this.headingLevel = 2,
   });
   final IconData icon;
   final String title;
+
+  /// 1 when the state is the whole page (not found), 2 inside a page.
+  final int headingLevel;
   final String? message;
   final Widget? action;
 
@@ -57,10 +61,15 @@ class EmptyView extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 360),
                 child: Column(
                   children: [
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: LizText.title3.copyWith(color: p.textPrimary),
+                    Semantics(
+                      container: true,
+                      header: true,
+                      headingLevel: headingLevel,
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: LizText.title3.copyWith(color: p.textPrimary),
+                      ),
                     ),
                     if (message != null) ...[
                       const SizedBox(height: 6),
@@ -112,6 +121,7 @@ class NotFoundScreen extends StatelessWidget {
       body: EmptyView(
         icon: Icons.explore_off_outlined,
         title: 'This page is not here',
+        headingLevel: 1,
         message: 'The link may be mistyped, or the page may have moved.',
         action: FilledButton(
           onPressed: () => context.go('/'),

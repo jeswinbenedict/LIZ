@@ -15,6 +15,7 @@ import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
+import '../../shared/widgets/page_header.dart';
 
 final _compareProvider = FutureProvider.autoDispose.family<List<Tool>, String>((
   ref,
@@ -37,7 +38,7 @@ class CompareScreen extends ConsumerWidget {
     final async = ref.watch(_compareProvider(toolIds.join(',')));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Compare'),
+        title: const PageHeading('Compare'),
         actions: [
           // The address already holds the comparison (/compare?ids=…), so a
           // copied link opens the same table for whoever receives it.

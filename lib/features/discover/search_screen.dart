@@ -87,7 +87,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       appBar: AppBar(
         titleSpacing: 0,
         toolbarHeight: 64,
-        // The field is the title: this screen exists to be typed into.
+        // The field is the title: this screen exists to be typed into. Its
+        // heading is for screen readers only — a visible "Search" above a
+        // search box would only repeat it.
         title: Padding(
           padding: EdgeInsets.only(right: gutter),
           child: MaxWidth(
@@ -120,6 +122,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Semantics(
+              container: true,
+              header: true,
+              headingLevel: 1,
+              label: 'Search tools',
+              child: const SizedBox(width: 1, height: 1),
+            ),
             Padding(
               padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 0),
               child: Row(
