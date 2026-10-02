@@ -45,7 +45,9 @@ def fetch_logoless(
         params={
             "select": "id,name,website_url,logo_url",
             "status": "eq.published",
-            "logo_url": "ilike.*.svg*" if svg else "is.null",
+            # No logo yet, or one store_logos marked as not found ("").
+            **({"logo_url": "ilike.*.svg*"} if svg
+               else {"or": "(logo_url.is.null,logo_url.eq.)"}),
             "order": "trend_score.desc",
             "limit": limit,
         },
@@ -108,7 +110,8 @@ def main(argv: list[str] | None = None) -> int:
             # something else set in the meantime.
             params={
                 "id": f"eq.{row['id']}",
-                "logo_url": f"eq.{row['logo_url']}" if row.get("logo_url") else "is.null",
+                "logo_url": "is.null" if row.get("logo_url") is None
+                else f"eq.{row['logo_url']}",
             },
             headers={**_headers(settings.service_role_key), "Prefer": "return=minimal"},
             json={"logo_url": logo},

@@ -11,6 +11,12 @@ as WebP (a few kilobytes), uploads it to the public `logos` bucket and points
 tools.logo_url at it. The Storage CDN then serves it with a one-year cache.
 
 New tools get theirs on the daily scrape run; this also back-fills.
+
+A tool with no usable logo anywhere — no icon, or only an SVG — gets an empty
+logo_url: "looked, found nothing". The app then draws its letter tile without
+asking the proxy, which every visitor's browser otherwise did, logging a 404
+each time. The row stays in this job's queue, so a logo that appears later is
+still picked up.
 """
 
 from __future__ import annotations
@@ -71,6 +77,20 @@ def domain_of(url: str | None) -> str | None:
     return host
 
 
+NO_LOGO = ""
+
+
+def same_logo_filter(logo_url: str | None) -> str:
+    """PostgREST filter matching the logo_url that was read, so a write never
+    overwrites one that something else set in the meantime."""
+    return "is.null" if logo_url is None else f"eq.{logo_url}"
+
+
+def should_mark_none(tool: dict) -> bool:
+    """Whether a miss is news: rows already marked need no write."""
+    return tool.get("logo_url") != NO_LOGO
+
+
 def proxy_url(functions_url: str, tool: dict) -> str | None:
     domain = domain_of(tool.get("website_url"))
     logo = tool.get("logo_url")
@@ -110,22 +130,41 @@ def main(argv: list[str] | None = None) -> int:
 
     outcome: collections.Counter[str] = collections.Counter()
     http = requests.Session()
+
+    def mark_none(tool: dict) -> None:
+        if not args.apply or not should_mark_none(tool):
+            return
+        http.patch(
+            f"{settings.rest_url}/tools",
+            params={"id": f"eq.{tool['id']}",
+                    "logo_url": same_logo_filter(tool.get("logo_url"))},
+            headers={**rest, "Content-Type": "application/json", "Prefer": "return=minimal"},
+            json={"logo_url": NO_LOGO},
+            timeout=REQUEST_TIMEOUT,
+        )
+        outcome["marked none"] += 1
+
     for tool in rows:
         src = proxy_url(f"{base}/functions/v1", tool)
         if not src:
             outcome["no source"] += 1
+            mark_none(tool)
             continue
         try:
             resp = http.get(src, timeout=REQUEST_TIMEOUT)
         except requests.RequestException:
+            # A network failure says nothing about the logo: leave the row.
             outcome["unreachable"] += 1
             continue
         if resp.status_code != 200 or not resp.headers.get("content-type", "").startswith("image/"):
             outcome["no logo"] += 1
+            if resp.status_code == 404:
+                mark_none(tool)
             continue
         webp = to_webp(resp.content)
         if webp is None:
             outcome["unusable"] += 1
+            mark_none(tool)
             continue
         outcome["stored"] += 1
         if not args.apply:

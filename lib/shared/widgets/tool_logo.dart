@@ -29,13 +29,19 @@ class ToolLogo extends StatelessWidget {
   }
 
   Widget _buildMark(BuildContext context) {
-    final stored = tool.logoUrl != null && tool.logoUrl!.isNotEmpty;
+    final logo = tool.logoUrl;
     // A tenth of the catalog was scraped without a logo, and every one showed
     // a letter tile even when its site has a perfectly good icon. Asking the
     // proxy by domain finds it; a miss still falls back to the letter.
-    final source = stored
-        ? Env.proxiedImage(tool.logoUrl!, fallbackDomain: tool.websiteUrl)
-        : Env.domainLogo(tool.websiteUrl);
+    //
+    // An empty logo_url is the logo job saying it looked and found nothing
+    // usable (liz_scraper.store_logos): asking again would only log a 404 in
+    // the visitor's console, so draw the letter straight away.
+    final source = logo == null
+        ? Env.domainLogo(tool.websiteUrl)
+        : logo.isEmpty
+        ? null
+        : Env.proxiedImage(logo, fallbackDomain: tool.websiteUrl);
     if (source != null) {
       // Present every logo as a clean, padded "app-icon" tile on a light
       // background so dark, transparent, or oddly-cropped marks all look uniform
