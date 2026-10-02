@@ -35,6 +35,7 @@ class ToolNewsSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Semantics(
+            container: true,
             header: true,
             child: Text(
               'In the news',

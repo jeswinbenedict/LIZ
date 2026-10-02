@@ -91,6 +91,7 @@ class _ProfileBody extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Semantics(
+                        container: true,
                         header: true,
                         child: Text(
                           profile.displayName,
@@ -209,6 +210,7 @@ class _Heading extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Semantics(
+      container: true,
       header: true,
       child: Text(
         text,

@@ -51,6 +51,7 @@ class LegalScreen extends StatelessWidget {
             for (final section in document.sections) ...[
               const SizedBox(height: 28),
               Semantics(
+                container: true,
                 header: true,
                 child: Text(section.heading, style: heading),
               ),
@@ -60,7 +61,11 @@ class LegalScreen extends StatelessWidget {
               ],
             ],
             const SizedBox(height: 28),
-            Semantics(header: true, child: Text('Questions', style: heading)),
+            Semantics(
+              container: true,
+              header: true,
+              child: Text('Questions', style: heading),
+            ),
             const SizedBox(height: 8),
             Text(
               legalContact.isEmpty

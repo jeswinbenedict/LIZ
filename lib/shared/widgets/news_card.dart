@@ -109,50 +109,72 @@ class NewsCard extends StatelessWidget {
               )
             : null;
 
-        return Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: _open,
-            customBorder: LizRadius.shape(LizRadius.md),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (wide)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: text),
-                        if (image != null) ...[
-                          const SizedBox(width: 20),
-                          image,
-                        ],
-                      ],
-                    )
-                  else ...[
-                    if (image != null) ...[image, const SizedBox(height: 14)],
-                    text,
-                  ],
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (item.aiSummary.isNotEmpty)
-                        Expanded(child: _QuickTake(bullets: item.aiSummary))
-                      else
-                        const Spacer(),
-                      IconButton(
-                        tooltip: 'Share',
-                        icon: const Icon(Icons.ios_share, size: 18),
-                        onPressed: () => SharePlus.instance.share(
-                          ShareParams(text: '${item.title}\n${item.url}'),
-                        ),
-                      ),
-                    ],
+        // The article is one link (its headline and summary read as its
+        // label); the quick take and Share sit below it, outside the link,
+        // so each is its own control rather than a button inside a button.
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Material(
+                type: MaterialType.transparency,
+                child: Semantics(
+                  container: true,
+                  link: true,
+                  // Without an address a screen reader is not told it is a
+                  // link at all.
+                  linkUrl: Uri.tryParse(item.url),
+                  child: InkWell(
+                    onTap: _open,
+                    customBorder: LizRadius.shape(LizRadius.md),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+                      child: wide
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: text),
+                                if (image != null) ...[
+                                  const SizedBox(width: 20),
+                                  image,
+                                ],
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (image != null) ...[
+                                  image,
+                                  const SizedBox(height: 14),
+                                ],
+                                text,
+                              ],
+                            ),
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  children: [
+                    if (item.aiSummary.isNotEmpty)
+                      Expanded(child: _QuickTake(bullets: item.aiSummary))
+                    else
+                      const Spacer(),
+                    IconButton(
+                      tooltip: 'Share',
+                      icon: const Icon(Icons.ios_share, size: 18),
+                      onPressed: () => SharePlus.instance.share(
+                        ShareParams(text: '${item.title}\n${item.url}'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },

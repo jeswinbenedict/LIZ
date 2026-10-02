@@ -26,6 +26,7 @@ final historyStart = DateTime.utc(2026, 9, 29);
 Widget _heading(BuildContext context, String title) {
   final p = context.liz;
   return Semantics(
+    container: true,
     header: true,
     child: Text(title, style: LizText.title2.copyWith(color: p.textPrimary)),
   );
@@ -75,6 +76,7 @@ class ToolSignalsSection extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Semantics(
+                        container: true,
                         header: true,
                         child: Text(
                           'SIGNAL · ${points.length} DAYS',
@@ -96,53 +98,61 @@ class ToolSignalsSection extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  // The body is its own node: the heading is read first,
+                  // then what it heads, not the text as a group label.
                   if (series == null)
-                    Text(
-                      'Liz has recorded this tool\'s signals daily since '
-                      '$since. Nothing measurable has moved yet; the line '
-                      'appears once it does.',
-                      style: LizText.callout.copyWith(color: p.textSecondary),
+                    Semantics(
+                      container: true,
+                      child: Text(
+                        'Liz has recorded this tool\'s signals daily since '
+                        '$since. Nothing measurable has moved yet; the line '
+                        'appears once it does.',
+                        style: LizText.callout.copyWith(color: p.textSecondary),
+                      ),
                     )
                   else
-                    LayoutBuilder(
-                      builder: (context, box) {
-                        final change = series.last - series.first;
-                        final summary =
-                            '${series.label}: ${_fmt(series.first)} → '
-                            '${_fmt(series.last)} since $since';
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SignalSparkline(
-                              values: series.values,
-                              width: box.maxWidth,
-                              height: 76,
-                              strokeWidth: 2,
-                              semanticLabel: summary,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              summary,
-                              style: LizText.mono.copyWith(
-                                fontSize: 12,
-                                color: p.textPrimary,
+                    Semantics(
+                      container: true,
+                      child: LayoutBuilder(
+                        builder: (context, box) {
+                          final change = series.last - series.first;
+                          final summary =
+                              '${series.label}: ${_fmt(series.first)} → '
+                              '${_fmt(series.last)} since $since';
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SignalSparkline(
+                                values: series.values,
+                                width: box.maxWidth,
+                                height: 76,
+                                strokeWidth: 2,
+                                semanticLabel: summary,
                               ),
-                            ),
-                            if (change > 0)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  '+${_fmt(change)} in ${points.length - 1} '
-                                  '${points.length == 2 ? 'day' : 'days'}',
-                                  style: LizText.mono.copyWith(
-                                    fontSize: 12,
-                                    color: p.accent,
-                                  ),
+                              const SizedBox(height: 12),
+                              Text(
+                                summary,
+                                style: LizText.mono.copyWith(
+                                  fontSize: 12,
+                                  color: p.textPrimary,
                                 ),
                               ),
-                          ],
-                        );
-                      },
+                              if (change > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text(
+                                    '+${_fmt(change)} in ${points.length - 1} '
+                                    '${points.length == 2 ? 'day' : 'days'}',
+                                    style: LizText.mono.copyWith(
+                                      fontSize: 12,
+                                      color: p.accent,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                 ],
               ),

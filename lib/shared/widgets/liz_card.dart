@@ -31,13 +31,19 @@ class LizCard extends StatefulWidget {
 
 class _LizCardState extends State<LizCard> {
   bool _hovered = false;
+  bool _focused = false;
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
     final interactive = widget.onTap != null;
-    final lifted = interactive && _hovered;
+    // Lit under the pointer, and when the keyboard brings focus here — the
+    // only sign a keyboard user has of where they are.
+    final keyboardFocus =
+        _focused &&
+        FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
+    final lifted = interactive && (_hovered || keyboardFocus);
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) == true;
     final duration = reduce ? Duration.zero : LizMotion.quick;
 
@@ -62,6 +68,9 @@ class _LizCardState extends State<LizCard> {
           customBorder: LizRadius.shape(widget.radius),
           onTap: widget.onTap,
           onHover: interactive ? (v) => setState(() => _hovered = v) : null,
+          onFocusChange: interactive
+              ? (v) => setState(() => _focused = v)
+              : null,
           onHighlightChanged: interactive
               ? (v) => setState(() => _pressed = v)
               : null,

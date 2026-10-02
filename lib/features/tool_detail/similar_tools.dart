@@ -47,6 +47,7 @@ class SimilarToolsSection extends ConsumerWidget {
             children: [
               Expanded(
                 child: Semantics(
+                  container: true,
                   header: true,
                   child: Text(
                     'Similar tools',

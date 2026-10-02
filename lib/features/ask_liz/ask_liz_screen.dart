@@ -239,6 +239,7 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                     ),
                     const SizedBox(height: 8),
                     Semantics(
+                      container: true,
                       header: true,
                       child: Text(
                         '“${_answered!}”',
@@ -389,6 +390,7 @@ class _ThinkingRows extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      container: true,
       label: 'Finding tools',
       liveRegion: true,
       child: ExcludeSemantics(
@@ -482,6 +484,7 @@ class _Intro extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Semantics(
+                container: true,
                 header: true,
                 child: Text(
                   'What do you want to do?',

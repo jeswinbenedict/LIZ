@@ -367,6 +367,7 @@ class _GroupLabel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
       child: Semantics(
+        container: true,
         header: true,
         child: Text(
           text.toUpperCase(),

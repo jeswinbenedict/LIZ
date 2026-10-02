@@ -70,14 +70,14 @@ class _SignInViewState extends ConsumerState<SignInView> {
   /// credentials" for an empty box is a poor way to learn you left one blank.
   /// Returns the first problem, or null when the form can be submitted.
   String? _validate() {
+    // In the order the fields appear, so the message names the first box
+    // that needs attention.
+    if (_isSignUp && _name.text.trim().isEmpty) {
+      return 'Enter a display name so people know who you are.';
+    }
     final emailProblem = validateEmail(_email.text);
     if (emailProblem != null) return emailProblem;
-    if (_isSignUp) {
-      if (_name.text.trim().isEmpty) {
-        return 'Enter a display name so people know who you are.';
-      }
-      return validateNewPassword(_password.text);
-    }
+    if (_isSignUp) return validateNewPassword(_password.text);
     if (_password.text.isEmpty) return 'Enter your password.';
     return null;
   }
@@ -184,6 +184,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Semantics(
+              container: true,
               header: true,
               child: Text(
                 _isSignUp ? 'Create your account' : 'Welcome back',
@@ -419,7 +420,10 @@ class _Message extends StatelessWidget {
     final p = context.liz;
     final fill = Color.alphaBlend(color.withValues(alpha: 0.10), p.surface);
     final ink = LizColors.legibleOn(color, fill);
+    // Its own node, so the message is announced on its own rather than read
+    // as the tail of the field hint above it.
     return Semantics(
+      container: true,
       liveRegion: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

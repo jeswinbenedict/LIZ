@@ -6,6 +6,7 @@ import '../../core/providers.dart';
 import '../../core/ui_state.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/models/tool_history.dart';
+import '../../shared/widgets/pressable.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/signal_sparkline.dart';
@@ -37,14 +38,17 @@ const _moversFilters = <(String?, String)>[
 ];
 
 class TopMovers extends ConsumerWidget {
-  const TopMovers({super.key});
+  const TopMovers({super.key, this.category});
+
+  /// Fixed to one category (a category page): no filter row.
+  final String? category;
 
   /// Below this width the table's six columns no longer fit legibly.
   static const tableWidth = 760.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filter = ref.watch(moversFilterProvider);
+    final filter = category ?? ref.watch(moversFilterProvider);
     final key = FeedKey(
       sort: ToolSort.rising,
       pricing: filter == 'free'
@@ -80,24 +84,25 @@ class TopMovers extends ConsumerWidget {
               'Hacker News and Liz.',
         ),
         // Sideways on a narrow window rather than wrapping into rows.
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 6),
-          child: Row(
-            children: [
-              for (final (value, label) in _moversFilters) ...[
-                LizFilterPill(
-                  label: label,
-                  selected: filter == value,
-                  semanticLabel: 'Show $label movers',
-                  onTap: () =>
-                      ref.read(moversFilterProvider.notifier).set(value),
-                ),
-                const SizedBox(width: 8),
+        if (category == null)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 6),
+            child: Row(
+              children: [
+                for (final (value, label) in _moversFilters) ...[
+                  LizFilterPill(
+                    label: label,
+                    selected: filter == value,
+                    semanticLabel: 'Show $label movers',
+                    onTap: () =>
+                        ref.read(moversFilterProvider.notifier).set(value),
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
           child: items.isEmpty
@@ -369,36 +374,48 @@ class _MoverRow extends StatelessWidget {
             ],
           );
 
+    // One sentence per part; taglines and reasons often bring their own
+    // full stop, which a screen reader would otherwise read twice.
+    String sentence(String s) => s.trim().replaceFirst(RegExp(r'[.!?]+$'), '');
     return Semantics(
-      button: true,
-      label:
-          'Number $rank, ${tool.name}. ${tool.tagline}'
-          '${reason == null ? '' : '. $reason'}',
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: open,
-        child: Container(
-          constraints: BoxConstraints(minHeight: wide ? 68 : 64),
-          padding: EdgeInsets.symmetric(
-            horizontal: wide ? 20 : 14,
-            vertical: 10,
+      link: true,
+      label: [
+        'Number $rank, ${tool.name}',
+        if (tool.tagline.trim().isNotEmpty) sentence(tool.tagline),
+        if (reason != null && reason.trim().isNotEmpty) sentence(reason),
+      ].join('. '),
+      container: true,
+      child: FocusOutline(
+        builder: (context, onFocusChange) => InkWell(
+          onTap: open,
+          onFocusChange: onFocusChange,
+          child: ExcludeSemantics(
+            child: Container(
+              constraints: BoxConstraints(minHeight: wide ? 68 : 64),
+              padding: EdgeInsets.symmetric(
+                horizontal: wide ? 20 : 14,
+                vertical: 10,
+              ),
+              // The leader is lit: a red seam on its leading edge, and light
+              // that fades across the row.
+              decoration: leader
+                  ? BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          p.glow.withValues(alpha: 0.13),
+                          p.glow.withValues(alpha: 0),
+                        ],
+                        stops: const [0, 0.6],
+                      ),
+                      border: Border(
+                        left: BorderSide(color: p.accent, width: 2),
+                      ),
+                    )
+                  : null,
+              alignment: Alignment.centerLeft,
+              child: content,
+            ),
           ),
-          // The leader is lit: a red seam on its leading edge, and light
-          // that fades across the row.
-          decoration: leader
-              ? BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      p.glow.withValues(alpha: 0.13),
-                      p.glow.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.6],
-                  ),
-                  border: Border(left: BorderSide(color: p.accent, width: 2)),
-                )
-              : null,
-          alignment: Alignment.centerLeft,
-          child: content,
         ),
       ),
     );

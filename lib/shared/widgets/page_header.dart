@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/responsive/adaptive_shell.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
+import 'pressable.dart';
 
 /// A page's title block (docs/DESIGN.md §7, Top bar): a large title in the
 /// page, an optional line under it, and optional trailing actions. Phones get
@@ -50,7 +51,9 @@ class PageHeader extends StatelessWidget {
                   const SizedBox(height: 10),
                 ],
                 Semantics(
+                  container: true,
                   header: true,
+                  headingLevel: 1,
                   child: Text(
                     title,
                     style:
@@ -112,6 +115,7 @@ class SectionHeader extends StatelessWidget {
                   const SizedBox(height: 6),
                 ],
                 Semantics(
+                  container: true,
                   header: true,
                   child: Text(
                     title,
@@ -337,17 +341,16 @@ class _Segment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    return Semantics(
-      button: true,
-      selected: selected,
-      inMutuallyExclusiveGroup: true,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
+    // A radio in a group: a screen reader says which one is chosen, which
+    // it does not for a button marked selected.
+    return Pressable(
+      onTap: onTap,
+      builder: (context, focused) => Semantics(
+        checked: selected,
+        selected: selected,
+        inMutuallyExclusiveGroup: true,
+        label: label,
+        child: ExcludeSemantics(
           child: SizedBox(
             height: 48,
             child: Center(
@@ -366,9 +369,10 @@ class _Segment extends StatelessWidget {
                         ? BorderSide(color: p.accent)
                         : BorderSide.none,
                   ),
-                  shadows: selected
-                      ? LizShadows.glow(p, strength: 0.35)
-                      : const [],
+                  shadows: [
+                    if (focused) ...focusRing(p),
+                    if (selected) ...LizShadows.glow(p, strength: 0.35),
+                  ],
                 ),
                 child: Text(
                   label,
@@ -432,16 +436,13 @@ class LizFilterPill extends StatelessWidget {
     final p = context.liz;
     final fg = selected ? p.textPrimary : p.textSecondary;
     final duration = LizMotion.of(context, LizMotion.quick);
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: semanticLabel ?? label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
+    return Pressable(
+      onTap: onTap,
+      builder: (context, focused) => Semantics(
+        button: true,
+        selected: selected,
+        label: semanticLabel ?? label,
+        child: ExcludeSemantics(
           child: SizedBox(
             height: 48,
             // widthFactor 1: size to the pill, not to whatever width a Wrap
@@ -463,9 +464,10 @@ class LizFilterPill extends StatelessWidget {
                       color: selected ? p.accent : p.hairlineStrong,
                     ),
                   ),
-                  shadows: selected
-                      ? LizShadows.glow(p, strength: 0.3)
-                      : const [],
+                  shadows: [
+                    if (focused) ...focusRing(p),
+                    if (selected) ...LizShadows.glow(p, strength: 0.3),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

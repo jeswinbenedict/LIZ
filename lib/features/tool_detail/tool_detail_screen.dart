@@ -192,7 +192,9 @@ class _ToolBody extends ConsumerWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Semantics(
+                      container: true,
                       header: true,
+                      headingLevel: 1,
                       child: Text(
                         tool.name,
                         style: LizText.title1.copyWith(color: p.textPrimary),
@@ -202,9 +204,12 @@ class _ToolBody extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  tool.tagline,
-                  style: LizText.body.copyWith(color: p.textSecondary),
+                Semantics(
+                  container: true,
+                  child: Text(
+                    tool.tagline,
+                    style: LizText.body.copyWith(color: p.textSecondary),
+                  ),
                 ),
               ],
             ),
@@ -647,6 +652,7 @@ class _Section extends StatelessWidget {
           Row(
             children: [
               Semantics(
+                container: true,
                 header: true,
                 child: Text(
                   title,
@@ -666,7 +672,9 @@ class _Section extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          child,
+          // Its own node, so a screen reader meets the heading first and
+          // then the text, rather than the text as the label of a group.
+          Semantics(container: true, child: child),
         ],
       ),
     );

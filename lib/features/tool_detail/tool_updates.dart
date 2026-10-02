@@ -87,6 +87,7 @@ class ToolUpdatesSection extends ConsumerWidget {
         Row(
           children: [
             Semantics(
+              container: true,
               header: true,
               child: Text(
                 "What's new",

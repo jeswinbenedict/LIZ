@@ -90,42 +90,49 @@ class _HeadlineCard extends StatelessWidget {
         children: [
           Semantics(
             link: true,
+            linkUrl: Uri.tryParse(item.url),
             label: '${item.title}, from ${item.source ?? 'the news'}',
-            excludeSemantics: true,
+            container: true,
             child: InkWell(
               onTap: _open,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '$source · ${timeAgo(item.publishedAt).toUpperCase()}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: LizText.label.copyWith(
-                              color: p.textSecondary,
+              child: ExcludeSemantics(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '$source · ${timeAgo(item.publishedAt).toUpperCase()}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: LizText.label.copyWith(
+                                color: p.textSecondary,
+                              ),
                             ),
                           ),
-                        ),
-                        Icon(Icons.north_east, size: 15, color: p.textTertiary),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      item.title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: LizText.headline.copyWith(
-                        color: p.textPrimary,
-                        fontSize: 16,
-                        height: 1.35,
+                          Icon(
+                            Icons.north_east,
+                            size: 15,
+                            color: p.textTertiary,
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        item.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: LizText.headline.copyWith(
+                          color: p.textPrimary,
+                          fontSize: 16,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -115,6 +115,7 @@ class _SkeletonScope extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      container: true,
       label: label,
       liveRegion: true,
       // The shapes carry no meaning of their own — the one label above says

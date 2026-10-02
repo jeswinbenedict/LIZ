@@ -162,81 +162,85 @@ class _AlertTile extends StatelessWidget {
       label:
           '${unread ? 'Unread. ' : ''}${alert.title}. ${alert.body}. '
           '${timeAgo(alert.createdAt)} ago',
-      excludeSemantics: true,
+      container: true,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: ShapeDecoration(
-                  color: unread ? p.accentSoft : p.surfaceMuted,
-                  shape: LizRadius.shape(10),
+        child: ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: ShapeDecoration(
+                    color: unread ? p.accentSoft : p.surfaceMuted,
+                    shape: LizRadius.shape(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 19,
+                    color: unread ? p.accent : p.textSecondary,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 19,
-                  color: unread ? p.accent : p.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            alert.title,
-                            style: LizText.headline.copyWith(
-                              color: p.textPrimary,
-                              fontWeight: unread
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              alert.title,
+                              style: LizText.headline.copyWith(
+                                color: p.textPrimary,
+                                fontWeight: unread
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
+                          Text(
+                            timeAgo(alert.createdAt),
+                            style: LizText.footnote.copyWith(
+                              color: p.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (alert.body.isNotEmpty) ...[
+                        const SizedBox(height: 2),
                         Text(
-                          timeAgo(alert.createdAt),
-                          style: LizText.footnote.copyWith(
+                          alert.body,
+                          style: LizText.callout.copyWith(
                             color: p.textSecondary,
                           ),
                         ),
                       ],
-                    ),
-                    if (alert.body.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        alert.body,
-                        style: LizText.callout.copyWith(color: p.textSecondary),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              // Unread is a dot, like Mail: the row stays quiet, the dot
-              // says what is new.
-              SizedBox(
-                width: 10,
-                child: unread
-                    ? Container(
-                        width: 9,
-                        height: 9,
-                        margin: const EdgeInsets.only(top: 6),
-                        decoration: BoxDecoration(
-                          color: p.accent,
-                          shape: BoxShape.circle,
-                        ),
-                      )
-                    : null,
-              ),
-            ],
+                const SizedBox(width: 8),
+                // Unread is a dot, like Mail: the row stays quiet, the dot
+                // says what is new.
+                SizedBox(
+                  width: 10,
+                  child: unread
+                      ? Container(
+                          width: 9,
+                          height: 9,
+                          margin: const EdgeInsets.only(top: 6),
+                          decoration: BoxDecoration(
+                            color: p.accent,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      : null,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -22,6 +22,7 @@ class LizGroup extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Semantics(
+              container: true,
               header: true,
               child: Text(
                 title!.toUpperCase(),

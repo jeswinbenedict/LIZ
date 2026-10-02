@@ -66,6 +66,7 @@ class WelcomeCard extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Semantics(
+                      container: true,
                       header: true,
                       child: Text(
                         'Find AI tools while they are still rising',
@@ -75,7 +76,7 @@ class WelcomeCard extends ConsumerWidget {
                   ),
                   IconButton(
                     tooltip: 'Dismiss',
-                    icon: const Icon(Icons.close, semanticLabel: 'Dismiss'),
+                    icon: const Icon(Icons.close),
                     onPressed: () =>
                         ref.read(welcomeDismissedProvider.notifier).dismiss(),
                   ),

@@ -254,13 +254,17 @@ class _CommentTile extends StatelessWidget {
             Semantics(
               button: true,
               label: '${author.displayName}, profile',
-              excludeSemantics: true,
+              container: true,
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: () => context.push('/user/${author.id}'),
-                child: SizedBox.square(
-                  dimension: 48,
-                  child: Center(child: UserAvatar(profile: author, radius: 16)),
+                child: ExcludeSemantics(
+                  child: SizedBox.square(
+                    dimension: 48,
+                    child: Center(
+                      child: UserAvatar(profile: author, radius: 16),
+                    ),
+                  ),
                 ),
               ),
             ),
