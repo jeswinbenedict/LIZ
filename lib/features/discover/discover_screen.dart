@@ -7,7 +7,9 @@ import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../alerts/alerts_screen.dart';
 import '../../shared/models/category.dart';
+import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/page_header.dart';
+import '../../shared/widgets/page_title.dart';
 import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/tool_grid_sliver.dart';
 import 'discover_controller.dart';
@@ -33,11 +35,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
     // the realistic way this feed goes stale, so re-read it on return rather
     // than holding a socket open for changes that arrive once a day.
     WidgetsBinding.instance.addObserver(this);
-    if (widget.initialCategory != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(discoverCategoryProvider.notifier).set(widget.initialCategory);
-      });
-    }
   }
 
   @override
@@ -61,12 +58,26 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
   @override
   Widget build(BuildContext context) {
     final sort = ref.watch(discoverSortProvider);
-    final category = ref.watch(discoverCategoryProvider);
+    // A category page (/category/<slug>) is this screen narrowed to one
+    // kind of tool: its own title and movers, and only its tools. It does not
+    // touch Discover's own category filter, so going back finds Discover as
+    // it was left.
+    final pageCategory = widget.initialCategory;
+    final category = pageCategory ?? ref.watch(discoverCategoryProvider);
     final pricing = ref.watch(discoverPricingProvider);
     final key = FeedKey(sort: sort, category: category, pricing: pricing);
+    final categoryName = pageCategory == null
+        ? null
+        : (ref
+                  .watch(categoriesProvider)
+                  .value
+                  ?.where((c) => c.slug == pageCategory)
+                  .firstOrNull
+                  ?.name ??
+              categoryLabel(pageCategory));
 
     final phone = context.isPhone;
-    return Scaffold(
+    final screen = Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(toolFeedProvider);
@@ -90,16 +101,32 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    PageHeader(
-                      eyebrow: '// MOMENTUM, NOT HYPE',
-                      title: 'Discover',
-                      subtitle: phone
-                          ? null
-                          : 'New AI tools, ranked by how fast they are growing.',
-                      // Tablets have no sidebar to carry alerts.
-                      trailing: context.isTablet ? const AlertsBell() : null,
-                      bottom: 16,
-                    ),
+                    if (categoryName != null)
+                      PageHeader(
+                        eyebrow: '// CATEGORY',
+                        title: categoryName,
+                        subtitle:
+                            'Every $categoryName tool Liz lists, ranked by how '
+                            'fast it is growing.',
+                        trailing: TextButton.icon(
+                          onPressed: () => context.go('/'),
+                          icon: const Icon(Icons.arrow_back, size: 18),
+                          label: const Text('All of Discover'),
+                        ),
+                        bottom: 16,
+                      )
+                    else
+                      PageHeader(
+                        eyebrow: '// MOMENTUM, NOT HYPE',
+                        title: 'Discover',
+                        subtitle: phone
+                            ? null
+                            : 'New AI tools, ranked by how fast they are '
+                                  'growing.',
+                        // Tablets have no sidebar to carry alerts.
+                        trailing: context.isTablet ? const AlertsBell() : null,
+                        bottom: 16,
+                      ),
                     Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: LizSpacing.gutter(
@@ -114,17 +141,22 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                         ),
                       ),
                     ),
-                    const WelcomeCard(),
-                    const TopMovers(),
-                    const ToolHeadlines(),
-                    const ForYou(),
-                    NewThisWeek(
-                      onSeeAll: () => ref
-                          .read(discoverSortProvider.notifier)
-                          .set(ToolSort.newest),
-                    ),
-                    const SectionHeader(title: 'All tools'),
-                    const _CategoryChips(),
+                    if (categoryName != null) ...[
+                      TopMovers(category: pageCategory),
+                      SectionHeader(title: 'All $categoryName tools'),
+                    ] else ...[
+                      const WelcomeCard(),
+                      const TopMovers(),
+                      const ToolHeadlines(),
+                      const ForYou(),
+                      NewThisWeek(
+                        onSeeAll: () => ref
+                            .read(discoverSortProvider.notifier)
+                            .set(ToolSort.newest),
+                      ),
+                      const SectionHeader(title: 'All tools'),
+                      const _CategoryChips(),
+                    ],
                     const _SortBar(),
                   ],
                 ),
@@ -136,6 +168,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
         ),
       ),
     );
+    // The same title the prerendered category page carries.
+    return categoryName == null
+        ? screen
+        : PageTitle(title: PageTitle.forCategory(categoryName), child: screen);
   }
 }
 

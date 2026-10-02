@@ -25,6 +25,10 @@ class PageTitle extends StatefulWidget {
     return '${_clip(text, 70)} | Liz';
   }
 
+  /// A category page's title, as the prerendered page carries it.
+  static String forCategory(String name) =>
+      '$name AI tools, ranked by what is rising | Liz';
+
   /// The alternatives page's title, as the prerendered page carries it.
   static String forAlternatives(String name) =>
       '${_clip('Alternatives to $name', 70)} | Liz';
