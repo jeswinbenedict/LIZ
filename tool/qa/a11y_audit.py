@@ -44,7 +44,8 @@ def audit(snapshot: str) -> list[str]:
             half = len(words) // 2
             if half and words[:half] == words[half:]:
                 problems.append(f'{role} name repeats itself: "{name}"')
-            if re.search(r"\.\.(?!\.)", name):
+            # Two full stops, not part of an ellipsis ("...").
+            if re.search(r"(?<!\.)\.\.(?!\.)", name):
                 problems.append(f'{role} name has "..": {name[:60]}')
         if role == "link" and "/url:" not in (lines[i + 1] if i + 1 < len(lines) else ""):
             problems.append(f"link without an address: {(name or '')[:50]}")

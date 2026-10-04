@@ -179,8 +179,9 @@ def news_links(page, found):
     ready(page)
     links = page.get_by_role("link").count()
     shares = page.get_by_role("button", name="Share").count()
-    # A phone shows about three stories; the list builds only what is on screen.
-    assert links >= 3 and shares >= 3, (links, shares)
+    # A phone shows two or three stories; the list builds only what is on
+    # screen, and the last one's Share button may sit just below the fold.
+    assert links >= 2 and shares >= 2, (links, shares)
     return f"{links} story links, {shares} share buttons"
 
 
