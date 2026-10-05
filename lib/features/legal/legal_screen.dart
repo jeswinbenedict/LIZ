@@ -105,14 +105,14 @@ class LegalDocument {
 
   static const privacy = LegalDocument(
     title: 'Privacy policy',
-    updated: '2 October 2026',
+    updated: '5 October 2026',
     summary:
         'Liz keeps what it needs to run your account, to keep the service '
         'working, and to learn which tools people find useful. Nothing is kept '
         'for advertising: there are no ads, no third-party trackers, and '
         'nothing is sold.',
     sections: [
-      LegalSection('If you only browse', [
+      LegalSection('Every visit', [
         'On your first visit Liz gives your browser a random ID. With it, Liz '
             'counts which pages and tools are viewed, which tool websites '
             'you visit from Liz, what is saved, and what is searched for or '
@@ -124,9 +124,8 @@ class LegalDocument {
             'stored with it. Clearing your browser\'s site data resets it.',
         'The words you type into search or ask Liz are kept for 90 days and '
             'then deleted. The counts are kept for 13 months.',
-        'Tools you save without an account and the kinds of tools you say '
-            'you are interested in are kept in your own browser. If you sign '
-            'in, your saved tools and interests move into your account.',
+        'Using Liz needs an account. Anything saved in your browser before '
+            'it did moves into your account when you sign in.',
         'If the app crashes, it sends an error report: the error message, where '
             'in the code it happened, which screen you were on, the app version '
             'and the kind of browser. Reports are deleted after 30 days.',

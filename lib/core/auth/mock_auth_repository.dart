@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../shared/models/profile.dart';
 import '../data/mock_data.dart';
 import '../errors.dart';
@@ -8,6 +10,44 @@ import 'auth_repository.dart';
 /// In-memory auth for mock mode. Any credentials "work" and drop you into a
 /// demo profile so every gated action is testable without a backend.
 class MockAuthRepository implements AuthRepository {
+  MockAuthRepository() {
+    _restore();
+  }
+
+  // The demo session survives a reload, like a real one, so the sign-in
+  // wall behaves the same in demo mode and the browser checks can reload.
+  static const _sessionKey = 'liz.demo_session';
+  final _restored = Completer<void>();
+
+  @override
+  Future<void> get restored => _restored.future;
+
+  Future<void> _restore() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final name = prefs.getString(_sessionKey);
+      if (name != null && _current == null) {
+        _current = _demoProfile(displayName: name);
+        _controller.add(_current);
+      }
+    } catch (_) {
+      // No storage (a widget test without mock values): start signed out.
+    } finally {
+      if (!_restored.isCompleted) _restored.complete();
+    }
+  }
+
+  Future<void> _remember(String? name) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (name == null) {
+        await prefs.remove(_sessionKey);
+      } else {
+        await prefs.setString(_sessionKey, name);
+      }
+    } catch (_) {}
+  }
+
   // Demo mode has no second factor to check; the console is open.
   @override
   Future<TwoStep> twoStep() async => const TwoStep(TwoStepStatus.verified);
@@ -50,6 +90,7 @@ class MockAuthRepository implements AuthRepository {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     _current = p;
     _controller.add(p);
+    unawaited(_remember(p.displayName));
     return p;
   }
 
@@ -99,6 +140,7 @@ class MockAuthRepository implements AuthRepository {
   Future<void> signOut() async {
     _current = null;
     _controller.add(null);
+    await _remember(null);
   }
 
   @override

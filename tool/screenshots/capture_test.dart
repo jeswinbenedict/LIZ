@@ -15,6 +15,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:liz/app/auth_gate.dart';
 import 'package:liz/app/router.dart';
 import 'package:liz/app/theme.dart';
 import 'package:liz/core/providers.dart';
@@ -85,7 +86,12 @@ void main() {
             }
           });
 
-          final router = buildRouter();
+          final gate = AuthGate(container.read(authRepositoryProvider));
+          addTearDown(gate.dispose);
+          await tester.runAsync(
+            () => container.read(authRepositoryProvider).restored,
+          );
+          final router = buildRouter(gate);
           final boundary = GlobalKey();
           await tester.pumpWidget(
             RepaintBoundary(

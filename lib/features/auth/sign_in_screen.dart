@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/auth_gate.dart' show safeReturnPath;
 import '../../app/responsive/adaptive_shell.dart' show LizWordmark;
 import '../../app/theme.dart';
 import '../../shared/widgets/page_header.dart';
@@ -14,17 +15,18 @@ import 'sign_in_view.dart';
 /// windows get the wordmark and the form alone: on a phone the panel would
 /// only push the form below the fold.
 class SignInScreen extends StatelessWidget {
-  const SignInScreen({super.key});
+  const SignInScreen({super.key, this.returnTo});
+
+  /// The page the visitor asked for before the sign-in wall sent them here.
+  final String? returnTo;
 
   /// From this width the brand panel has room beside a full-width form.
   static const splitWidth = 960.0;
 
+  /// Back to where they were going. The router would get there too once it
+  /// sees the session; going now saves a frame of the form after success.
   void _done(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
+    context.go(safeReturnPath(returnTo)?.toString() ?? '/');
   }
 
   @override
@@ -50,8 +52,9 @@ class SignInScreen extends StatelessWidget {
   }
 }
 
-/// The form side: a close button, the form centred in a 420 column, and the
-/// legal links at the foot.
+/// The form side: the form centred in a 420 column, and the legal links at the
+/// foot. No close button: every page is behind sign-in, so there is nowhere
+/// to close to.
 class _FormColumn extends StatelessWidget {
   const _FormColumn({required this.onSignedIn});
   final VoidCallback onSignedIn;
@@ -70,12 +73,6 @@ class _FormColumn extends StatelessWidget {
               // On a wide window the wordmark is in the brand panel.
               if (!wide) const LizWordmark(size: 24),
               const Spacer(),
-              IconButton(
-                tooltip: context.canPop() ? 'Close' : 'Go to Discover',
-                icon: const Icon(Icons.close),
-                onPressed: () =>
-                    context.canPop() ? context.pop() : context.go('/'),
-              ),
             ],
           ),
         ),

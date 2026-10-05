@@ -59,7 +59,7 @@ void main() {
 
     await tester.tap(find.text('Privacy policy'));
     await tester.pumpAndSettle();
-    expect(find.text('If you only browse'), findsOneWidget);
+    expect(find.text('Every visit'), findsOneWidget);
 
     r.pop();
     await tester.pumpAndSettle();

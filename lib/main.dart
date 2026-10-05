@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app/auth_gate.dart';
 import 'app/router.dart';
 import 'app/settings_controller.dart';
 import 'app/theme.dart';
@@ -137,4 +138,8 @@ class _LizAppState extends ConsumerState<LizApp> {
 }
 
 /// The router is created once and kept alive for the app's lifetime.
-final _routerProvider = Provider((ref) => buildRouter());
+final _routerProvider = Provider((ref) {
+  final gate = AuthGate(ref.watch(authRepositoryProvider));
+  ref.onDispose(gate.dispose);
+  return buildRouter(gate);
+});

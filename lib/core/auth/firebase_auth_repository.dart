@@ -68,6 +68,15 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Stream<Profile?> authStateChanges() => _out.stream;
 
+  final _restored = Completer<void>();
+
+  @override
+  Future<void> get restored => _restored.future;
+
+  void _markRestored() {
+    if (!_restored.isCompleted) _restored.complete();
+  }
+
   // --- starting Firebase -----------------------------------------------------
 
   Future<void> _resumeIfRemembered() async {
@@ -78,11 +87,18 @@ class FirebaseAuthRepository implements AuthRepository {
       final arrivingWithLink =
           Uri.base.queryParameters['mode'] == 'signIn' &&
           Uri.base.queryParameters.containsKey('oobCode');
-      if (!remembered && !arrivingWithLink) return;
+      if (!remembered && !arrivingWithLink) {
+        _markRestored();
+        return;
+      }
+      // Firebase reports the restored user (or none) through _onUser. A
+      // network that never answers must not leave the wall waiting forever.
+      Timer(const Duration(seconds: 12), _markRestored);
       await _auth();
       if (arrivingWithLink) await _completeLinkSignIn(link, prefs);
     } catch (e) {
       debugPrint('Resuming the session failed: $e');
+      _markRestored();
     }
   }
 
@@ -120,6 +136,7 @@ class FirebaseAuthRepository implements AuthRepository {
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       debugPrint('Session sync failed: $e');
+      _markRestored();
     }
   }
 
@@ -127,6 +144,7 @@ class FirebaseAuthRepository implements AuthRepository {
     _current = profile;
     CrashReporter.userId = profile?.id;
     _out.add(profile);
+    _markRestored();
   }
 
   Future<Profile>? _syncing;

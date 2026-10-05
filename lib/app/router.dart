@@ -23,6 +23,7 @@ import '../features/profile/settings_screen.dart';
 import '../features/profile/user_profile_screen.dart';
 import '../features/tool_detail/tool_detail_screen.dart';
 import '../features/track/saved_screen.dart';
+import 'auth_gate.dart';
 import 'responsive/adaptive_shell.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -34,15 +35,25 @@ final _profileKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
 
 /// go_router configuration: every screen has a real URL (deep links + web),
 /// with a stateful shell so each tab keeps its own navigation stack.
-GoRouter buildRouter() {
+///
+/// [gate] puts every page behind sign-in (see auth_gate.dart); the router
+/// re-runs its redirect whenever the gate changes, so signing in or out moves
+/// the visitor at once.
+GoRouter buildRouter(AuthGate gate) {
   return GoRouter(
     navigatorKey: _rootKey,
     initialLocation: '/',
-    // Not a redirect in the usual sense — it never returns a destination. It
-    // is the one place every navigation passes through, which makes it where
-    // the crash reporter learns which screen a later error came from, and
-    // where a page view is counted.
+    refreshListenable: gate,
+    // Every navigation passes through here: the sign-in wall decides first,
+    // and a page that is actually shown tells the crash reporter which screen
+    // a later error came from, and counts as a view.
     redirect: (context, state) {
+      final elsewhere = authRedirect(
+        location: state.uri,
+        restored: gate.restored,
+        signedIn: gate.signedIn,
+      );
+      if (elsewhere != null) return elsewhere;
       CrashReporter.currentRoute = state.uri.toString();
       Analytics.pageView(state.uri);
       return null;
@@ -184,9 +195,16 @@ GoRouter buildRouter() {
         builder: (c, s) => const AlertsScreen(),
       ),
       GoRoute(
+        path: startingPath,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (c, s) => const NoTransitionPage(child: StartingScreen()),
+      ),
+      GoRoute(
         path: '/signin',
         parentNavigatorKey: _rootKey,
-        builder: (c, s) => const SignInScreen(),
+        pageBuilder: (c, s) => NoTransitionPage(
+          child: SignInScreen(returnTo: s.uri.queryParameters['from']),
+        ),
       ),
       GoRoute(
         path: '/forgot-password',

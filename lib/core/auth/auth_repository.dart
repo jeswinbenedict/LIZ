@@ -57,6 +57,12 @@ abstract interface class AuthRepository {
   /// Emits whenever the session changes (sign in / out / refresh).
   Stream<Profile?> authStateChanges();
 
+  /// Completes once the session a returning visitor left behind has been
+  /// restored or found missing. Until then a null [currentProfile] does not
+  /// mean signed out — the sign-in wall waits for this rather than bounce a
+  /// signed-in person to the sign-in page while Firebase loads.
+  Future<void> get restored;
+
   Future<Profile> signInWithEmail(String email, String password);
   Future<Profile> signUpWithEmail(
     String email,

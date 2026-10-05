@@ -4,6 +4,23 @@ Decided 1 October 2026. Firebase handles who someone is; Supabase keeps
 everything about them. Nothing moved to Firestore: ranking, search, Ask Liz,
 the scheduled jobs and the access rules all depend on Postgres.
 
+## Every page is behind sign-in
+
+Since 5 October 2026 Liz is for signed-in people. The router sends a
+signed-out visitor to `/signin?from=<the page they asked for>` and, once they
+are signed in, on to that page (`lib/app/auth_gate.dart`). Open to anyone:
+`/signin`, `/forgot-password`, `/reset-password`, `/privacy`, `/terms`.
+
+A returning visitor's Firebase session is restored in the background, so
+until it has been (`AuthRepository.restored`) app pages wait on a short
+starting screen rather than flash the sign-in form. `from` only ever names a
+path inside Liz, so the sign-in page cannot be used to send someone off-site.
+
+The wall is the app's: the catalog itself — tools, news, rankings — is still
+readable through the public API with the anon key, because row-level
+security grants it to everyone. Personal data was always private. Making the
+catalog private too would mean changing those policies to `authenticated`.
+
 ## How it fits together
 
 ```
