@@ -1,0 +1,3 @@
+# Liz is for signed-in people: there is nothing here for a crawler.
+User-agent: *
+Disallow: /

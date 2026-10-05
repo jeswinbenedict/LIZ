@@ -18,6 +18,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { presentsEvalKey } from '../_shared/auth.ts';
+import { signedInUid } from '../_shared/signed_in.ts';
 import { callerKey, tooManyRequests, withinRateLimit } from '../_shared/rate_limit.ts';
 import { embed } from '../_shared/embed.ts';
 import { MIN_SIMILARITY, type Match, reasonFor } from './logic.ts';
@@ -35,13 +36,19 @@ Deno.serve(async (req) => {
       return json({ data: null, error: 'Missing query' }, 400);
     }
 
-    // Anonymous on purpose — asking a question should not need an account —
-    // but every call runs an embedding model, so it cannot also be unlimited.
-    // Thirty an hour is far above what a person browsing will ever reach.
-    // The evaluation run is exempt, so the question set
+    // Signed-in people only: the answers are the catalog, which is private
+    // since migration 0061. The evaluation run presents its own key instead.
+    const evaluating = presentsEvalKey(req);
+    if (!evaluating && !(await signedInUid(req))) {
+      return json({ data: null, error: 'Sign in to ask Liz' }, 401);
+    }
+
+    // Every call runs an embedding model, so it cannot be unlimited. Thirty
+    // an hour is far above what a person browsing will ever reach. The
+    // evaluation run is exempt, so the question set
     // (scrapers/eval/ask_liz_questions.json) can run in one go.
     if (
-      !presentsEvalKey(req) &&
+      !evaluating &&
       !(await withinRateLimit(callerKey(req, 'ask-liz'), ASK_LIMIT_PER_HOUR))
     ) {
       return tooManyRequests(600);

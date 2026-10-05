@@ -1,5 +1,13 @@
 # Pages search engines can read
 
+> **Switched off on 5 October 2026.** Liz is now for signed-in people, the
+> catalog included (migration 0061), so the deploy no longer pre-renders tool
+> and category pages or writes a sitemap: a static page per tool would publish
+> the catalog to anyone. `web/robots.txt` disallows everything, and shared links
+> preview as "Liz". What follows describes the pre-renderer as it was; it still
+> works, and turning it back on means re-adding the step to `deploy-web.yml`
+> and reading with the service key, since the anon key now sees no tools.
+
 Liz draws itself on a canvas. Without help, every address — `/`, `/tools/elevenlabs`,
 `/category/ai-video` — returns the same HTML: an empty shell titled "Liz", with
 no description and no text. A search engine has nothing to index and a shared

@@ -99,27 +99,11 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
-      # One HTML page per tool and category, with its own title, description,
-      # structured data and text, plus sitemap.xml and robots.txt — so search
-      # engines and link previews see more than an empty app shell. Reads
-      # published rows with the public anon key. docs/SEO.md.
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
-          cache: pip
-      - name: Pre-render pages for search engines
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          SITE_URL: ${{ secrets.SITE_URL }}
-        working-directory: scrapers
-        run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::warning::Supabase secrets not set — skipping pre-rendering."
-            exit 0
-          fi
-          pip install -r requirements.txt
-          python -m liz_scraper.prerender --build ../build/web --site "$SITE_URL"
+      # No pre-rendered pages since 5 October 2026: the catalog is for
+      # signed-in people (migration 0061), and a static page per tool would
+      # publish it to anyone. web/robots.txt keeps crawlers out of a site with
+      # nothing for them. liz_scraper.prerender stays, for if that changes
+      # (docs/SEO.md).
 
       - name: Check Cloudflare secrets
         id: cf
@@ -143,9 +127,9 @@ jobs:
           command: pages deploy build/web --project-name=${{ env.CLOUDFLARE_PROJECT }} --branch=main
 
       # A deploy that "succeeded" but serves a broken site is the worst kind.
-      # Fetch the home page, one tool page and the sitemap from the live
-      # address, and fail the run if any is wrong. Pages takes a few seconds to
-      # serve a new deployment, so allow a couple of retries.
+      # Fetch the home page, a deep link and robots.txt from the live address,
+      # and fail the run if any is wrong. Pages takes a few seconds to serve a
+      # new deployment, so allow a couple of retries.
       - name: Smoke test the live site
         if: steps.cf.outputs.ready == 'true'
         env:
@@ -164,7 +148,7 @@ jobs:
             return 1
           }
           check "$SITE_URL/" 'flutter_bootstrap.js'
-          tool=$(ls build/web/tools | head -1 | sed 's/\.html$//')
-          check "$SITE_URL/tools/$tool" '| Liz</title>'
-          check "$SITE_URL/sitemap.xml" '<urlset'
-          check "$SITE_URL/robots.txt" 'Sitemap:'
+          # A deep link serves the app, which sends a signed-out visitor to
+          # sign in; no catalog text in the page itself.
+          check "$SITE_URL/tools/anything" 'flutter_bootstrap.js'
+          check "$SITE_URL/robots.txt" 'Disallow: /'

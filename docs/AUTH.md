@@ -16,10 +16,12 @@ until it has been (`AuthRepository.restored`) app pages wait on a short
 starting screen rather than flash the sign-in form. `from` only ever names a
 path inside Liz, so the sign-in page cannot be used to send someone off-site.
 
-The wall is the app's: the catalog itself — tools, news, rankings — is still
-readable through the public API with the anon key, because row-level
-security grants it to everyone. Personal data was always private. Making the
-catalog private too would mean changing those policies to `authenticated`.
+The data is behind it too (migration 0061): the policies that let anyone
+read tools, news, categories, signals, reviews, posts, comments, profiles,
+follows and likes now name `authenticated`, so the anon key every browser
+holds reads nothing from the catalog. Ask Liz checks the caller's Firebase
+token itself (`_shared/signed_in.ts`), since it searches with the service
+role. Nothing is pre-rendered for search engines any more (docs/SEO.md).
 
 ## How it fits together
 
