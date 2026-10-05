@@ -91,3 +91,8 @@ verify_jwt = true
 [auth.third_party.firebase]
 enabled = true
 project_id = "liz-f5f93"
+
+# The laptop scraper holds its own key for this function (LIZ_INGEST_KEY),
+# not a Supabase key; the function checks it itself.
+[functions.scraper-ingest]
+verify_jwt = false

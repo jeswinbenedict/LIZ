@@ -155,7 +155,8 @@ To make someone an admin, set `profiles.role`; their next request sees it.
 | Secret | Lives in | Used by |
 |---|---|---|
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | GitHub Actions; public by design | web build, prerender |
-| `SUPABASE_SERVICE_ROLE_KEY` | GitHub Actions; `~/.liz/n8n.env` | scrapers, `fetch-news.yml` |
+| `SUPABASE_SERVICE_ROLE_KEY` | GitHub Actions | scrapers, `fetch-news.yml` |
+| `INGEST_KEY` / `LIZ_INGEST_KEY` | Supabase function secret; `~/.liz/n8n.env` | the laptop scraper, through `scraper-ingest` only |
 | `SUPABASE_FUNCTIONS_URL` | GitHub Actions | `fetch-news.yml` |
 | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` | GitHub Actions | `deploy-supabase.yml` |
 | `SUPABASE_DB_URL` | GitHub Actions | `backup-db.yml` |
@@ -167,5 +168,7 @@ To make someone an admin, set `profiles.role`; their next request sees it.
 | `ASK_EVAL_KEY` | Supabase function secrets | lets the Ask Liz evaluation skip the rate limit |
 | ntfy topic | `app_config.alert_ntfy_topic` | health pushes |
 
-Set function secrets with `supabase secrets set NAME=value`. Rotating the
-service key means updating GitHub Actions and `~/.liz/n8n.env` together.
+Set function secrets with `supabase secrets set NAME=value`. The laptop holds
+no Supabase key: rotating the service key means GitHub Actions only, and
+rotating the ingest key means the function secret and `~/.liz/n8n.env`
+together.

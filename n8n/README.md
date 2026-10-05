@@ -64,7 +64,7 @@ Everything lives in `~/.liz`, outside this repository (which OneDrive syncs):
 | `~/.liz/node24/` | Portable Node 24 LTS, used by n8n only | the `win-x64.zip` from nodejs.org/dist/latest-v24.x, checksum-verified |
 | `~/.liz/n8n/` | n8n 2.40.7 | `npm install n8n@2.40.7`, run with that Node 24 |
 | `~/.liz/scraper-venv/` | Python 3.11 with the scraper's requirements | `python -m venv`, then `pip install -r scrapers/requirements.txt` |
-| `~/.liz/n8n.env` | `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` | readable by your account only |
+| `~/.liz/n8n.env` | `SUPABASE_URL` and `LIZ_INGEST_KEY` | readable by your account only |
 
 Why each is separate:
 
@@ -74,8 +74,16 @@ Why each is separate:
   alone.
 - **Its own Python.** A bare `python` on this machine resolves to another
   tool's virtual environment. The workflow names this one explicitly.
-- **The key in a file only you can read.** It bypasses row-level security. It
-  never goes in the repository or in n8n's own database.
+- **A key that opens one door.** `LIZ_INGEST_KEY` works only on the
+  `scraper-ingest` function, which does exactly what these two commands need:
+  look up published tools, write new or re-scraped listings (never rewrite a
+  published one, never hide anything), and re-try held ones. Until 6 October
+  2026 this file held the service role key, which reads and writes the whole
+  database — profiles, notifications, storage — so a lost laptop was a lost
+  database. The key still lives in a file only you can read, never in the
+  repository or in n8n's own database. It matches the `INGEST_KEY` function
+  secret; to rotate, set a new one in both places
+  (`supabase secrets set INGEST_KEY=…`).
 
 ### Starting it
 
@@ -88,7 +96,7 @@ Then open <http://localhost:5678>. The script:
 - loads `~/.liz/n8n.env` into the process, so the scraper inherits the keys;
 - sets `LIZ_REPO_DIR` and `LIZ_PYTHON`, which the commands read through the
   shell (`%LIZ_PYTHON%`). Not through n8n's `$env`, which n8n 2.x blocks in
-  expressions — and should: allowing it would hand the service key to every
+  expressions — and should: allowing it would hand the key to every
   expression and Code node;
 - re-enables Execute Command (`NODES_EXCLUDE=[]`), which n8n 2.x turns off;
 - binds n8n to `127.0.0.1` only, because a node that can run commands must not

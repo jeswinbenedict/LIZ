@@ -36,6 +36,7 @@ import requests
 from .config import REQUEST_TIMEOUT, load_settings
 from .enrich import PageFacts, is_aggregator, resolve_and_enrich
 from .http_client import PoliteSession
+from .ingest_client import IngestClient
 from .normalize import build_tool_row, choose_name
 from .quality import assess
 
@@ -57,6 +58,8 @@ def _headers(key: str) -> dict[str, str]:
 
 def fetch_held(settings, session: requests.Session, limit: int) -> list[dict]:
     """Pending rows held because their website is still a listing page."""
+    if settings.uses_ingest:
+        return IngestClient(settings, session).held(_LISTING_MARKER, limit)
     resp = session.get(
         f"{settings.rest_url}/tools",
         params={
@@ -162,7 +165,12 @@ def main(argv: list[str] | None = None) -> int:
         else:
             report["still_held"] += 1
 
-        if args.apply:
+        if args.apply and settings.uses_ingest:
+            try:
+                IngestClient(settings, rest).update_held(row["id"], update)
+            except requests.RequestException as err:
+                log.warning("could not update %s: %s", row["id"], err)
+        elif args.apply:
             resp = rest.patch(
                 f"{settings.rest_url}/tools",
                 params={"id": f"eq.{row['id']}"},

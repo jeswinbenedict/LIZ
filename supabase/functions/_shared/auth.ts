@@ -20,7 +20,7 @@ import { corsHeaders, json } from './cors.ts';
 /// A plain `===` returns as soon as two bytes differ, so how long it takes is a
 /// measurement of how much of the prefix was right — enough to reconstruct a
 /// key one character at a time against a patient caller.
-function constantTimeEquals(a: string, b: string): boolean {
+export function constantTimeEquals(a: string, b: string): boolean {
   const left = new TextEncoder().encode(a);
   const right = new TextEncoder().encode(b);
   if (left.length !== right.length) return false;

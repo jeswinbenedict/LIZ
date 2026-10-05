@@ -9,7 +9,7 @@
 $ErrorActionPreference = 'Stop'
 $liz = Join-Path $HOME '.liz'
 
-# Secrets: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY. The scraper reads them
+# Secrets: SUPABASE_URL and LIZ_INGEST_KEY. The scraper reads them
 # from the environment n8n passes to its commands.
 $envFile = Join-Path $liz 'n8n.env'
 if (-not (Test-Path $envFile)) { throw "Missing $envFile - see n8n/README.md" }

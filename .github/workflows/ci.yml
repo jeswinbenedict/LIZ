@@ -86,7 +86,7 @@ jobs:
       # is caught here rather than on deploy.
       - run: |
           for f in ask-liz delete-account embed-tools fetch-news fetch-tools \
-                   firebase-session logo send-notification summarize-news \
+                   firebase-session logo scraper-ingest send-notification summarize-news \
                    summarize-tools tool-updates; do
             deno check "supabase/functions/$f/index.ts"
           done

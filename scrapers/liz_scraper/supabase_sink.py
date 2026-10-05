@@ -1,7 +1,9 @@
 """Write normalized rows into Supabase via PostgREST.
 
 Upserts on `content_hash` so a re-run refreshes an existing row instead of
-duplicating it. The service-role key bypasses RLS and must stay server-side.
+duplicating it. The service-role key bypasses RLS and must stay server-side;
+a machine with LIZ_INGEST_KEY goes through the scraper-ingest function instead
+(config.py).
 """
 
 from __future__ import annotations
@@ -11,6 +13,7 @@ import logging
 import requests
 
 from .config import REQUEST_TIMEOUT, Settings
+from .ingest_client import IngestClient
 
 log = logging.getLogger(__name__)
 
@@ -19,14 +22,17 @@ BATCH_SIZE = 50
 
 class SupabaseSink:
     def __init__(self, settings: Settings) -> None:
-        if not settings.configured:
+        if not settings.can_scrape:
             raise ValueError(
-                "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set to write rows."
+                "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or LIZ_INGEST_KEY) "
+                "must be set to write rows."
             )
         self.settings = settings
         # One connection, reused. A rejected batch is retried row by row, so a
         # bad run would otherwise open a TLS handshake per row.
         self._session = requests.Session()
+        self._ingest = (IngestClient(settings, self._session)
+                        if settings.uses_ingest else None)
 
     @property
     def _headers(self) -> dict[str, str]:
@@ -60,6 +66,9 @@ class SupabaseSink:
             chunk = hashes[start : start + BATCH_SIZE]
             quoted = ",".join(f'"{h}"' for h in chunk)
             try:
+                if self._ingest:
+                    found.update(self._ingest.published(chunk))
+                    continue
                 resp = self._session.get(
                     f"{self.settings.rest_url}/tools",
                     params={
@@ -87,6 +96,9 @@ class SupabaseSink:
             chunk = keys[start : start + BATCH_SIZE]
             quoted = ",".join(f'"{k}"' for k in chunk)
             try:
+                if self._ingest:
+                    found.update(self._ingest.sites(chunk))
+                    continue
                 resp = self._session.get(
                     f"{self.settings.rest_url}/tools",
                     params={"select": "site_key,content_hash",
@@ -102,6 +114,9 @@ class SupabaseSink:
 
     def _post(self, rows: list[dict]) -> tuple[bool, str]:
         try:
+            if self._ingest:
+                self._ingest.upsert(rows)
+                return True, ""
             resp = self._session.post(
                 f"{self.settings.rest_url}/tools",
                 params={"on_conflict": "content_hash"},
