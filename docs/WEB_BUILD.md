@@ -47,17 +47,18 @@ Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: credentialless
 ```
 
-The multi-threaded renderer needs them. Decide at deployment whether the host
-sends them, and test both ways there before relying on either:
+The multi-threaded renderer needs them. **Decided 5 October 2026: the host
+does not send them**, and Flutter uses the single-threaded renderer (still
+WebAssembly, somewhat slower to draw). `Cross-Origin-Opener-Policy:
+same-origin` severs a page from the windows it opens, and Google sign-in is a
+Firebase popup (`signInWithPopup`): with the header, the popup could not hand
+the sign-in back. Revisit only with a redirect-based sign-in, and then every
+cross-origin resource the page embeds must allow embedding — logos come
+through Liz's own proxy and fonts are bundled, so the Firebase Messaging
+service worker is the likely risk.
 
-- **With them**, every cross-origin resource the page embeds must allow it.
-  Logos and images already come through Liz's own proxy with permissive CORS,
-  and fonts are bundled, so the likely risk is the Firebase Messaging service
-  worker and anything a future change embeds from elsewhere.
-- **Without them**, Flutter uses the single-threaded renderer instead. Still
-  WebAssembly, somewhat slower to draw.
+## The deploy
 
-## Not changed yet
-
-The CI build and any deploy workflow belong to the deployment phase, which is
-waiting on the choice of host. Nothing here changes how the app is built today.
+`.github/workflows/deploy-web.yml` builds with `--wasm` (with the JavaScript
+fallback) after CI passes on main, and daily, and publishes to Cloudflare
+Pages (docs/OPERATIONS.md).
