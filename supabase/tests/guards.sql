@@ -1,4 +1,4 @@
--- Run by CI on the freshly migrated database (supabase db query --local -f).
+-- Run by CI on the freshly migrated database, with psql (ON_ERROR_STOP).
 -- Proves the column guards of migration 0063 hold for a signed-in person
 -- going through the API role, and that the edits they are allowed still work.
 -- Any failure raises, which fails the job.
