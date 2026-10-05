@@ -13,9 +13,20 @@ import 'package:qr_flutter/qr_flutter.dart';
 /// check (migration 0042). These pin what a moderator sees at each stage.
 
 class _Auth extends MockAuthRepository {
-  _Auth(this.state);
+  _Auth(this.state, {this.staleSignIn = false});
   TwoStep state;
+  final bool staleSignIn;
   final List<String> codes = [];
+  int signOuts = 0;
+
+  @override
+  Future<TotpSetup> startTwoStepSetup() async {
+    if (staleSignIn) throw const RecentSignInRequiredException();
+    return super.startTwoStepSetup();
+  }
+
+  @override
+  Future<void> signOut() async => signOuts++;
 
   @override
   Future<TwoStep> twoStep() async => state;
@@ -79,5 +90,23 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(QrImageView), findsOneWidget);
+  });
+
+  testWidgets('an old sign-in is sent to sign in again, not told to retry', (
+    t,
+  ) async {
+    // 6 Oct 2026: Firebase refused setup for a session from the day before,
+    // and the page said only "Something went wrong" with a Try again button
+    // that could never work.
+    final auth = _Auth(
+      const TwoStep(TwoStepStatus.needsSetup),
+      staleSignIn: true,
+    );
+    await _pump(t, auth);
+    expect(find.textContaining('sign in again'), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
+    await t.tap(find.text('Sign in again'));
+    await t.pumpAndSettle();
+    expect(auth.signOuts, 1);
   });
 }

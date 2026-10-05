@@ -46,6 +46,17 @@ class TwoStepRequiredException extends LizException {
     : super('Enter the code from your authenticator app.');
 }
 
+/// Firebase adds a second factor only to a session signed in a few minutes
+/// ago; an older one is refused (CREDENTIAL_TOO_OLD_LOGIN_AGAIN). Signing in
+/// again is the way through, so the two-step page offers it.
+class RecentSignInRequiredException extends LizException {
+  const RecentSignInRequiredException()
+    : super(
+        'For your security, sign in again before setting up two-step '
+        'verification.',
+      );
+}
+
 /// Authentication surface. Guest browsing is always allowed; only identity
 /// actions require a signed-in session.
 abstract interface class AuthRepository {

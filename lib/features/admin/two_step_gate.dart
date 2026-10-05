@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import '../auth/auth_controller.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/page_header.dart';
 
@@ -54,6 +55,7 @@ class _TwoStepPageState extends ConsumerState<_TwoStepPage> {
   TotpSetup? _setup;
   String? _error;
   bool _busy = false;
+  bool _signInAgain = false;
 
   bool get _settingUp => widget.state.status == TwoStepStatus.needsSetup;
 
@@ -75,11 +77,21 @@ class _TwoStepPageState extends ConsumerState<_TwoStepPage> {
       final setup = await ref.read(authRepositoryProvider).startTwoStepSetup();
       if (mounted) setState(() => _setup = setup);
     } catch (e) {
-      if (mounted) setState(() => _error = _message(e));
+      if (mounted) {
+        setState(() {
+          _error = _message(e);
+          _signInAgain = e is RecentSignInRequiredException;
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  /// Signing out here lands on the sign-in page, which comes back to the
+  /// console afterwards (auth_gate.dart).
+  Future<void> _freshSignIn() =>
+      ref.read(authControllerProvider.notifier).signOut();
 
   Future<void> _verify() async {
     final factorId = _setup?.factorId ?? widget.state.factorId;
@@ -213,10 +225,17 @@ class _TwoStepPageState extends ConsumerState<_TwoStepPage> {
             ] else if (_error != null) ...[
               Text(_error!, style: LizText.callout.copyWith(color: p.danger)),
               const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _startSetup,
-                child: const Text('Try again'),
-              ),
+              if (_signInAgain)
+                FilledButton(
+                  style: LizButtons.capsule,
+                  onPressed: _freshSignIn,
+                  child: const Text('Sign in again'),
+                )
+              else
+                OutlinedButton(
+                  onPressed: _startSetup,
+                  child: const Text('Try again'),
+                ),
             ],
           ],
         ),

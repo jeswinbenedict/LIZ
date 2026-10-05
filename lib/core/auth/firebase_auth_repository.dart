@@ -248,9 +248,31 @@ class FirebaseAuthRepository implements AuthRepository {
       _resolver = e.resolver;
       throw const TwoStepRequiredException();
     } on FirebaseAuthException catch (e) {
-      throw LizException(authErrorMessage(e.code));
+      throw _authError(e.code);
+    } on FirebaseException catch (e) {
+      throw _authError(e.code);
+    } on LizException {
+      rethrow;
+    } catch (e) {
+      // On the web some calls (the two-step ones among them) fail with a
+      // plain JavaScript error whose text is the only place the code is.
+      final code = RegExp(r'auth/([a-z-]+)').firstMatch('$e')?.group(1);
+      if (code == null) rethrow;
+      throw _authError(code);
     }
   }
+
+  static LizException _authError(String code) {
+    code = code.replaceFirst('auth/', '');
+    if (code == 'requires-recent-login' ||
+        code == 'credential-too-old-login-again') {
+      return const RecentSignInRequiredException();
+    }
+    return LizException(authErrorMessage(code));
+  }
+
+  /// How recent a sign-in Firebase accepts for adding a second factor.
+  static const _recentSignIn = Duration(minutes: 5);
 
   Future<Profile> _signedIn(UserCredential credential) async {
     final user = credential.user;
@@ -487,6 +509,13 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<TotpSetup> startTwoStepSetup() async {
     final user = (await _auth()).currentUser;
     if (user == null) throw const AuthRequiredException();
+    // Asked up front rather than learned from the refusal, whose shape
+    // differs between platforms.
+    final signedInAt = user.metadata.lastSignInTime;
+    if (signedInAt == null ||
+        DateTime.now().difference(signedInAt) > _recentSignIn) {
+      throw const RecentSignInRequiredException();
+    }
     return _guard(() async {
       final session = await user.multiFactor.getSession();
       final secret = await TotpMultiFactorGenerator.generateSecret(session);
