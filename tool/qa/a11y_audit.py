@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 import sys
 
-from common import BASE, discover, launch, new_page, ready, routes
+from common import BASE, SIGNED_OUT_ONLY, discover, launch, new_page, ready, routes, sign_in
 from playwright.sync_api import sync_playwright
 
 NAMED = re.compile(r'^\s*- (\w+)(?: "((?:[^"\\]|\\.)*)")?(.*)$')
@@ -23,7 +23,13 @@ CONTROLS = {"button", "link", "textbox", "checkbox", "radio", "tab", "slider",
             "switch", "combobox"}
 
 
-def audit(snapshot: str) -> list[str]:
+# Pages inside the app shell, which must carry its navigation. The sidebar
+# once vanished from the tree on every one of them, and nothing else noticed.
+SHELL_PAGES = {"discover", "news", "ask", "saved", "profile", "category"}
+NAV_NAMES = ("Discover", "News", "Saved")
+
+
+def audit(snapshot: str, page_name: str = "") -> list[str]:
     problems = []
     lines = snapshot.splitlines()
     has_h1 = False
@@ -49,6 +55,10 @@ def audit(snapshot: str) -> list[str]:
                 problems.append(f'{role} name has "..": {name[:60]}')
         if role == "link" and "/url:" not in (lines[i + 1] if i + 1 < len(lines) else ""):
             problems.append(f"link without an address: {(name or '')[:50]}")
+    if page_name in SHELL_PAGES:
+        for nav in NAV_NAMES:
+            if not re.search(rf'- (button|link|tab) "{nav}"', snapshot):
+                problems.append(f'navigation "{nav}" missing from the tree')
     if not has_h1:
         problems.append("no level-1 heading")
     return problems
@@ -59,11 +69,12 @@ def main() -> int:
     total = 0
     with sync_playwright() as p:
         browser = launch(p, "chromium")
-        for name, path in routes(discover(browser)):
-            ctx, page = new_page(browser, *size)
+        state = sign_in(browser)
+        for name, path in routes(discover(browser, state)):
+            ctx, page = new_page(browser, *size, state=None if name in SIGNED_OUT_ONLY else state)
             page.goto(BASE + path)
             ready(page)
-            problems = sorted(set(audit(page.locator("body").aria_snapshot())))
+            problems = sorted(set(audit(page.locator("body").aria_snapshot(), name)))
             total += len(problems)
             print(("ok  " if not problems else "!!  ") + f"{name:13} {path}")
             for pr in problems:

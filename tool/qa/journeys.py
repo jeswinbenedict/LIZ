@@ -20,15 +20,39 @@ from __future__ import annotations
 import re
 import sys
 
-from common import BASE, OUT, discover, launch, new_page, ready
+from common import BASE, OUT, NeedsAccount, discover, launch, new_page, ready, sign_in
 from playwright.sync_api import expect, sync_playwright
 
 JOURNEYS = []
+# Journeys about the sign-in page itself run signed out.
+SIGNED_OUT = set()
 
 
 def journey(fn):
     JOURNEYS.append(fn)
     return fn
+
+
+def signed_out(fn):
+    SIGNED_OUT.add(fn.__name__)
+    return fn
+
+
+@journey
+@signed_out
+def sign_in_wall(page, found):
+    # Straight to a tool page without signing in: the wall sends you to sign
+    # in, remembering where you were going.
+    page.goto(BASE + "/tools/anything")
+    ready(page, settle_ms=1500)
+    # The browser may show the address with or without its slashes escaped.
+    page.wait_for_url(re.compile(r"/signin\?from=(%2F|/)tools(%2F|/)anything"), timeout=10000)
+    expect(page.get_by_role("heading", name="Welcome back")).to_be_visible()
+    # The legal pages stay open.
+    page.goto(BASE + "/privacy")
+    ready(page, settle_ms=1000)
+    assert page.url.endswith("/privacy"), page.url
+    return "signed-out visit goes to sign-in; legal pages open"
 
 
 def first_mover(page):
@@ -112,19 +136,37 @@ def compare_from_tool(page, found):
 
 
 @journey
-def guest_save(page, found):
-    page.goto(BASE + found["tool"])
+def save_tool(page, found):
+    # Into a tool from Discover and back out through the app, not by reloading
+    # the page: a demo build keeps saves in memory, as a live one does not.
+    page.goto(BASE + "/")
     ready(page)
+    first_mover(page).first.click()
+    page.wait_for_url(re.compile(r"/tools/"), timeout=15000)
+    page.wait_for_timeout(2000)
     name = page.get_by_role("heading", level=1).first.inner_text()
-    page.get_by_role("button", name=re.compile(r"^Save")).first.click()
-    expect(page.get_by_role("group", name="Saved in this browser")).to_be_visible(timeout=5000)
-    page.goto(BASE + "/saved")
-    ready(page)
+    # Read the state from the button's name, not its text: on a phone the
+    # button is an icon.
+    saved = page.get_by_role("button", name="Saved", exact=True)
+    if saved.count():  # saved on an earlier run
+        saved.first.click()
+        page.wait_for_timeout(1500)
+    page.get_by_role("button", name="Save").first.click()
+    expect(page.get_by_role("button", name="Saved").first).to_be_visible(timeout=5000)
+    page.get_by_role("button", name="Back").first.click()
+    page.wait_for_timeout(1500)
+    # The sidebar's Saved is a button; a phone's bottom bar makes it a tab.
+    page.get_by_role("button", name="Saved", exact=True).or_(
+        page.get_by_role("tab", name=re.compile(r"^Saved"))
+    ).first.click()
+    page.wait_for_url(re.compile(r"/saved"), timeout=10000)
+    page.wait_for_timeout(2000)
     expect(page.get_by_text(name).first).to_be_visible(timeout=8000)
     return f"saved and listed {name}"
 
 
 @journey
+@signed_out
 def signin_validation(page, found):
     page.goto(BASE + "/signin")
     ready(page)
@@ -150,6 +192,7 @@ def signin_validation(page, found):
 
 
 @journey
+@signed_out
 def forgot_password_carries_email(page, found):
     page.goto(BASE + "/signin")
     ready(page)
@@ -220,12 +263,21 @@ def main() -> int:
     results = []
     with sync_playwright() as p:
         browser = launch(p, engine)
-        found = discover(browser)
+        try:
+            state = sign_in(browser)
+            found = discover(browser, state)
+        except NeedsAccount as e:
+            # No account for this backend: check the wall and the sign-in page.
+            print(f"note: {e}; running the signed-out journeys only")
+            state, found = None, {}
         for fn in JOURNEYS:
             name = fn.__name__
             if only and only not in name:
                 continue
-            ctx, page = new_page(browser, *size)
+            guest = name in SIGNED_OUT
+            if state is None and not guest:
+                continue
+            ctx, page = new_page(browser, *size, state=None if guest else state)
             errors = []
             page.on("pageerror", lambda e, errors=errors: errors.append(str(e)[:200]))
             try:

@@ -16,7 +16,7 @@ import json
 import sys
 import time
 
-from common import BASE, OUT, discover, launch, new_page, routes
+from common import BASE, OUT, SIGNED_OUT_ONLY, discover, launch, new_page, routes, sign_in
 from playwright.sync_api import sync_playwright
 
 WIDTHS = {"desktop": (1440, 900), "laptop": (1024, 700), "tablet": (834, 1112),
@@ -25,8 +25,8 @@ KEY = {"discover", "tool", "search", "news", "signin", "compare"}
 IGNORED = ("favicon", "chrome-extension://", "moz-extension://")
 
 
-def visit(browser, name, path, size, engine):
-    ctx, page = new_page(browser, *size)
+def visit(browser, name, path, size, engine, state):
+    ctx, page = new_page(browser, *size, state=None if name in SIGNED_OUT_ONLY else state)
     errors, failed = [], []
     page.on("pageerror", lambda e: errors.append(str(e)[:300]))
     page.on("response", lambda r: failed.append(f"{r.status} {r.url.split('?')[0][-90:]}")
@@ -56,11 +56,12 @@ def main() -> int:
     results = []
     with sync_playwright() as p:
         browser = launch(p, engine)
-        pages = [r for r in routes(discover(browser)) if not key_only or r[0] in KEY]
+        state = sign_in(browser)
+        pages = [r for r in routes(discover(browser, state)) if not key_only or r[0] in KEY]
         widths = {k: v for k, v in WIDTHS.items() if not key_only or k in ("desktop", "phone")}
         for size in widths.values():
             for name, path in pages:
-                r = visit(browser, name, path, size, engine)
+                r = visit(browser, name, path, size, engine, state)
                 results.append(r)
                 bad = r["errors"] or r["overflow"]
                 print(("!! " if bad else "ok ") + f"{name:13} {size[0]:>4}px "
