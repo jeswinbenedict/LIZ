@@ -157,11 +157,17 @@ class _AlertTile extends StatelessWidget {
     final icon = _icons[alert.type] ?? Icons.notifications_none;
     final unread = !alert.read;
 
+    // One full stop per part: titles and bodies often end with their own,
+    // which a screen reader would otherwise read twice.
+    String sentence(String t) => t.trim().replaceFirst(RegExp(r'[.!?]+$'), '');
     return Semantics(
       button: true,
-      label:
-          '${unread ? 'Unread. ' : ''}${alert.title}. ${alert.body}. '
-          '${timeAgo(alert.createdAt)} ago',
+      label: [
+        if (unread) 'Unread',
+        sentence(alert.title),
+        if (alert.body.trim().isNotEmpty) sentence(alert.body),
+        '${timeAgo(alert.createdAt)} ago',
+      ].join('. '),
       container: true,
       child: InkWell(
         onTap: onTap,

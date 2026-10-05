@@ -224,7 +224,7 @@ class _RailScaffold extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(child: shell),
+          Expanded(child: _PageArea(shell: shell)),
         ],
       ),
     );
@@ -251,6 +251,7 @@ class _RailButton extends StatelessWidget {
       child: Tooltip(
         message: label,
         child: Semantics(
+          container: true,
           selected: selected,
           button: true,
           label: label,
@@ -351,11 +352,26 @@ class _SidebarScaffold extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(child: shell),
+          Expanded(child: _PageArea(shell: shell)),
         ],
       ),
     );
   }
+}
+
+/// The page beside the rail or sidebar, in a semantics container of its own.
+///
+/// Every page route carries a BlockSemantics barrier, which drops whatever
+/// was painted before it in the same container. Without this boundary that
+/// was the whole sidebar — screen readers could not see Discover, News or
+/// Saved, only the page.
+class _PageArea extends StatelessWidget {
+  const _PageArea({required this.shell});
+  final Widget shell;
+
+  @override
+  Widget build(BuildContext context) =>
+      Semantics(container: true, explicitChildNodes: true, child: shell);
 }
 
 class _GroupLabel extends StatelessWidget {
@@ -580,6 +596,7 @@ class _SidebarSearch extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.liz;
     return Semantics(
+      container: true,
       button: true,
       label: 'Search tools',
       excludeSemantics: true,
@@ -637,6 +654,7 @@ class _ShortcutHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = context.liz.textSecondary;
     return Semantics(
+      container: true,
       label: 'Command K',
       excludeSemantics: true,
       child: Row(
@@ -704,6 +722,7 @@ class LizWordmark extends StatelessWidget {
         const SizedBox(width: 10),
         // Set in spaced capitals; read as the name, not spelled out.
         Semantics(
+          container: true,
           label: 'Liz',
           excludeSemantics: true,
           child: Text(
