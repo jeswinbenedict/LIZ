@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../core/config/env.dart';
 import '../models/profile.dart';
 
 /// Circular avatar: the person's picture, or their initials on a dark disc
@@ -14,12 +15,25 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: CachedNetworkImageProvider(profile.avatarUrl!),
+    final url = profile.avatarUrl;
+    if (url != null && url.isNotEmpty) {
+      // Through Liz's own image proxy unless it is already in Liz's storage:
+      // a Google sign-up's picture lives on googleusercontent.com, which the
+      // Content-Security-Policy does not allow — and fetching it there would
+      // tell Google who looked at whose profile. A picture that will not load
+      // falls back to the initials.
+      return CachedNetworkImage(
+        imageUrl: Env.proxiedImage(url),
+        imageBuilder: (context, image) =>
+            CircleAvatar(radius: radius, backgroundImage: image),
+        placeholder: (context, _) => _initials(context),
+        errorWidget: (context, _, _) => _initials(context),
       );
     }
+    return _initials(context);
+  }
+
+  Widget _initials(BuildContext context) {
     final p = context.liz;
     return Container(
       width: radius * 2,

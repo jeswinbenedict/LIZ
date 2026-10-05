@@ -164,6 +164,18 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   Future<Profile> _syncOnce(User user) async {
+    // A returning session's token already names its Liz user (the liz_uid
+    // claim firebase-session set the first time). Load the profile straight
+    // away rather than call the function again: that round trip, often a
+    // cold start, was most of the wait on the starting screen. A new sign-up,
+    // or a token without the claim, still goes through firebase-session.
+    if (_pendingName == null) {
+      final returning = await _profileFromClaims(user);
+      if (returning != null) {
+        _set(returning);
+        return returning;
+      }
+    }
     final res = await _client.functions.invoke(
       'firebase-session',
       body: {'display_name': ?_pendingName},
@@ -197,6 +209,26 @@ class FirebaseAuthRepository implements AuthRepository {
         : Profile.fromJson(row);
     _set(profile);
     return profile;
+  }
+
+  /// The profile a returning session's claims point to, or null when the
+  /// token has no usable claim or the profile is gone (a deleted account).
+  Future<Profile?> _profileFromClaims(User user) async {
+    try {
+      final claims = (await user.getIdTokenResult()).claims ?? const {};
+      final id = claims['liz_uid'];
+      if (claims['role'] != 'authenticated' || id is! String || id.isEmpty) {
+        return null;
+      }
+      final row = await _client
+          .from('profiles')
+          .select()
+          .eq('id', id)
+          .maybeSingle();
+      return row == null ? null : Profile.fromJson(row);
+    } catch (_) {
+      return null; // the full path below will explain any real failure
+    }
   }
 
   Profile _fallbackProfile(User user, String id) => Profile(
