@@ -82,6 +82,9 @@ jobs:
           supabase db query --local "select public.current_uid() is null as guest,
             (select count(*) from public.tools) as seeded_tools,
             (select count(*) from pg_policies where schemaname = 'public') as policies"
+      # A signed-in person once could make themselves admin with one request.
+      - name: Signed-in people cannot change protected columns
+        run: supabase db query --local -f supabase/tests/guards.sql
 
   # The app in a real browser, on the bundled demo data: visitor journeys, the
   # accessibility tree of every page, and a sweep for errors and overflow
