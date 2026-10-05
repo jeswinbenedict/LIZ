@@ -2,12 +2,17 @@
 
     python tool/symbolicate.py main.dart.js.map < stack.txt
     python tool/symbolicate.py main.dart.js.map "at a.b (https://liz.app/main.dart.js:2:51234)"
+    python tool/symbolicate.py main.dart.wasm.map < stack.txt
 
 The release build is minified, so a crash report in the admin console (or in
 error_events) reads "main.dart.js:2:51234". Each deploy keeps that build's
 source maps as a GitHub Actions artifact named `sourcemaps-<version>`, where
 <version> is the `app_version` the report carries. Download it, then pipe the
 stack through this script. Standard library only; reads source map v3.
+
+Browsers that run the WebAssembly build report frames as
+"main.dart.wasm:wasm-function[5504]:0x17f409": a byte offset into the module,
+which its map (main.dart.wasm.map) records as a column of a single line.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ _B64 = {c: i for i, c in enumerate(
 
 # "main.dart.js:2:51234", with or without a URL or parentheses around it.
 _FRAME = re.compile(r"(?P<file>[\w./:-]*?main\.dart\.js):(?P<line>\d+):(?P<col>\d+)")
+_WASM_FRAME = re.compile(r"[\w./:-]*?main\.dart\.wasm:wasm-function\[\d+\]:0x(?P<offset>[0-9a-fA-F]+)")
 
 
 def decode_vlq(segment: str) -> list[int]:
@@ -76,14 +82,21 @@ class SourceMap:
 
 
 def symbolicate(text: str, smap: SourceMap) -> str:
-    def replace(m: re.Match) -> str:
-        hit = smap.lookup(int(m.group("line")), int(m.group("col")))
+    def describe(hit, original: str) -> str:
         if hit is None:
-            return m.group(0)
+            return original
         source, line, col, name = hit
         source = source.replace("org-dartlang-sdk:///", "sdk:")
         return f"{source}:{line}:{col}" + (f" ({name})" if name else "")
-    return _FRAME.sub(replace, text)
+
+    def js(m: re.Match) -> str:
+        return describe(smap.lookup(int(m.group("line")), int(m.group("col"))), m.group(0))
+
+    def wasm(m: re.Match) -> str:
+        # One generated line; the byte offset is the 0-based column.
+        return describe(smap.lookup(1, int(m.group("offset"), 16) + 1), m.group(0))
+
+    return _WASM_FRAME.sub(wasm, _FRAME.sub(js, text))
 
 
 def main(argv: list[str]) -> int:
