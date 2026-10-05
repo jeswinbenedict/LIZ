@@ -9,7 +9,36 @@ on:
     branches: [main]
 
 jobs:
+  # What a push touched, so the slow app jobs run only when the app changed:
+  # a push that is only migrations, functions, scrapers or docs skips about
+  # twelve minutes of Flutter and browser checks (the free plan has 2,000 a
+  # month). A first push, a force-push or anything it cannot compare counts
+  # as a change.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.diff.outputs.app }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          BEFORE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          app='^(lib/|web/|test/|tool/|assets/|pubspec\.|analysis_options\.yaml|\.github/workflows/ci\.yml)'
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] ||
+             ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BEFORE" HEAD | grep -qE "$app"; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "app=false" >> "$GITHUB_OUTPUT"
+          fi
+
   flutter:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -95,6 +124,8 @@ jobs:
   # address bar not following the page, controls the keyboard could not
   # reach, headings that swallowed their sections.
   browser:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
