@@ -1,4 +1,15 @@
 <!DOCTYPE html><html lang="en"><head>
+  <!-- One address. "liz-cfp.pages.dev." (a link copied with the full stop
+       that ended its sentence) opens the same site, but to Firebase it is
+       another domain: Google sign-in failed with "Sign-in isn't set up for
+       this address yet" (6 October 2026). Drop the dot before anything loads.
+       The same holds for any host, so a custom domain is covered too. -->
+  <script>
+    if (location.hostname.endsWith('.')) {
+      location.replace(location.protocol + '//' + location.hostname.replace(/\.+$/, '') +
+        (location.port ? ':' + location.port : '') + location.pathname + location.search + location.hash);
+    }
+  </script>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
