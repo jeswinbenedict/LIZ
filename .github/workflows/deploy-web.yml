@@ -83,6 +83,11 @@ jobs:
             --dart-define=LEGAL_CONTACT="$LEGAL_CONTACT" \
             --dart-define=APP_VERSION="$VERSION"
           test -f build/web/_headers
+          # Link previews need absolute URLs; index.html names the pages.dev
+          # address, which a custom domain in SITE_URL replaces.
+          if [ -n "$SITE_URL" ]; then
+            sed -i "s#https://liz-cfp.pages.dev#${SITE_URL%/}#g" build/web/index.html
+          fi
           # Source maps turn a minified crash report back into Dart files and
           # lines (tool/symbolicate.py). They stay out of the public site —
           # they are the source — and are kept with the run instead, named by

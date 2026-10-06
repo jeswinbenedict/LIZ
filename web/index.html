@@ -38,10 +38,17 @@
   <meta property="og:site_name" content="Liz">
   <meta property="og:title" content="Liz — Discover the next big AI tool">
   <meta property="og:description" content="Find AI tools while they are still rising, not after everyone has them.">
-  <meta property="og:image" content="icons/Icon-512.png">
-  <meta name="twitter:card" content="summary">
+  <!-- Link previews (LinkedIn, WhatsApp, X, Slack) need absolute URLs; the
+       deploy rewrites https://liz-cfp.pages.dev to SITE_URL when it differs. -->
+  <meta property="og:url" content="https://liz-cfp.pages.dev/">
+  <meta property="og:image" content="https://liz-cfp.pages.dev/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="627">
+  <meta property="og:image:alt" content="Liz: discover the next big AI tool before everyone else.">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Liz — Discover the next big AI tool">
   <meta name="twitter:description" content="Find AI tools while they are still rising, not after everyone has them.">
+  <meta name="twitter:image" content="https://liz-cfp.pages.dev/og-card.png">
 
   <!-- The first screen cannot paint until the catalog arrives, and that
        request cannot start until DNS, TCP and TLS to the API have finished.

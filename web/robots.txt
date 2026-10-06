@@ -1,3 +1,18 @@
-# Liz is for signed-in people: there is nothing here for a crawler.
+# Liz is for signed-in people: there is nothing here for a search engine.
+#
+# Link-preview fetchers may read the front page, so a link to Liz shared on
+# LinkedIn, WhatsApp, X, Slack or Discord shows its card (og:* tags in
+# index.html) instead of "couldn't load a preview". They see only the
+# signed-out shell; the catalog is private in the database (migration 0061).
+
+User-agent: LinkedInBot
+User-agent: facebookexternalhit
+User-agent: Twitterbot
+User-agent: Slackbot-LinkExpanding
+User-agent: Discordbot
+User-agent: WhatsApp
+User-agent: TelegramBot
+Allow: /
+
 User-agent: *
 Disallow: /
