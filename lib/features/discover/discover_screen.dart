@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shared/widgets/liz_mark.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -91,7 +92,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   const AlertsBell(),
                   IconButton(
                     tooltip: 'Ask Liz',
-                    icon: const Icon(Icons.auto_awesome_outlined),
+                    icon: const LizMark.icon(),
                     onPressed: () => context.go('/ask'),
                   ),
                 ],

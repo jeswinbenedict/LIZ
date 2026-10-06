@@ -216,7 +216,7 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.auto_awesome, size: 18, color: p.accent),
+                        LizMark.icon(size: 18, color: p.accent),
                         const SizedBox(width: 8),
                         Text(
                           'Ask Liz',
@@ -366,7 +366,7 @@ class _Answer extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 1),
-                    child: Icon(Icons.auto_awesome, size: 16, color: p.accent),
+                    child: LizMark.icon(size: 16, color: p.accent),
                   ),
                   const SizedBox(width: 8),
                   Expanded(

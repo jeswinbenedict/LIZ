@@ -19,10 +19,14 @@ class NavDestinationSpec {
     required this.label,
     required this.icon,
     required this.selectedIcon,
+    this.brand = false,
   });
   final String label;
   final IconData icon;
   final IconData selectedIcon;
+
+  /// Drawn as the Liz mark instead of [icon]: the destination is Liz itself.
+  final bool brand;
 }
 
 /// Indexed by branch. Community has no entry on purpose (see router.dart);
@@ -42,6 +46,7 @@ const kNavDestinations = <NavDestinationSpec>[
     label: 'Ask Liz',
     icon: Icons.auto_awesome_outlined,
     selectedIcon: Icons.auto_awesome,
+    brand: true,
   ),
   NavDestinationSpec(
     label: 'Saved',
@@ -125,8 +130,10 @@ class _PhoneScaffold extends StatelessWidget {
           destinations: [
             for (final d in kNavDestinations)
               NavigationDestination(
-                icon: Icon(d.icon),
-                selectedIcon: Icon(d.selectedIcon),
+                icon: d.brand ? const LizMark.icon() : Icon(d.icon),
+                selectedIcon: d.brand
+                    ? const LizMark.icon()
+                    : Icon(d.selectedIcon),
                 label: d.label,
               ),
           ],
@@ -218,6 +225,7 @@ class _RailScaffold extends StatelessWidget {
                           ? kNavDestinations[i].selectedIcon
                           : kNavDestinations[i].icon,
                       label: kNavDestinations[i].label,
+                      brand: kNavDestinations[i].brand,
                       selected: shell.currentIndex == i,
                       onTap: () => onSelect(i),
                     ),
@@ -235,11 +243,13 @@ class _RailScaffold extends StatelessWidget {
 class _RailButton extends StatelessWidget {
   const _RailButton({
     required this.icon,
+    this.brand = false,
     required this.label,
     required this.onTap,
     this.selected = false,
   });
   final IconData icon;
+  final bool brand;
   final String label;
   final VoidCallback onTap;
   final bool selected;
@@ -270,14 +280,20 @@ class _RailButton extends StatelessWidget {
               onTap: onTap,
               child: SizedBox.square(
                 dimension: 48,
-                child: Icon(
-                  icon,
-                  size: 22,
-                  color: selected ? p.accent : p.textSecondary,
-                  shadows: selected
-                      ? [Shadow(color: p.glow, blurRadius: 10)]
-                      : null,
-                ),
+                child: brand
+                    ? LizMark.icon(
+                        size: 22,
+                        color: selected ? p.accent : p.textSecondary,
+                        glow: selected,
+                      )
+                    : Icon(
+                        icon,
+                        size: 22,
+                        color: selected ? p.accent : p.textSecondary,
+                        shadows: selected
+                            ? [Shadow(color: p.glow, blurRadius: 10)]
+                            : null,
+                      ),
               ),
             ),
           ),
@@ -400,12 +416,14 @@ class _GroupLabel extends StatelessWidget {
 class _SideRow extends StatelessWidget {
   const _SideRow({
     required this.icon,
+    this.brand = false,
     required this.label,
     required this.onTap,
     this.selected = false,
     this.trailing,
   });
   final IconData icon;
+  final bool brand;
   final String label;
   final VoidCallback onTap;
   final bool selected;
@@ -437,14 +455,21 @@ class _SideRow extends StatelessWidget {
                     : null,
                 child: Row(
                   children: [
-                    Icon(
-                      icon,
-                      size: 20,
-                      color: selected ? p.accent : p.textSecondary,
-                      shadows: selected
-                          ? [Shadow(color: p.glow, blurRadius: 10)]
-                          : null,
-                    ),
+                    if (brand)
+                      LizMark.icon(
+                        size: 20,
+                        color: selected ? p.accent : p.textSecondary,
+                        glow: selected,
+                      )
+                    else
+                      Icon(
+                        icon,
+                        size: 20,
+                        color: selected ? p.accent : p.textSecondary,
+                        shadows: selected
+                            ? [Shadow(color: p.glow, blurRadius: 10)]
+                            : null,
+                      ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -484,6 +509,7 @@ class _SideItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SideRow(
     icon: selected ? spec.selectedIcon : spec.icon,
+    brand: spec.brand,
     label: spec.label,
     selected: selected,
     onTap: onTap,

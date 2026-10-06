@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shared/widgets/liz_mark.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -127,21 +128,21 @@ class _PointHolder extends StatelessWidget {
 
   static const _points = [
     _Point(
-      icon: Icons.trending_up,
+      icon: Icon(Icons.trending_up),
       title: 'Early',
       text:
           'New launches from Product Hunt, Hacker News and GitHub, '
           'checked and summarised every day.',
     ),
     _Point(
-      icon: Icons.auto_awesome_outlined,
+      icon: LizMark.icon(),
       title: 'Plain words',
       text:
           'Ask Liz — "free tool to transcribe meetings" — and get tools '
           'that fit, with the reason why.',
     ),
     _Point(
-      icon: Icons.notifications_none,
+      icon: Icon(Icons.notifications_none),
       title: 'Watched',
       text:
           'Save a tool to hear when its price changes or it breaks into the '
@@ -155,7 +156,7 @@ class _PointHolder extends StatelessWidget {
 
 class _Point extends StatelessWidget {
   const _Point({required this.icon, required this.title, required this.text});
-  final IconData icon;
+  final Widget icon;
   final String title;
   final String text;
 
@@ -172,7 +173,10 @@ class _Point extends StatelessWidget {
             color: p.accentSoft,
             shape: LizRadius.shape(9),
           ),
-          child: Icon(icon, size: 18, color: p.accent),
+          child: IconTheme(
+            data: IconThemeData(size: 18, color: p.accent),
+            child: icon,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(

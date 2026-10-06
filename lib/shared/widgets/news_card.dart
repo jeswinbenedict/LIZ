@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'liz_mark.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -210,7 +211,7 @@ class _QuickTakeState extends State<_QuickTake> {
               minimumSize: const Size(48, 40),
             ),
             onPressed: () => setState(() => _open = !_open),
-            icon: const Icon(Icons.auto_awesome, size: 16),
+            icon: const LizMark.icon(size: 16),
             label: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

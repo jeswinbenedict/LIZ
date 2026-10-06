@@ -11,12 +11,16 @@ class LizPill extends StatelessWidget {
     required this.label,
     this.color,
     this.icon,
+    this.leading,
     this.filled = false,
   });
 
   final String label;
   final Color? color;
   final IconData? icon;
+
+  /// In place of [icon], for a glyph that is not in an icon font (LizMark).
+  final Widget? leading;
   final bool filled;
 
   @override
@@ -37,7 +41,7 @@ class LizPill extends StatelessWidget {
           );
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: icon != null ? 6 : 7,
+        horizontal: icon != null || leading != null ? 6 : 7,
         vertical: 3,
       ),
       decoration: ShapeDecoration(
@@ -47,8 +51,11 @@ class LizPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: ink),
+          if (icon != null || leading != null) ...[
+            IconTheme(
+              data: IconThemeData(size: 12, color: ink),
+              child: leading ?? Icon(icon),
+            ),
             const SizedBox(width: 3),
           ],
           // A long tag on a narrow phone would otherwise push the pill past
