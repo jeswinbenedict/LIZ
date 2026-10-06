@@ -69,7 +69,9 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.8
 
-# Liz app icon — generated via `dart run flutter_launcher_icons`. Web only:
+# Liz app icon (the red mark on the canvas black, from zion-icon-flat.png;
+# web/favicon.png is a rounded, larger-glyph cut of it for 16-pixel tabs) —
+# generated via `dart run flutter_launcher_icons`. Web only:
 # Liz ships as a web application, and the android/ and ios/ scaffolds were
 # removed rather than carried unbuilt. `flutter create --platforms
 # android,ios .` restores them if that ever changes; re-enable the platform
@@ -77,10 +79,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: false
   ios: false
-  image_path: "assets/icon/zion-icon-flat.png"
+  image_path: "assets/icon/liz-icon-red.png"
   web:
     generate: true
-    image_path: "assets/icon/zion-icon-flat.png"
+    image_path: "assets/icon/liz-icon-red.png"
     background_color: "#FFFFFF"
     theme_color: "#FFFFFF"
 
