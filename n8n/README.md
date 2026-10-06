@@ -116,6 +116,26 @@ The workflow has a fixed id, `LizScrapeHome001`, so importing it again updates
 it rather than creating a copy. The commands use `cmd.exe` syntax; on Linux or
 Docker they would read `cd "$LIZ_REPO_DIR/scrapers" && "$LIZ_PYTHON" …`.
 
+### Starting with Windows
+
+A Task Scheduler task, **Liz n8n scraper**, runs the script a minute after you
+log in, in a hidden window, and writes its output to `~/.liz/n8n.log`
+(replaced at each start). Set up 6 October 2026, after n8n had gone eight days
+without running because nobody had started it since a restart. It runs on
+battery, has no time limit, and is retried three times, five minutes apart, if
+it fails to start.
+
+```powershell
+Get-ScheduledTask 'Liz n8n scraper' | Get-ScheduledTaskInfo   # last run, result
+Stop-ScheduledTask 'Liz n8n scraper'                          # stop n8n
+Start-ScheduledTask 'Liz n8n scraper'                         # start it again
+Disable-ScheduledTask 'Liz n8n scraper'                       # stop starting at log-in
+```
+
+n8n is up when <http://127.0.0.1:5678/healthz> answers `200`. The laptop has to
+be on and logged in for the twelve-hourly run; a run missed while it was off
+is not made up, and the next one picks up whatever is on the feed then.
+
 ### The first visit
 
 The first time <http://localhost:5678> opens, n8n asks you to create its owner
