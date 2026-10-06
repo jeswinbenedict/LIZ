@@ -83,8 +83,8 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: "assets/icon/liz-icon-red.png"
-    background_color: "#FFFFFF"
-    theme_color: "#FFFFFF"
+    background_color: "#050506"
+    theme_color: "#050506"
 
 # Liz splash screen — generated via `dart run flutter_native_splash:create`.
 # The transparent, safe-zone-padded mark centered on a white field. Web only,
