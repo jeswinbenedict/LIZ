@@ -159,4 +159,4 @@ jobs:
           check "$SITE_URL/robots.txt" 'Disallow: /'
           # Google sign-in's helper pages, relayed from this origin
           # (functions/__/[[path]].js). Without them the popup breaks.
-          check "$SITE_URL/__/firebase/init.json" 'liz-f5f93'
+          check "$SITE_URL/__/auth/handler" 'fireauth.oauthhelper'

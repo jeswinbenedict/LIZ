@@ -13,6 +13,8 @@
 // https://liz-cfp.pages.dev/__/auth/handler as a redirect URI.
 //
 // Only these two prefixes are relayed; anything else under /__/ is a 404.
+// (/__/firebase/init.json is 404 upstream too — the project has no Firebase
+// Hosting — and the handler does not need it: the SDK passes the config.)
 
 const UPSTREAM = 'https://liz-f5f93.firebaseapp.com';
 
