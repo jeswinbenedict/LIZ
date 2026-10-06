@@ -128,6 +128,7 @@ class FirebaseAuthRepository implements AuthRepository {
       return;
     }
     await prefs.setBool(_sessionHint, true);
+    await prefs.setBool(kSignedInBeforeKey, true);
     try {
       await _sync(user);
     } on LizException {

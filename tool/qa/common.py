@@ -68,6 +68,9 @@ def sign_in(browser) -> dict:
     try:
         page.goto(BASE + "/signin")
         ready(page, settle_ms=1500)
+        # A browser nobody has signed in on opens on "Create account".
+        page.get_by_role("radio", name="Sign in").click()
+        page.wait_for_timeout(800)  # the name field animates away
         page.get_by_role("textbox", name="Email").click()
         page.wait_for_timeout(400)  # WebKit attaches the text input a beat later
         page.keyboard.type(email)

@@ -47,7 +47,8 @@ def sign_in_wall(page, found):
     ready(page, settle_ms=1500)
     # The browser may show the address with or without its slashes escaped.
     page.wait_for_url(re.compile(r"/signin\?from=(%2F|/)tools(%2F|/)anything"), timeout=10000)
-    expect(page.get_by_role("heading", name="Welcome back")).to_be_visible()
+    # A fresh browser is a new visitor: the form opens on "Create account".
+    expect(page.get_by_role("heading", name="Create your account")).to_be_visible()
     # The legal pages stay open.
     page.goto(BASE + "/privacy")
     ready(page, settle_ms=1000)
@@ -196,6 +197,9 @@ def signin_validation(page, found):
 def forgot_password_carries_email(page, found):
     page.goto(BASE + "/signin")
     ready(page)
+    # The reset link lives on the Sign in tab; a new visitor starts on the other.
+    page.get_by_role("radio", name="Sign in").click()
+    page.wait_for_timeout(800)
     page.get_by_role("textbox", name="Email").click()
     page.wait_for_timeout(400)
     page.keyboard.type("me@example.com")

@@ -41,6 +41,11 @@ class TotpSetup {
 /// Thrown by a sign-in when the account has two-step verification: the
 /// password was right, and [AuthRepository.completeTwoStepSignIn] with a code
 /// from the authenticator app finishes the sign-in.
+/// SharedPreferences key: someone has signed in on this device before. The
+/// sign-in form opens on "Create account" until then, since a first visit is
+/// almost always a new person (everything in Liz is behind sign-in).
+const kSignedInBeforeKey = 'liz.signed_in_before';
+
 class TwoStepRequiredException extends LizException {
   const TwoStepRequiredException()
     : super('Enter the code from your authenticator app.');

@@ -44,6 +44,7 @@ class MockAuthRepository implements AuthRepository {
         await prefs.remove(_sessionKey);
       } else {
         await prefs.setString(_sessionKey, name);
+        await prefs.setBool(kSignedInBeforeKey, true);
       }
     } catch (_) {}
   }

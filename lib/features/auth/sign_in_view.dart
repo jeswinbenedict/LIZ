@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/settings_controller.dart';
 import '../../app/theme.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/auth/enabled_providers.dart';
 import '../../core/errors.dart';
+import '../../core/platform/in_app_browser.dart';
 import '../../core/providers.dart';
 import '../../shared/widgets/google_logo.dart';
 import '../../shared/widgets/page_header.dart';
@@ -22,6 +24,10 @@ import 'password_validation.dart';
 /// submits, password managers fill it, the password can be shown, the error
 /// is read out, and the way back from a forgotten password sits next to the
 /// password field rather than under the button.
+/// The in-app browser showing the page, if any (see in_app_browser.dart).
+/// A provider so tests can pretend to be one.
+final inAppBrowserProvider = Provider<String?>((ref) => inAppBrowserName());
+
 class SignInView extends ConsumerStatefulWidget {
   const SignInView({
     super.key,
@@ -47,6 +53,10 @@ class _SignInViewState extends ConsumerState<SignInView> {
   final _password = TextEditingController();
   final _name = TextEditingController();
   bool _isSignUp = false;
+
+  /// Set once the person picks a tab, so the first-visit default below can
+  /// never flip the form under them.
+  bool _modeChosen = false;
   bool _showPassword = false;
   String? _error;
   String? _info;
@@ -56,6 +66,22 @@ class _SignInViewState extends ConsumerState<SignInView> {
     super.initState();
     // The magic-link button depends on there being an address.
     _email.addListener(() => setState(() {}));
+    // A device nobody has signed in on opens on "Create account": friends
+    // following a shared link are new, and "Welcome back" told them they
+    // were in the wrong place.
+    final prefs = ref.read(sharedPreferencesProvider).value;
+    if (prefs != null) {
+      _isSignUp = prefs.getBool(kSignedInBeforeKey) != true;
+    } else {
+      ref
+          .read(sharedPreferencesProvider.future)
+          .then((p) {
+            if (!mounted || _modeChosen) return;
+            setState(() => _isSignUp = p.getBool(kSignedInBeforeKey) != true);
+          })
+          // Without storage the form simply stays on "Sign in".
+          .catchError((Object _) {});
+    }
   }
 
   @override
@@ -132,6 +158,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
   }
 
   void _setMode(bool signUp) {
+    _modeChosen = true;
     if (signUp == _isSignUp) return;
     setState(() {
       _isSignUp = signUp;
@@ -175,6 +202,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
         ref.watch(enabledAuthProvidersProvider).value ??
         EnabledAuthProviders.none;
     final small = LizText.footnote.copyWith(color: p.textSecondary);
+    final inAppBrowser = ref.watch(inAppBrowserProvider);
 
     return SingleChildScrollView(
       padding: widget.padding,
@@ -196,8 +224,9 @@ class _SignInViewState extends ConsumerState<SignInView> {
             Text(
               widget.prompt ??
                   (_isSignUp
-                      ? 'Save tools, get alerts when they move, and write '
-                            'reviews.'
+                      ? 'Free, and it takes a minute. Then browse every AI '
+                            'tool Liz tracks, ask for one in plain words, and '
+                            'get alerts when they move.'
                       : 'Sign in to your saved tools and alerts.'),
               style: LizText.callout.copyWith(color: p.textSecondary),
             ),
@@ -212,6 +241,18 @@ class _SignInViewState extends ConsumerState<SignInView> {
 
             // Only the providers this project offers. A switched-off one
             // dead-ends on an error.
+            if (providers.google && inAppBrowser != null) ...[
+              _Message(
+                text:
+                    'You opened Liz inside $inAppBrowser, where Google blocks '
+                    'its sign-in. Open this page in Chrome or Safari (menu ⋯ '
+                    '→ Open in browser) to continue with Google, or use '
+                    'email below.',
+                color: p.caution,
+                icon: Icons.open_in_browser,
+              ),
+              const SizedBox(height: 10),
+            ],
             if (providers.google)
               _ProviderButton(
                 mark: const GoogleLogo(),
