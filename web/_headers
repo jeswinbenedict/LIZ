@@ -5,7 +5,8 @@
 # report-only against the deployed site. What a signed-in session loads was
 # checked: the app and its CanvasKit (self), the Firebase SDK and Flutter's
 # fallback fonts (gstatic), Supabase (data, functions, storage), Firebase
-# sign-in (googleapis, apis.google.com, the auth iframe). Remote pictures —
+# sign-in (googleapis, apis.google.com, the auth iframe — relayed from 'self'
+# since 6 October 2026, functions/__/[[path]].js). Remote pictures —
 # logos, news images, Google profile photos — come through Liz's own proxy on
 # supabase.co. A wrong CSP blanks a Flutter app entirely: anything new the
 # page loads from elsewhere must be added here first.
@@ -16,7 +17,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.gstatic.com https://fonts.gstatic.com https://*.googleapis.com; worker-src 'self' blob:; frame-src https://liz-f5f93.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.gstatic.com https://fonts.gstatic.com https://*.googleapis.com; worker-src 'self' blob:; frame-src 'self' https://liz-f5f93.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
 # The app shell changes with every deploy; everything it loads is
 # content-hashed or versioned by the service worker.

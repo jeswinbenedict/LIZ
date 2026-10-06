@@ -2,12 +2,27 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
+/// Firebase's own address for its sign-in helper pages.
+const firebaseAuthDomain = 'liz-f5f93.firebaseapp.com';
+
+/// Sites that relay Firebase's sign-in pages from their own origin
+/// (functions/__/[[path]].js). Google's sign-in client lists
+/// `https://<host>/__/auth/handler` as a redirect URI for each of these, and no
+/// other host: a preview deployment or localhost keeps using Firebase's.
+const relayedAuthHosts = {'liz-cfp.pages.dev'};
+
+/// The authDomain for a page served from [host]: the host itself where it
+/// relays sign-in, so the helper pages are first-party and survive browsers
+/// that block third-party storage (Brave, Safari, Firefox strict mode).
+String authDomainFor(String host) =>
+    relayedAuthHosts.contains(host) ? host : firebaseAuthDomain;
+
 /// Firebase web app config (public by design: it identifies the project, it
 /// does not grant anything). Mobile would read its own config from
 /// google-services.json / GoogleService-Info.plist.
-const firebaseWebOptions = FirebaseOptions(
+FirebaseOptions get firebaseWebOptions => FirebaseOptions(
   apiKey: 'AIzaSyCzsZChfi0nVuZc3G7KG0Wt6zgferaAdEw',
-  authDomain: 'liz-f5f93.firebaseapp.com',
+  authDomain: authDomainFor(Uri.base.host),
   projectId: 'liz-f5f93',
   storageBucket: 'liz-f5f93.firebasestorage.app',
   messagingSenderId: '729418856494',

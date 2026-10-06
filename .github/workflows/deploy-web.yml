@@ -157,3 +157,6 @@ jobs:
           # sign in; no catalog text in the page itself.
           check "$SITE_URL/tools/anything" 'flutter_bootstrap.js'
           check "$SITE_URL/robots.txt" 'Disallow: /'
+          # Google sign-in's helper pages, relayed from this origin
+          # (functions/__/[[path]].js). Without them the popup breaks.
+          check "$SITE_URL/__/firebase/init.json" 'liz-f5f93'
