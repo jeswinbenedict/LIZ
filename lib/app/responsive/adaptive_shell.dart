@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
 import '../../features/alerts/alerts_controller.dart';
+import '../../shared/widgets/liz_mark.dart';
 import '../../shared/widgets/user_avatar.dart';
 import '../theme.dart';
 import 'breakpoints.dart';
@@ -203,7 +204,7 @@ class _RailScaffold extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 16),
-                  const _Mark(size: 30),
+                  const LizMark(size: 30),
                   const SizedBox(height: 20),
                   _RailButton(
                     icon: Icons.search,
@@ -672,40 +673,6 @@ class _ShortcutHint extends StatelessWidget {
 // Brand.
 // ---------------------------------------------------------------------------
 
-class _Mark extends StatelessWidget {
-  const _Mark({this.size = 28});
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final p = context.liz;
-    // The artwork is a single near-black glyph on transparency, tinted red.
-    // ColorFiltered rather than Image's own `color`: the latter renders
-    // nothing under CanvasKit. A blurred copy behind it is its glow.
-    Widget glyph(Color color) => ColorFiltered(
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-      child: Image.asset(
-        'assets/branding/liz-logo-light.png',
-        width: size,
-        height: size,
-        cacheWidth: (size * dpr).round(),
-        cacheHeight: (size * dpr).round(),
-        filterQuality: FilterQuality.high,
-      ),
-    );
-    return Stack(
-      children: [
-        ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-          child: glyph(p.glow.withValues(alpha: 0.9)),
-        ),
-        glyph(p.accent),
-      ],
-    );
-  }
-}
-
 /// The brand mark and name, for sidebars and phone top bars.
 class LizWordmark extends StatelessWidget {
   const LizWordmark({super.key, this.size = 26});
@@ -718,7 +685,7 @@ class LizWordmark extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ExcludeSemantics(child: _Mark(size: size)),
+        ExcludeSemantics(child: LizMark(size: size)),
         const SizedBox(width: 10),
         // Set in spaced capitals; read as the name, not spelled out.
         Semantics(

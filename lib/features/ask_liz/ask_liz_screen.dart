@@ -9,6 +9,7 @@ import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/liz_card.dart';
+import '../../shared/widgets/liz_mark.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
@@ -481,7 +482,8 @@ class _Intro extends StatelessWidget {
                   color: p.accentSoft,
                   shape: LizRadius.shape(16),
                 ),
-                child: Icon(Icons.auto_awesome, size: 28, color: p.accent),
+                alignment: Alignment.center,
+                child: const LizMark(size: 42),
               ),
               const SizedBox(height: 20),
               Semantics(
