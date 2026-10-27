@@ -99,7 +99,8 @@ def search(page, found):
     ready(page)
     page.keyboard.type("voice")
     page.wait_for_timeout(3000)
-    return page.get_by_text(re.compile(r"^\d+ tools?$")).first.inner_text()
+    # "2 tools for “voice”": the count, then the words it is for.
+    return page.get_by_text(re.compile(r"^\d+ tools? for ")).first.inner_text()
 
 
 @journey
