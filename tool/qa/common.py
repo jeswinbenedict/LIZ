@@ -52,9 +52,17 @@ class NeedsAccount(RuntimeError):
     """Signing in failed: a live backend needs a real test account."""
 
 
+# The clock the pages read. CI runs in UTC, and a page that groups by day
+# (News) lays out differently at 3 a.m. in Kolkata than at 9 p.m. in UTC: a
+# check that passed here once failed there. Same zone, same pages.
+TIMEZONE = os.environ.get("LIZ_TZ", "UTC")
+
+
 def new_page(browser, width: int = 1440, height: int = 900, state=None):
     ctx = browser.new_context(
-        viewport={"width": width, "height": height}, storage_state=state
+        viewport={"width": width, "height": height},
+        storage_state=state,
+        timezone_id=TIMEZONE,
     )
     ctx.add_init_script(FIRST_FRAME_SCRIPT)
     return ctx, ctx.new_page()
@@ -159,5 +167,6 @@ def routes(found: dict[str, str]) -> list[tuple[str, str]]:
         ("privacy", "/privacy"),
         ("terms", "/terms"),
         ("admin", "/admin"),
+        ("welcome", "/welcome"),
         ("notfound", "/no-such-page"),
     ]

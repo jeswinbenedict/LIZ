@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Runs CI's fast checks before anything leaves this machine: the format check
+# over lib, test and tool, flutter analyze (infos fatal, as in CI), the
+# tests, ruff and pytest. A push that would turn CI red stops here instead.
+#
+# Enable once per clone:  git config core.hooksPath tool/hooks
+# The browser checks take about fifteen minutes; run them before a design
+# change with `bash tool/ci_local.sh` (tool/qa/README.md).
+
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+# The interpreter with ruff and pytest: $PYTHON, else the scraper venv, else
+# whatever `python` is.
+if [ -z "${PYTHON:-}" ]; then
+  for candidate in "$HOME/.liz/scraper-venv/Scripts/python.exe" \
+                   "$HOME/.liz/scraper-venv/bin/python"; do
+    if [ -x "$candidate" ]; then PYTHON="$candidate"; break; fi
+  done
+fi
+export PYTHON="${PYTHON:-python}"
+
+echo "pre-push: running CI's fast checks (tool/ci_local.sh --fast)…"
+if ! bash tool/ci_local.sh --fast; then
+  echo
+  echo "pre-push: a check CI runs failed, so nothing was pushed."
+  exit 1
+fi

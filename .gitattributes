@@ -1,0 +1,4 @@
+# Shell scripts keep Unix line endings on every checkout: bash reads a CRLF
+# script as commands ending in "\r" and fails on the first line.
+*.sh text eol=lf
+tool/hooks/* text eol=lf

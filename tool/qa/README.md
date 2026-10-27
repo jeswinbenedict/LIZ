@@ -14,6 +14,20 @@ live, and where each of them has broken without a single widget test failing.
 The pages visited are discovered from Discover, so the same scripts run
 against the live catalog and against the demo data CI builds.
 
+## Before a push: all of CI's app checks
+
+```bash
+PYTHON=~/.liz/scraper-venv/Scripts/python.exe bash tool/ci_local.sh
+```
+
+`tool/ci_local.sh` runs what CI's `flutter`, `scrapers` and `browser` jobs
+run, the way they run it: the format check over `lib`, `test` and `tool`,
+analyze, the tests, ruff and pytest, a `flutter build web --release` (not
+`--wasm`), and these scripts — in UTC, CI's timezone. The pages take their
+clock from `LIZ_TZ` (default `UTC`, in `common.py`): News groups stories by
+day, and once laid out differently at night in UTC than here, so a check
+passed locally and failed in CI. `--fast` stops before the build.
+
 ## Running them
 
 Once:
