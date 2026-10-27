@@ -146,9 +146,9 @@ class _PhoneScaffold extends StatelessWidget {
 /// Which edge of a glass bar carries its hairline.
 enum GlassEdge { top, bottom }
 
-/// The bar material (docs/DESIGN.md §5): black at 82% over a 24px blur, so
-/// content shows through as it scrolls underneath, edged with a glowing red
-/// seam ([GlowLine]) where it meets the page.
+/// The bar material (docs/DESIGN.md §5): the canvas at 92% over a blur, so
+/// the bar stays solid enough to read while content scrolls underneath, with
+/// one hairline where it meets the page.
 class GlassBar extends StatelessWidget {
   const GlassBar({
     super.key,
@@ -168,7 +168,7 @@ class GlassBar extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: p.canvas.withValues(alpha: 0.82),
+                color: p.canvas.withValues(alpha: 0.92),
               ),
               child: child,
             ),
@@ -204,7 +204,7 @@ class _RailScaffold extends StatelessWidget {
           Container(
             width: 72,
             decoration: BoxDecoration(
-              color: p.surface,
+              color: p.canvas,
               border: Border(right: BorderSide(color: p.hairline)),
             ),
             child: SafeArea(
@@ -268,13 +268,8 @@ class _RailButton extends StatelessWidget {
           label: label,
           excludeSemantics: true,
           child: Material(
-            color: selected ? p.accentSoft : Colors.transparent,
-            shape: LizRadius.shape(
-              LizRadius.sm,
-              side: selected
-                  ? BorderSide(color: p.accent.withValues(alpha: 0.6))
-                  : BorderSide.none,
-            ),
+            color: selected ? p.surfaceHover : Colors.transparent,
+            shape: LizRadius.shape(LizRadius.sm),
             child: InkWell(
               customBorder: LizRadius.shape(LizRadius.sm),
               onTap: onTap,
@@ -283,16 +278,12 @@ class _RailButton extends StatelessWidget {
                 child: brand
                     ? LizMark.icon(
                         size: 22,
-                        color: selected ? p.accent : p.textSecondary,
-                        glow: selected,
+                        color: selected ? p.textPrimary : p.textSecondary,
                       )
                     : Icon(
                         icon,
                         size: 22,
-                        color: selected ? p.accent : p.textSecondary,
-                        shadows: selected
-                            ? [Shadow(color: p.glow, blurRadius: 10)]
-                            : null,
+                        color: selected ? p.textPrimary : p.textSecondary,
                       ),
               ),
             ),
@@ -325,9 +316,9 @@ class _SidebarScaffold extends StatelessWidget {
       body: Row(
         children: [
           Container(
-            width: 248,
+            width: 240,
             decoration: BoxDecoration(
-              color: p.surface,
+              color: p.canvas,
               border: Border(right: BorderSide(color: p.hairline)),
             ),
             child: SafeArea(
@@ -403,7 +394,7 @@ class _GroupLabel extends StatelessWidget {
         container: true,
         header: true,
         child: Text(
-          text.toUpperCase(),
+          text,
           style: LizText.label.copyWith(color: context.liz.textSecondary),
         ),
       ),
@@ -411,8 +402,8 @@ class _GroupLabel extends StatelessWidget {
   }
 }
 
-/// A sidebar row: icon and label; when selected, lit — a faint red fill and
-/// a glowing red bar on its leading edge.
+/// A sidebar row: icon and label. The selected row is a neutral raised pill
+/// with white text and icon; the others are secondary grey until hovered.
 class _SideRow extends StatelessWidget {
   const _SideRow({
     required this.icon,
@@ -437,38 +428,27 @@ class _SideRow extends StatelessWidget {
       child: Semantics(
         selected: selected,
         child: Material(
-          color: selected ? p.glow.withValues(alpha: 0.08) : Colors.transparent,
+          color: selected ? p.surfaceHover : Colors.transparent,
           shape: LizRadius.shape(LizRadius.sm),
           child: InkWell(
             customBorder: LizRadius.shape(LizRadius.sm),
             onTap: onTap,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 38),
-              child: Container(
+              constraints: const BoxConstraints(minHeight: 36),
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: selected
-                    ? BoxDecoration(
-                        border: Border(
-                          left: BorderSide(color: p.accent, width: 2),
-                        ),
-                      )
-                    : null,
                 child: Row(
                   children: [
                     if (brand)
                       LizMark.icon(
-                        size: 20,
-                        color: selected ? p.accent : p.textSecondary,
-                        glow: selected,
+                        size: 18,
+                        color: selected ? p.textPrimary : p.textSecondary,
                       )
                     else
                       Icon(
                         icon,
-                        size: 20,
-                        color: selected ? p.accent : p.textSecondary,
-                        shadows: selected
-                            ? [Shadow(color: p.glow, blurRadius: 10)]
-                            : null,
+                        size: 18,
+                        color: selected ? p.textPrimary : p.textSecondary,
                       ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -477,10 +457,8 @@ class _SideRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: LizText.callout.copyWith(
-                          color: p.textPrimary,
-                          fontWeight: selected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
+                          color: selected ? p.textPrimary : p.textSecondary,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -561,11 +539,8 @@ class _AccountItem extends ConsumerWidget {
     final p = context.liz;
     final user = ref.watch(currentUserProvider);
     return Material(
-      color: selected ? p.surface : Colors.transparent,
-      shape: LizRadius.shape(
-        LizRadius.sm,
-        side: selected ? BorderSide(color: p.hairline) : BorderSide.none,
-      ),
+      color: selected ? p.surfaceHover : Colors.transparent,
+      shape: LizRadius.shape(LizRadius.sm),
       child: InkWell(
         customBorder: LizRadius.shape(LizRadius.sm),
         onTap: onTap,

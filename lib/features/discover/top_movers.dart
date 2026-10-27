@@ -73,35 +73,42 @@ class TopMovers extends ConsumerWidget {
             .value ??
         const <String, List<SignalPoint>>{};
 
+    final filters = category == null
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (value, label) in _moversFilters) ...[
+                LizFilterPill(
+                  label: label,
+                  selected: filter == value,
+                  semanticLabel: 'Show $label movers',
+                  onTap: () =>
+                      ref.read(moversFilterProvider.notifier).set(value),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ],
+          )
+        : null;
+    // From this width the filters fit beside the title.
+    final besideTitle = MediaQuery.sizeOf(context).width >= 1280;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(
-          eyebrow: '// TOP MOVERS · 7 DAYS',
+        SectionHeader(
           title: 'Rising this week',
           subtitle:
               'Biggest jumps in the last seven days, on GitHub, '
               'Hacker News and Liz.',
+          action: besideTitle ? filters : null,
         ),
         // Sideways on a narrow window rather than wrapping into rows.
-        if (category == null)
+        if (filters != null && !besideTitle)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 6),
-            child: Row(
-              children: [
-                for (final (value, label) in _moversFilters) ...[
-                  LizFilterPill(
-                    label: label,
-                    selected: filter == value,
-                    semanticLabel: 'Show $label movers',
-                    onTap: () =>
-                        ref.read(moversFilterProvider.notifier).set(value),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
+            child: filters,
           ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
@@ -190,7 +197,7 @@ final _moversHistoryProvider = FutureProvider.autoDispose
 // The table's columns: fixed for figures, flexible for words.
 const _rankW = 52.0;
 const _signalW = 132.0;
-const _priceW = 92.0;
+const _priceW = 108.0;
 
 class _HeadingRow extends StatelessWidget {
   const _HeadingRow();
@@ -204,13 +211,13 @@ class _HeadingRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
         child: Row(
           children: [
-            SizedBox(width: _rankW, child: cell('RANK')),
-            Expanded(flex: 5, child: cell('TOOL')),
-            Expanded(flex: 6, child: cell('WHAT IT DOES')),
-            SizedBox(width: _signalW, child: cell('14-DAY SIGNAL')),
+            SizedBox(width: _rankW, child: cell('#')),
+            Expanded(flex: 5, child: cell('Tool')),
+            Expanded(flex: 6, child: cell('What it does')),
+            SizedBox(width: _signalW, child: cell('Last 14 days')),
             const SizedBox(width: 20),
-            Expanded(flex: 4, child: cell('WHY IT’S RISING')),
-            SizedBox(width: _priceW, child: cell('PRICE')),
+            Expanded(flex: 4, child: cell('Why it’s rising')),
+            SizedBox(width: _priceW, child: cell('Price')),
           ],
         ),
       ),
@@ -237,27 +244,18 @@ class _MoverRow extends StatelessWidget {
     final p = context.liz;
     final reason = tool.trendReason;
     final series = SignalSeries.pick(history);
-    final leader = rank == 1;
-
+    // The rank is a plain figure: the order is the data, the trend line and
+    // the growth figure carry the colour.
     final rankText = Text(
-      rank.toString().padLeft(2, '0'),
+      '$rank',
       style: LizText.mono.copyWith(
-        fontSize: wide ? 15 : 14,
-        color: rank <= 3 ? p.accent : p.textSecondary,
-        shadows: leader ? [Shadow(color: p.glow, blurRadius: 8)] : null,
+        fontSize: wide ? 14 : 13,
+        color: p.textSecondary,
       ),
     );
     final reasonText = reason == null
         ? null
-        : Text(
-            reason,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: LizText.mono.copyWith(
-              fontSize: wide ? 12.5 : 11.5,
-              color: p.accent,
-            ),
-          );
+        : ReasonText(reason, maxLines: 2, small: !wide);
     final spark = series == null
         ? null
         : SignalSparkline(
@@ -331,11 +329,9 @@ class _MoverRow extends StatelessWidget {
               ),
               SizedBox(
                 width: _priceW,
-                child: Text(
-                  tool.pricingType == PricingType.unknown
-                      ? '—'
-                      : tool.pricingType.label,
-                  style: LizText.footnote.copyWith(color: p.textSecondary),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: PricingLabel(tool.pricingType),
                 ),
               ),
             ],
@@ -396,28 +392,59 @@ class _MoverRow extends StatelessWidget {
                 horizontal: wide ? 20 : 14,
                 vertical: 10,
               ),
-              // The leader is lit: a red seam on its leading edge, and light
-              // that fades across the row.
-              decoration: leader
-                  ? BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          p.glow.withValues(alpha: 0.13),
-                          p.glow.withValues(alpha: 0),
-                        ],
-                        stops: const [0, 0.6],
-                      ),
-                      border: Border(
-                        left: BorderSide(color: p.accent, width: 2),
-                      ),
-                    )
-                  : null,
               alignment: Alignment.centerLeft,
               child: content,
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Why a tool is rising, with its growth figure in the accent and the words
+/// in grey: "+2.2k GitHub stars this week" leads with "+2.2k". A reason that
+/// does not start with a figure is grey throughout.
+class ReasonText extends StatelessWidget {
+  const ReasonText(
+    this.reason, {
+    super.key,
+    this.maxLines = 2,
+    this.small = false,
+  });
+  final String reason;
+  final int maxLines;
+  final bool small;
+
+  static final _lead = RegExp(r'^([+\-−]?[\d.,]+\s?[kKmM%]?)\s+(.*)$');
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final base = (small ? LizText.footnote : LizText.subhead).copyWith(
+      color: p.textSecondary,
+      fontWeight: FontWeight.w400,
+    );
+    final m = _lead.firstMatch(reason.trim());
+    return Text.rich(
+      m == null
+          ? TextSpan(text: reason)
+          : TextSpan(
+              children: [
+                TextSpan(
+                  text: m.group(1),
+                  style: base.copyWith(
+                    color: p.accent,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: LizText.tabular,
+                  ),
+                ),
+                TextSpan(text: ' ${m.group(2)}'),
+              ],
+            ),
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: base,
     );
   }
 }

@@ -4,16 +4,15 @@ import 'package:go_router/go_router.dart';
 import '../../app/auth_gate.dart' show safeReturnPath;
 import '../../app/responsive/adaptive_shell.dart' show LizWordmark;
 import '../../app/theme.dart';
-import '../../shared/widgets/page_header.dart';
+import '../../shared/widgets/signal_sparkline.dart';
 import 'sign_in_view.dart';
 
 /// The sign-in page (`/signin`), in the Signal look (docs/DESIGN.md).
 ///
 /// Wide windows — most visitors, on a desktop browser — get two halves: a
-/// brand panel that says what Liz is, lit by seams of red light and a trend
-/// line that draws itself in, and a quiet column with the form. Narrow
-/// windows get the wordmark and the form alone: on a phone the panel would
-/// only push the form below the fold.
+/// brand panel that says what Liz is and shows a preview of it, and a quiet
+/// column with the form. Narrow windows get the wordmark and the form alone:
+/// on a phone the panel would only push the form below the fold.
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key, this.returnTo});
 
@@ -76,7 +75,7 @@ class _FormColumn extends StatelessWidget {
             ],
           ),
         ),
-        if (!wide) const GlowLine(strength: 0.6),
+        if (!wide) Divider(height: 1, color: p.hairline),
         Expanded(
           child: Center(
             child: ConstrainedBox(
@@ -122,7 +121,9 @@ class _FormColumn extends StatelessWidget {
   }
 }
 
-/// What Liz is, beside the form on a wide window.
+/// What Liz is, beside the form on a wide window: the name, one claim in
+/// large type, one plain sentence, and a preview of the product itself — the
+/// week's risers as Liz shows them — rather than decoration.
 class _BrandPanel extends StatelessWidget {
   const _BrandPanel();
 
@@ -134,25 +135,15 @@ class _BrandPanel extends StatelessWidget {
         color: p.surface,
         border: Border(right: BorderSide(color: p.hairline)),
       ),
-      child: Stack(
-        children: [
-          // The seams of light: decoration only.
-          const Positioned.fill(
-            child: ExcludeSemantics(
-              child: CustomPaint(painter: _SeamsPainter()),
-            ),
+      // Scrolls on a short window instead of overflowing; fills the height
+      // on a normal one, so the spacers place the parts.
+      child: LayoutBuilder(
+        builder: (context, box) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: box.maxHeight),
+            child: IntrinsicHeight(child: _content(context)),
           ),
-          // Scrolls on a short window instead of overflowing; fills the
-          // height on a normal one, so the spacers place the parts.
-          LayoutBuilder(
-            builder: (context, box) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: box.maxHeight),
-                child: IntrinsicHeight(child: _content(context)),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -160,29 +151,28 @@ class _BrandPanel extends StatelessWidget {
   Widget _content(BuildContext context) {
     final p = context.liz;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(56, 40, 56, 48),
+      padding: const EdgeInsets.fromLTRB(56, 40, 56, 40),
       child: _Entrance(
         offset: 0,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const LizWordmark(size: 28),
-            const Spacer(flex: 3),
-            const Eyebrow('// MOMENTUM, NOT HYPE'),
-            const SizedBox(height: 16),
+            const Spacer(flex: 2),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
+              constraints: const BoxConstraints(maxWidth: 500),
               child: Text(
-                'Find the AI tools taking off — before everyone else.',
+                'Find AI tools while they are still rising.',
                 style: LizText.display.copyWith(color: p.textPrimary),
               ),
             ),
             const SizedBox(height: 16),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 520),
               child: Text(
-                'Liz ranks new AI tools by how fast they are growing, '
-                'and tells you why.',
+                'Liz ranks new AI tools by how fast they are growing — GitHub '
+                'stars, Hacker News points and saves — and says why in plain '
+                'words.',
                 style: LizText.body.copyWith(
                   color: p.textSecondary,
                   fontSize: 17,
@@ -190,29 +180,15 @@ class _BrandPanel extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
-            const _Point(
-              label: 'DAILY SIGNALS',
-              text:
-                  'GitHub stars, Hacker News points and real visits, '
-                  'recorded every day.',
+            const SizedBox(height: 40),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: const _RisingPreview(),
             ),
-            const _Point(
-              label: 'REASONS, IN WORDS',
-              text: 'Every rank says why: “+3.4k GitHub stars this week”.',
-            ),
-            const _Point(
-              label: 'WATCHED FOR YOU',
-              text:
-                  'Save a tool and hear when its price changes or it '
-                  'starts to rise.',
-            ),
-            const Spacer(flex: 2),
-            const SizedBox(height: 72, child: _TrendLine()),
-            const SizedBox(height: 12),
+            const Spacer(flex: 3),
             Text(
-              'RANKED DAILY · GITHUB · HACKER NEWS · LIZ',
-              style: LizText.label.copyWith(color: p.textSecondary),
+              'Ranked daily from GitHub, Hacker News and Liz.',
+              style: LizText.footnote.copyWith(color: p.textSecondary),
             ),
           ],
         ),
@@ -221,41 +197,147 @@ class _BrandPanel extends StatelessWidget {
   }
 }
 
-class _Point extends StatelessWidget {
-  const _Point({required this.label, required this.text});
-  final String label;
-  final String text;
+/// The week's risers, drawn as Liz draws them on Discover: a sample of the
+/// product rather than a picture of it. The tools are illustrative; signed
+/// out, the catalogue itself is not readable.
+class _RisingPreview extends StatelessWidget {
+  const _RisingPreview();
+
+  static const _rows = [
+    (
+      'Lensflow',
+      'Video',
+      '2.2k',
+      'GitHub stars',
+      [2.0, 2.1, 2.3, 2.4, 2.8, 3.3, 4.1, 5.0, 6.4, 8.0],
+    ),
+    (
+      'Reviewer',
+      'Dev tools',
+      '1.6k',
+      'GitHub stars',
+      [3.0, 3.1, 3.0, 3.3, 3.6, 3.7, 4.4, 5.2, 5.9, 6.6],
+    ),
+    (
+      'Taskloop',
+      'Agents',
+      '276',
+      'saves on Liz',
+      [1.0, 1.2, 1.3, 1.3, 1.6, 2.0, 2.2, 2.9, 3.4, 4.1],
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
+    return ExcludeSemantics(
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: p.canvas,
+          shape: LizRadius.shape(
+            LizRadius.md,
+            side: BorderSide(color: p.hairline),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Rising this week',
+                    style: LizText.headline.copyWith(color: p.textPrimary),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Last 7 days',
+                    style: LizText.footnote.copyWith(color: p.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              for (var i = 0; i < _rows.length; i++) ...[
+                if (i > 0) Divider(height: 1, color: p.hairline),
+                _PreviewRow(rank: i + 1, row: _rows[i]),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PreviewRow extends StatelessWidget {
+  const _PreviewRow({required this.rank, required this.row});
+  final int rank;
+  final (String, String, String, String, List<double>) row;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final (name, category, figure, unit, trend) = row;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 2,
-            height: 38,
-            margin: const EdgeInsets.only(right: 14, top: 2),
-            decoration: BoxDecoration(
-              color: p.accent,
-              boxShadow: [BoxShadow(color: p.glow, blurRadius: 6)],
+          SizedBox(
+            width: 20,
+            child: Text(
+              '$rank',
+              style: LizText.mono.copyWith(color: p.textSecondary),
             ),
           ),
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: p.surfaceHover,
+              shape: LizRadius.shape(
+                LizRadius.sm,
+                side: BorderSide(color: p.hairlineStrong),
+              ),
+            ),
+            child: Text(
+              name[0],
+              style: LizText.headline.copyWith(color: p.textPrimary),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: LizText.label.copyWith(color: p.accent)),
-                const SizedBox(height: 4),
                 Text(
-                  text,
-                  style: LizText.callout.copyWith(color: p.textSecondary),
+                  name,
+                  style: LizText.headline.copyWith(color: p.textPrimary),
+                ),
+                Text(
+                  category,
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
                 ),
               ],
             ),
           ),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '+$figure ',
+                  style: LizText.mono.copyWith(color: p.accent),
+                ),
+                TextSpan(
+                  text: unit,
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          SignalSparkline(values: trend, semanticLabel: '', width: 72),
         ],
       ),
     );
@@ -286,161 +368,4 @@ class _Entrance extends StatelessWidget {
       child: child,
     );
   }
-}
-
-/// A rising line of light that draws itself left to right when the page
-/// opens — the shape Liz looks for, as decoration.
-class _TrendLine extends StatelessWidget {
-  const _TrendLine();
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.liz;
-    final duration = LizMotion.of(context, const Duration(milliseconds: 1600));
-    return ExcludeSemantics(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: 1),
-        duration: duration,
-        curve: Curves.easeInOutCubic,
-        builder: (context, t, _) => CustomPaint(
-          size: Size.infinite,
-          painter: _TrendPainter(progress: t, line: p.accent, glow: p.glow),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrendPainter extends CustomPainter {
-  _TrendPainter({
-    required this.progress,
-    required this.line,
-    required this.glow,
-  });
-  final double progress;
-  final Color line;
-  final Color glow;
-
-  // A fixed, rising shape (not data): slow, then taking off.
-  static const _shape = [
-    0.12,
-    0.14,
-    0.13,
-    0.17,
-    0.16,
-    0.21,
-    0.24,
-    0.23,
-    0.31,
-    0.38,
-    0.47,
-    0.6,
-    0.74,
-    0.9,
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (progress <= 0) return;
-    final path = Path();
-    for (var i = 0; i < _shape.length; i++) {
-      final o = Offset(
-        size.width * i / (_shape.length - 1),
-        size.height * (1 - _shape[i]),
-      );
-      i == 0 ? path.moveTo(o.dx, o.dy) : path.lineTo(o.dx, o.dy);
-    }
-    final metric = path.computeMetrics().first;
-    final drawn = metric.extractPath(0, metric.length * progress);
-    final tip = metric.getTangentForOffset(metric.length * progress)?.position;
-
-    canvas.drawPath(
-      drawn,
-      Paint()
-        ..color = glow.withValues(alpha: 0.7)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-    );
-    canvas.drawPath(
-      drawn,
-      Paint()
-        ..color = line
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-    if (tip != null) {
-      canvas.drawCircle(
-        tip,
-        7,
-        Paint()
-          ..color = glow.withValues(alpha: 0.6)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-      );
-      canvas.drawCircle(tip, 3.5, Paint()..color = line);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_TrendPainter old) =>
-      old.progress != progress || old.line != line || old.glow != glow;
-}
-
-/// Thin seams of red light across the brand panel — after the lines on the
-/// TRON: Ares suit the look was drawn from. Fixed geometry, scaled to the
-/// panel; drawn faint so text over them stays easy to read.
-class _SeamsPainter extends CustomPainter {
-  const _SeamsPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    const red = LizColors.brand;
-
-    void seam(List<Offset> points, {double alpha = 0.55}) {
-      final path = Path()..moveTo(points.first.dx, points.first.dy);
-      for (final o in points.skip(1)) {
-        path.lineTo(o.dx, o.dy);
-      }
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = red.withValues(alpha: alpha * 0.6)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
-      );
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = red.withValues(alpha: alpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2,
-      );
-    }
-
-    // Two seams down the right edge, angling in like a suit's panels.
-    seam([
-      Offset(w * 0.86, 0),
-      Offset(w * 0.86, h * 0.34),
-      Offset(w * 0.78, h * 0.44),
-      Offset(w * 0.78, h),
-    ], alpha: 0.35);
-    seam([
-      Offset(w * 0.93, 0),
-      Offset(w * 0.93, h * 0.40),
-      Offset(w * 0.85, h * 0.50),
-      Offset(w * 0.85, h),
-    ], alpha: 0.5);
-    // A short horizontal seam near the top, under the wordmark.
-    seam([Offset(0, h * 0.13), Offset(w * 0.32, h * 0.13)], alpha: 0.3);
-  }
-
-  @override
-  bool shouldRepaint(_SeamsPainter old) => false;
 }

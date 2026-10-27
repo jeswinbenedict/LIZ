@@ -90,6 +90,39 @@ Color pricingColor(BuildContext context, PricingType pricing) {
   };
 }
 
+/// A price as a dot and a word with no box around it — "● Free" — for a
+/// table column, where a boxed badge per row would be a column of boxes.
+class PricingLabel extends StatelessWidget {
+  const PricingLabel(this.pricing, {super.key});
+  final PricingType pricing;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    if (pricing == PricingType.unknown) {
+      return Text(
+        '—',
+        style: LizText.footnote.copyWith(color: p.textSecondary),
+      );
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _Dot(color: pricingColor(context, pricing)),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            pricing.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LizText.subhead.copyWith(color: p.textPrimary),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// A price as a coloured dot and a neutral word — "● Freemium". The colour is
 /// a cue; the word is the information, so nothing depends on colour alone.
 class PricingBadge extends StatelessWidget {

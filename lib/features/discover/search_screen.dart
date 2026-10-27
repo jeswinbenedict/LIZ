@@ -88,6 +88,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       appBar: AppBar(
         titleSpacing: 0,
         toolbarHeight: 64,
+        // Back always works: to the page before, or to Discover when search
+        // was opened by its address.
+        leading: BackButton(
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+        ),
         // The field is the title: this screen exists to be typed into. Its
         // heading is for screen readers only — a visible "Search" above a
         // search box would only repeat it.

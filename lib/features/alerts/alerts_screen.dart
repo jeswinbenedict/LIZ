@@ -11,6 +11,7 @@ import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
 import '../auth/sign_in_view.dart';
+import '../../shared/widgets/top_bar.dart';
 import 'alerts_controller.dart';
 
 /// What happened while you were away, for the tools you saved.
@@ -89,7 +90,8 @@ class AlertsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(),
+      // The page's heading is in the list below.
+      appBar: const LizTopBar(title: 'Alerts', titleIsHeading: false),
       body: RefreshIndicator(
         onRefresh: controller.refresh,
         child: MaxWidth(

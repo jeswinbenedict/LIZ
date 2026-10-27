@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../shared/widgets/liz_mark.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/link.dart';
@@ -24,6 +23,7 @@ import '../community/community_widgets.dart';
 import '../community/composers.dart';
 import '../compare/compare_sheet.dart';
 import '../track/bookmark_button.dart';
+import '../../shared/widgets/top_bar.dart';
 import 'maker_badge.dart';
 import 'similar_tools.dart';
 import 'tool_history.dart';
@@ -47,16 +47,14 @@ class ToolDetailScreen extends ConsumerWidget {
     final toolAsync = ref.watch(provider);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
+      appBar: LizTopBar(
+        section: ('Discover', '/'),
+        title: toolAsync.maybeWhen(
+          data: (tool) => tool?.name,
+          orElse: () => null,
         ),
+        // The tool's name is the page's heading, above its icon.
+        titleIsHeading: false,
         actions: [
           toolAsync.maybeWhen(
             data: (tool) => tool == null
@@ -68,7 +66,6 @@ class ToolDetailScreen extends ConsumerWidget {
                   ),
             orElse: () => const SizedBox.shrink(),
           ),
-          const SizedBox(width: 4),
         ],
       ),
       body: toolAsync.when(
@@ -181,7 +178,7 @@ class _ToolBody extends ConsumerWidget {
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ToolLogo(tool: tool, size: phone ? 76 : 96),
+          ToolLogo(tool: tool, size: phone ? 72 : 80),
           SizedBox(width: phone ? 16 : 20),
           Expanded(
             child: Column(
@@ -286,7 +283,7 @@ class _ToolBody extends ConsumerWidget {
                         height: 6,
                         margin: const EdgeInsets.only(top: 8, right: 12),
                         decoration: BoxDecoration(
-                          color: p.accent,
+                          color: p.textSecondary,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -577,10 +574,7 @@ class _InfoCell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
         child: Column(
           children: [
-            Text(
-              label.toUpperCase(),
-              style: LizText.label.copyWith(color: p.textSecondary),
-            ),
+            Text(label, style: LizText.label.copyWith(color: p.textSecondary)),
             const SizedBox(height: 6),
             Row(
               mainAxisSize: MainAxisSize.min,

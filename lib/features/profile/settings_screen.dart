@@ -10,7 +10,7 @@ import '../../shared/widgets/grouped_list.dart';
 import '../auth/auth_controller.dart';
 import 'data_export.dart';
 import 'preferences.dart';
-import '../../shared/widgets/page_header.dart';
+import '../../shared/widgets/top_bar.dart';
 
 /// Settings as grouped lists (docs/DESIGN.md §8, Profile & Settings).
 class SettingsScreen extends ConsumerWidget {
@@ -25,7 +25,11 @@ class SettingsScreen extends ConsumerWidget {
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
-      appBar: AppBar(title: const PageHeading('Settings')),
+      appBar: const LizTopBar(
+        title: 'Settings',
+        section: ('Profile', '/profile'),
+        fallback: '/profile',
+      ),
       body: MaxWidth(
         maxWidth: 640 + gutter * 2,
         child: ListView(
@@ -229,7 +233,7 @@ class _SwitchRow extends StatelessWidget {
       type: MaterialType.transparency,
       child: MergeSemantics(
         child: SwitchListTile(
-          secondary: Icon(icon, color: p.accent),
+          secondary: Icon(icon, color: p.textSecondary),
           title: Text(
             title,
             style: LizText.body.copyWith(color: p.textPrimary),

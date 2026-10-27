@@ -39,8 +39,8 @@ void main() {
     tester,
   ) async {
     await _pump(tester, const TopMovers());
-    expect(find.text('WHY IT’S RISING'), findsOneWidget);
-    expect(find.text('01'), findsOneWidget);
+    expect(find.text('Why it’s rising'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
   });
 
   testWidgets('a kind with nothing rising says so and keeps the filters', (
@@ -50,13 +50,13 @@ void main() {
     await tester.tap(find.text('Image'));
     await tester.pumpAndSettle(const Duration(seconds: 1));
     final empty = find.text('Nothing of this kind is rising this week.');
-    final rows = find.text('01');
+    final rows = find.text('1');
     // Either the demo has image movers, or it says plainly that it has none;
     // the filter row is there in both cases to go back.
     expect(empty.evaluate().isNotEmpty || rows.evaluate().isNotEmpty, isTrue);
     await tester.tap(find.text('All'));
     await tester.pumpAndSettle(const Duration(seconds: 1));
-    expect(find.text('01'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
   });
 
   testWidgets('a headline that names a tool leads to that tool', (

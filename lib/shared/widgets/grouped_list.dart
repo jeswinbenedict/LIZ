@@ -25,7 +25,7 @@ class LizGroup extends StatelessWidget {
               container: true,
               header: true,
               child: Text(
-                title!.toUpperCase(),
+                title!,
                 style: LizText.label.copyWith(color: p.textSecondary),
               ),
             ),

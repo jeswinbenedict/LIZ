@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/time_ago.dart';
+import '../../shared/widgets/news_card.dart' show newsSourceLabel;
 
 /// The latest headlines that name a tool in the catalog.
 final toolHeadlinesProvider = FutureProvider.autoDispose<List<ToolHeadline>>(
@@ -32,7 +33,6 @@ class ToolHeadlines extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
-          eyebrow: '// IN THE NEWS',
           title: 'Tools in the headlines',
           subtitle: 'Recent stories that name a tool Liz lists.',
           action: TextButton(
@@ -80,7 +80,7 @@ class _HeadlineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.liz;
     final item = headline.item;
-    final source = (item.source ?? 'News').toUpperCase();
+    final source = newsSourceLabel(item.source);
     return Material(
       color: p.surface,
       shape: LizRadius.shape(LizRadius.md, side: BorderSide(color: p.hairline)),
@@ -105,7 +105,7 @@ class _HeadlineCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              '$source · ${timeAgo(item.publishedAt).toUpperCase()}',
+                              '$source · ${timeAgo(item.publishedAt)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: LizText.label.copyWith(

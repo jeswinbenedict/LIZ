@@ -276,7 +276,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
-                      'OR WITH EMAIL',
+                      'or continue with email',
                       style: LizText.label.copyWith(color: p.textSecondary),
                     ),
                   ),

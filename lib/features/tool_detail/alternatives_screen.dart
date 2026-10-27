@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
@@ -12,6 +11,7 @@ import '../../shared/widgets/tool_card.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../community/community_controller.dart';
 import '../compare/compare_sheet.dart';
+import '../../shared/widgets/top_bar.dart';
 
 /// "Alternatives to X": the tools closest to one, by meaning.
 ///
@@ -26,11 +26,11 @@ class AlternativesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final toolAsync = ref.watch(toolBySlugProvider(slug));
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/tools/$slug'),
-        ),
+      appBar: LizTopBar(
+        section: ('Discover', '/'),
+        title: 'Alternatives',
+        titleIsHeading: false,
+        fallback: '/tools/$slug',
       ),
       body: toolAsync.when(
         loading: () => const LoadingView(),

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 /// Liz's design tokens and theme. docs/DESIGN.md explains every value here;
 /// change the two together.
 ///
-/// "Signal", in black and red (1 October 2026): near-black surfaces, one red
-/// that marks what can be acted on and what is moving, and thin glowing red
-/// light lines — after the TRON: Ares reference the product's owner chose.
-/// There is one theme. The previous neutral light/dark pair with an indigo
-/// accent is gone, not hidden.
+/// "Signal", in black and red: near-black surfaces and one red that marks
+/// what can be acted on and what is rising. Refined on 27 October 2026 into
+/// an enterprise finish (docs/DESIGN.md §10): one typeface, colour on data and
+/// the primary action only, flat surfaces separated by a tone step or a
+/// hairline, and no glow on anything at rest. There is one theme.
 class LizColors {
   const LizColors._();
 
@@ -115,19 +115,19 @@ class LizPalette extends ThemeExtension<LizPalette> {
 
   /// The app's palette.
   static const ares = LizPalette(
-    canvas: Color(0xFF050506),
-    surface: Color(0xFF0D0E11),
-    surfaceMuted: Color(0xFF121318),
-    surfaceHover: Color(0xFF191A20),
-    hairline: Color(0xFF1F2128),
-    hairlineStrong: Color(0xFF2E313A),
-    textPrimary: Color(0xFFF4F5F7),
-    textSecondary: Color(0xFFA3A7B1),
-    textTertiary: Color(0xFF6F7380),
+    canvas: Color(0xFF09090B),
+    surface: Color(0xFF111114),
+    surfaceMuted: Color(0xFF16161A),
+    surfaceHover: Color(0xFF1C1C21),
+    hairline: Color(0xFF232329),
+    hairlineStrong: Color(0xFF33333B),
+    textPrimary: Color(0xFFEDEDF0),
+    textSecondary: Color(0xFFA1A1AA),
+    textTertiary: Color(0xFF71717A),
     accent: Color(0xFFFF3B3B),
     accentFill: LizColors.brandFill,
     accentHover: Color(0xFFFF5C5C),
-    accentSoft: Color(0x24FF2A2A),
+    accentSoft: Color(0x1FFF3B3B),
     positive: LizColors.positive,
     caution: LizColors.warn,
     rising: LizColors.rising,
@@ -197,14 +197,14 @@ extension LizPaletteX on BuildContext {
       Theme.of(this).extension<LizPalette>() ?? LizPalette.ares;
 }
 
-/// Corner radii (docs/DESIGN.md §4). Tighter than before: Signal is
-/// precise rather than soft. Drawn as continuous-corner squircles.
+/// Corner radii (docs/DESIGN.md §4): badges and chips 6, controls 8, cards
+/// 12, dialogs 16. Drawn as continuous-corner squircles.
 class LizRadius {
   const LizRadius._();
-  static const double xs = 4;
-  static const double sm = 6;
-  static const double md = 10;
-  static const double lg = 14;
+  static const double xs = 6;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
   static const double xl = 20;
   static const double pill = 999;
 
@@ -272,33 +272,32 @@ class LizShadows {
     ),
   ];
 
-  /// The red light around something lit: a primary button, the selected tab,
-  /// a trend line. [strength] scales it; 1 is a button's.
-  static List<BoxShadow> glow(LizPalette p, {double strength = 1}) => [
-    BoxShadow(
-      color: p.glow.withValues(alpha: (0.45 * strength).clamp(0, 1)),
-      blurRadius: 18 * strength,
-    ),
-  ];
+  /// Formerly a red glow around lit things. The refined Signal has no glow
+  /// on anything at rest (a glow reads as costume, not emphasis), so this is
+  /// empty; selection is shown by tone and a crisp edge instead.
+  static List<BoxShadow> glow(LizPalette p, {double strength = 1}) => const [];
 }
 
 /// Button styles beyond the themed defaults (docs/DESIGN.md §7, Buttons).
 class LizButtons {
   const LizButtons._();
 
-  /// A secondary action: a red outline that glows faintly, white label.
+  /// A secondary action: a raised neutral surface with a hairline and a
+  /// white label. Red is kept for the one primary action beside it.
   static ButtonStyle tonal(LizPalette p) => ButtonStyle(
     elevation: const WidgetStatePropertyAll(0),
     backgroundColor: WidgetStateProperty.resolveWith(
-      (s) => s.contains(WidgetState.hovered)
-          ? p.glow.withValues(alpha: 0.16)
-          : p.accentSoft,
+      (s) => s.contains(WidgetState.hovered) ? p.surfaceHover : p.surfaceMuted,
     ),
     foregroundColor: WidgetStatePropertyAll(p.textPrimary),
-    side: WidgetStatePropertyAll(
-      BorderSide(color: p.accent.withValues(alpha: 0.7)),
+    side: WidgetStateProperty.resolveWith(
+      (s) => BorderSide(
+        color: s.contains(WidgetState.hovered)
+            ? p.textTertiary
+            : p.hairlineStrong,
+      ),
     ),
-    overlayColor: WidgetStatePropertyAll(p.glow.withValues(alpha: 0.08)),
+    overlayColor: WidgetStatePropertyAll(p.textPrimary.withValues(alpha: 0.04)),
   );
 
   /// The shape used for a page's primary call to action.
@@ -311,10 +310,9 @@ class LizButtons {
 }
 
 const String _fontFamily = 'SpaceGrotesk';
-const String _monoFamily = 'JetBrainsMono';
 
-/// Text roles (docs/DESIGN.md §3): Space Grotesk for words, JetBrains Mono
-/// for the numbers and labels that make Signal read as instruments.
+/// Text roles (docs/DESIGN.md §3): one typeface, Space Grotesk, for words and
+/// figures alike. Figures that line up use tabular numerals ([tabular]).
 class LizText {
   const LizText._();
 
@@ -323,20 +321,19 @@ class LizText {
     double height,
     FontWeight weight, [
     double tracking = 0,
-    String family = _fontFamily,
   ]) => TextStyle(
-    fontFamily: family,
+    fontFamily: _fontFamily,
     fontSize: size,
     height: height / size,
     fontWeight: weight,
     letterSpacing: tracking,
   );
 
-  static final display = _s(44, 46, FontWeight.w700, -1.4);
-  static final largeTitle = _s(32, 36, FontWeight.w700, -0.9);
-  static final title1 = _s(26, 31, FontWeight.w700, -0.6);
-  static final title2 = _s(21, 26, FontWeight.w600, -0.3);
-  static final title3 = _s(18, 23, FontWeight.w600, -0.2);
+  static final display = _s(40, 44, FontWeight.w600, -1.2);
+  static final largeTitle = _s(28, 34, FontWeight.w600, -0.7);
+  static final title1 = _s(24, 30, FontWeight.w600, -0.5);
+  static final title2 = _s(19, 25, FontWeight.w600, -0.3);
+  static final title3 = _s(17, 23, FontWeight.w600, -0.2);
   static final headline = _s(15, 21, FontWeight.w600, -0.1);
   static final body = _s(15, 22, FontWeight.w400);
   static final callout = _s(14, 20, FontWeight.w400);
@@ -344,12 +341,17 @@ class LizText {
   static final footnote = _s(12, 16, FontWeight.w500, 0.1);
   static final caption = _s(11, 14, FontWeight.w600, 0.3);
 
-  /// Instrument labels: small monospace capitals ("SIGNAL · 30 DAYS").
-  /// Write the text in capitals; the style does not transform it.
-  static final label = _s(11, 14, FontWeight.w500, 1.0, _monoFamily);
+  /// Small labels: column headings, group titles, field captions. Sentence
+  /// case at a readable size — no capitals, no letter-spacing, no monospace.
+  static final label = _s(12, 16, FontWeight.w500);
 
-  /// Figures that change in place: ranks, counts, deltas.
-  static final mono = _s(13, 18, FontWeight.w500, 0, _monoFamily);
+  /// Figures that change in place (ranks, counts, deltas), in the text face
+  /// with tabular numerals so columns line up digit for digit.
+  static final mono = _s(
+    13,
+    18,
+    FontWeight.w500,
+  ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
 
   /// Numbers that change in place keep their width.
   static const tabular = [FontFeature.tabularFigures()];
@@ -424,7 +426,6 @@ class LizTheme {
     final buttonText = LizText.subhead.copyWith(
       fontSize: 14,
       fontWeight: FontWeight.w600,
-      letterSpacing: 0.3,
     );
     final controlShape = LizRadius.shape(LizRadius.sm);
     const buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 12);
@@ -494,18 +495,18 @@ class LizTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        // The chosen filter is lit: a red edge on a faint red fill. Others
-        // are outlines that wait.
+        // The chosen filter is a raised neutral tone with a light edge and
+        // white text; the others are quiet outlines. Red stays on data.
         color: WidgetStateProperty.resolveWith((s) {
-          if (s.contains(WidgetState.selected)) return p.accentSoft;
-          if (s.contains(WidgetState.hovered)) return p.surfaceHover;
-          return p.surface;
+          if (s.contains(WidgetState.selected)) return p.surfaceHover;
+          if (s.contains(WidgetState.hovered)) return p.surfaceMuted;
+          return Colors.transparent;
         }),
         side: WidgetStateBorderSide.resolveWith(
           (s) => BorderSide(
             color: s.contains(WidgetState.selected)
-                ? p.accent
-                : p.hairlineStrong,
+                ? p.textTertiary
+                : p.hairline,
           ),
         ),
         shape: LizRadius.shape(LizRadius.xs),
@@ -522,12 +523,12 @@ class LizTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: p.surface,
-        hoverColor: p.surfaceMuted,
+        fillColor: p.surfaceMuted,
+        hoverColor: p.surfaceHover,
         // Placeholders are text, so they get text contrast.
         hintStyle: LizText.body.copyWith(color: p.textSecondary),
         labelStyle: LizText.callout.copyWith(color: p.textSecondary),
-        floatingLabelStyle: LizText.footnote.copyWith(color: p.accent),
+        floatingLabelStyle: LizText.footnote.copyWith(color: p.textSecondary),
         prefixIconColor: p.textSecondary,
         suffixIconColor: p.textSecondary,
         border: OutlineInputBorder(
@@ -540,7 +541,7 @@ class LizTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LizRadius.sm),
-          borderSide: BorderSide(color: p.accent, width: 1.5),
+          borderSide: BorderSide(color: p.textSecondary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LizRadius.sm),
@@ -561,14 +562,8 @@ class LizTheme {
           padding: const WidgetStatePropertyAll(buttonPadding),
           shape: WidgetStatePropertyAll(controlShape),
           textStyle: WidgetStatePropertyAll(buttonText),
-          // A primary button is lit: its shadow is red light, stronger when
-          // the pointer is on it.
-          elevation: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.disabled)
-                ? 0
-                : (s.contains(WidgetState.hovered) ? 6 : 3),
-          ),
-          shadowColor: WidgetStatePropertyAll(p.glow.withValues(alpha: 0.45)),
+          // Flat: the fill is the emphasis. Hover deepens it.
+          elevation: const WidgetStatePropertyAll(0),
           backgroundColor: WidgetStateProperty.resolveWith((s) {
             if (s.contains(WidgetState.disabled)) return p.surfaceHover;
             if (s.contains(WidgetState.hovered)) {
@@ -595,11 +590,11 @@ class LizTheme {
           side: WidgetStateProperty.resolveWith(
             (s) => BorderSide(
               color: s.contains(WidgetState.hovered)
-                  ? p.accent
+                  ? p.textTertiary
                   : p.hairlineStrong,
             ),
           ),
-          overlayColor: overlay(p.glow),
+          overlayColor: overlay(p.textPrimary),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -624,15 +619,11 @@ class LizTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           textStyle: WidgetStatePropertyAll(buttonText.copyWith(fontSize: 13)),
-          side: WidgetStateProperty.resolveWith(
-            (s) => BorderSide(
-              color: s.contains(WidgetState.selected)
-                  ? p.accent
-                  : p.hairlineStrong,
-            ),
-          ),
+          side: WidgetStatePropertyAll(BorderSide(color: p.hairline)),
           backgroundColor: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.selected) ? p.accentSoft : p.surface,
+            (s) => s.contains(WidgetState.selected)
+                ? p.surfaceHover
+                : Colors.transparent,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.selected)
@@ -662,19 +653,19 @@ class LizTheme {
             letterSpacing: 0.2,
             fontSize: 11,
             color: s.contains(WidgetState.selected)
-                ? p.accent
+                ? p.textPrimary
                 : p.textSecondary,
+            fontWeight: s.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
           ),
         ),
         iconTheme: WidgetStateProperty.resolveWith(
           (s) => IconThemeData(
             size: 24,
             color: s.contains(WidgetState.selected)
-                ? p.accent
+                ? p.textPrimary
                 : p.textSecondary,
-            shadows: s.contains(WidgetState.selected)
-                ? [Shadow(color: p.glow, blurRadius: 10)]
-                : null,
           ),
         ),
       ),
@@ -709,7 +700,7 @@ class LizTheme {
         dragHandleSize: const Size(36, 4),
         shape: RoundedSuperellipseBorder(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-          side: BorderSide(color: p.accent.withValues(alpha: 0.5)),
+          side: BorderSide(color: p.hairlineStrong),
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
@@ -810,10 +801,9 @@ class LizTheme {
   }
 }
 
-/// A thin red light line, brightest in the middle and fading to nothing at
-/// both ends, with a glow — the signature of the Signal look (the seams of
-/// light on the TRON: Ares suits it was drawn from). Use it sparingly: under
-/// the top bar, over the tab bar, under a section that matters.
+/// A 1px divider in the hairline tone. Once the glowing red seam of the
+/// original Signal look; since the 27 October refinement nothing at rest
+/// glows, so it is a plain line. [strength] is kept for compatibility.
 class GlowLine extends StatelessWidget {
   const GlowLine({super.key, this.vertical = false, this.strength = 1});
 
@@ -823,29 +813,11 @@ class GlowLine extends StatelessWidget {
   final double strength;
 
   @override
-  Widget build(BuildContext context) {
-    final glow = context.liz.glow;
-    final fade = glow.withValues(alpha: 0);
-    final lit = glow.withValues(alpha: strength.clamp(0, 1));
-    return ExcludeSemantics(
-      child: Container(
-        width: vertical ? 1 : double.infinity,
-        height: vertical ? double.infinity : 1,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: vertical ? Alignment.topCenter : Alignment.centerLeft,
-            end: vertical ? Alignment.bottomCenter : Alignment.centerRight,
-            colors: [fade, lit, lit, fade],
-            stops: const [0, 0.3, 0.7, 1],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: glow.withValues(alpha: 0.55 * strength),
-              blurRadius: 8,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: SizedBox(
+      width: vertical ? 1 : double.infinity,
+      height: vertical ? double.infinity : 1,
+      child: ColoredBox(color: context.liz.hairline),
+    ),
+  );
 }

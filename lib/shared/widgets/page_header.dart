@@ -16,16 +16,12 @@ class PageHeader extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.bottom = 20,
-    this.eyebrow,
   });
 
   final String title;
   final String? subtitle;
   final Widget? trailing;
   final double bottom;
-
-  /// A short monospace line above the title; see [Eyebrow].
-  final String? eyebrow;
 
   @override
   Widget build(BuildContext context) {
@@ -46,10 +42,6 @@ class PageHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (eyebrow != null) ...[
-                  Eyebrow(eyebrow!),
-                  const SizedBox(height: 10),
-                ],
                 Semantics(
                   container: true,
                   header: true,
@@ -86,16 +78,12 @@ class SectionHeader extends StatelessWidget {
     this.subtitle,
     this.action,
     this.padding,
-    this.eyebrow,
   });
 
   final String title;
   final String? subtitle;
   final Widget? action;
   final EdgeInsetsGeometry? padding;
-
-  /// A short monospace line above the title; see [Eyebrow].
-  final String? eyebrow;
 
   @override
   Widget build(BuildContext context) {
@@ -110,10 +98,6 @@ class SectionHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (eyebrow != null) ...[
-                  Eyebrow(eyebrow!),
-                  const SizedBox(height: 6),
-                ],
                 Semantics(
                   container: true,
                   header: true,
@@ -134,26 +118,6 @@ class SectionHeader extends StatelessWidget {
           ),
           ?action,
         ],
-      ),
-    );
-  }
-}
-
-/// The small monospace line above a title ("// MOMENTUM, NOT HYPE"), in red
-/// with a faint glow: Signal's instrument-label voice. Capitals as written.
-class Eyebrow extends StatelessWidget {
-  const Eyebrow(this.text, {super.key});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.liz;
-    return Text(
-      text,
-      style: LizText.label.copyWith(
-        color: p.accent,
-        letterSpacing: 1.6,
-        shadows: [Shadow(color: p.glow.withValues(alpha: 0.7), blurRadius: 8)],
       ),
     );
   }
@@ -362,17 +326,14 @@ class _Segment extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 alignment: Alignment.center,
                 decoration: ShapeDecoration(
-                  color: selected ? p.accentSoft : Colors.transparent,
+                  color: selected ? p.surfaceHover : Colors.transparent,
                   shape: LizRadius.shape(
                     LizRadius.xs,
                     side: selected
-                        ? BorderSide(color: p.accent)
+                        ? BorderSide(color: p.hairlineStrong)
                         : BorderSide.none,
                   ),
-                  shadows: [
-                    if (focused) ...focusRing(p),
-                    if (selected) ...LizShadows.glow(p, strength: 0.35),
-                  ],
+                  shadows: [if (focused) ...focusRing(p)],
                 ),
                 child: Text(
                   label,
@@ -430,8 +391,9 @@ class PageHeading extends StatelessWidget {
   );
 }
 
-/// A filter pill (docs/DESIGN.md §7): an outline when off, lit when on — a
-/// red edge on a faint red fill. Drawn 32px tall with a 48px hit area.
+/// A filter pill (docs/DESIGN.md §7): a quiet outline when off; on, a raised
+/// neutral tone with a light edge and white text. Drawn 32px tall with a 48px
+/// hit area.
 class LizFilterPill extends StatelessWidget {
   const LizFilterPill({
     super.key,
@@ -476,17 +438,14 @@ class LizFilterPill extends StatelessWidget {
                   right: trailingIcon != null ? 10 : 14,
                 ),
                 decoration: ShapeDecoration(
-                  color: selected ? p.accentSoft : p.surface,
+                  color: selected ? p.surfaceHover : Colors.transparent,
                   shape: LizRadius.shape(
                     LizRadius.xs,
                     side: BorderSide(
-                      color: selected ? p.accent : p.hairlineStrong,
+                      color: selected ? p.textTertiary : p.hairline,
                     ),
                   ),
-                  shadows: [
-                    if (focused) ...focusRing(p),
-                    if (selected) ...LizShadows.glow(p, strength: 0.3),
-                  ],
+                  shadows: [if (focused) ...focusRing(p)],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

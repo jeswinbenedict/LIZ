@@ -15,7 +15,7 @@ import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
-import '../../shared/widgets/page_header.dart';
+import '../../shared/widgets/top_bar.dart';
 
 final _compareProvider = FutureProvider.autoDispose.family<List<Tool>, String>((
   ref,
@@ -37,8 +37,9 @@ class CompareScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(_compareProvider(toolIds.join(',')));
     return Scaffold(
-      appBar: AppBar(
-        title: const PageHeading('Compare'),
+      appBar: LizTopBar(
+        title: 'Compare',
+        section: ('Saved', '/saved'),
         actions: [
           // The address already holds the comparison (/compare?ids=…), so a
           // copied link opens the same table for whoever receives it.
@@ -56,17 +57,10 @@ class CompareScreen extends ConsumerWidget {
                 ..showSnackBar(const SnackBar(content: Text('Link copied')));
             },
           ),
-          const SizedBox(width: 4),
         ],
-        leading: BackButton(
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/saved');
-            }
-          },
-        ),
+        // Comparisons start from Saved; a shared one opened by its address
+        // goes back there too.
+        fallback: '/saved',
       ),
       body: async.when(
         loading: () => const LoadingView(),

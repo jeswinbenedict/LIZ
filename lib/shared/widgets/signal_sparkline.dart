@@ -37,7 +37,7 @@ class SignalSparkline extends StatelessWidget {
           painter: _SparklinePainter(
             values: values,
             line: p.accent,
-            fill: p.glow.withValues(alpha: 0.22),
+            fill: p.accent.withValues(alpha: 0.10),
             glow: p.glow,
             strokeWidth: strokeWidth,
           ),
@@ -90,26 +90,9 @@ class _SparklinePainter extends CustomPainter {
       ..lineTo(at(0).dx, size.height)
       ..close();
 
-    canvas.drawPath(
-      area,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [fill, fill.withValues(alpha: 0)],
-        ).createShader(Offset.zero & size),
-    );
-    // The glow: the same line, wider and blurred, under the crisp one.
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = glow.withValues(alpha: 0.7)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth * 2.5
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
+    // A flat, faint area under the line: it reads as volume without a
+    // gradient or a glow.
+    canvas.drawPath(area, Paint()..color = fill);
     canvas.drawPath(
       path,
       Paint()
@@ -118,13 +101,6 @@ class _SparklinePainter extends CustomPainter {
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
-    );
-    canvas.drawCircle(
-      at(values.length - 1),
-      strokeWidth * 3,
-      Paint()
-        ..color = glow.withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
     canvas.drawCircle(
       at(values.length - 1),

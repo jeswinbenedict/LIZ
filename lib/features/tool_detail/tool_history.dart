@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/models/tool_history.dart';
 import '../../shared/widgets/signal_sparkline.dart';
+import '../discover/top_movers.dart' show ReasonText;
 import '../../shared/widgets/time_ago.dart';
 
 final signalHistoryProvider = FutureProvider.autoDispose
@@ -79,20 +80,16 @@ class ToolSignalsSection extends ConsumerWidget {
                         container: true,
                         header: true,
                         child: Text(
-                          'SIGNAL · ${points.length} DAYS',
+                          'Last ${points.length} days',
                           style: LizText.label.copyWith(color: p.textSecondary),
                         ),
                       ),
                       const SizedBox(width: 16),
                       if (tool.trendReason != null)
                         Expanded(
-                          child: Text(
-                            tool.trendReason!,
-                            textAlign: TextAlign.end,
-                            style: LizText.mono.copyWith(
-                              fontSize: 12,
-                              color: p.accent,
-                            ),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: ReasonText(tool.trendReason!, small: true),
                           ),
                         ),
                     ],
@@ -252,7 +249,7 @@ class _TimelineRow extends StatelessWidget {
             width: 28,
             child: Column(
               children: [
-                Icon(event.icon, size: 18, color: p.accent),
+                Icon(event.icon, size: 18, color: p.textSecondary),
                 if (!last)
                   Expanded(
                     child: Center(

@@ -104,7 +104,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   children: [
                     if (categoryName != null)
                       PageHeader(
-                        eyebrow: '// CATEGORY',
                         title: categoryName,
                         subtitle:
                             'Every $categoryName tool Liz lists, ranked by how '
@@ -118,7 +117,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                       )
                     else
                       PageHeader(
-                        eyebrow: '// MOMENTUM, NOT HYPE',
                         title: 'Discover',
                         subtitle: phone
                             ? null

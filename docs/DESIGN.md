@@ -5,11 +5,12 @@ the UI next — a person or Claude — so the app stays one design rather than a
 collection of screens. Tokens live in `lib/app/theme.dart`; this explains them.
 
 **Signal**, chosen on 1 October 2026: a trading desk for AI tools, in black
-and red. Three concepts were drawn (an evolution of the previous calm light
-look, *Signal*, and a colourful bento); the owner chose Signal in black with
-red light, after a TRON: Ares reference — deep black, thin seams of glowing
-red. The concepts are on the canvas "Liz redesign concepts". What it replaced
-is at the end.
+and red. Refined on 27 October 2026 to an enterprise finish (§10): the black
+and the red stay; the costume went — monospace labels, eyebrows, index
+numbers and glowing seams — after a review against the house rules of
+`taste-skill` (app screens), the motion principles of Emil Kowalski, and the
+DESIGN.md files of Linear, Raycast and Vercel. A Stitch draft of Discover,
+made independently from the same brief, landed on the same layout.
 
 ---
 
@@ -18,16 +19,16 @@ is at the end.
 1. **Signal first.** Liz's difference is knowing what is taking off and why.
    Ranks, trend lines and the reason in words lead every screen they appear
    on; the description comes after.
-2. **Red means something.** One red marks what you can act on (primary
-   buttons, links), where you are (the selected tab), and what is rising
-   (ranks, trend lines, reasons). Nothing else is red — not prices, not
-   avatars, not icons in a list.
-3. **Light lines, sparingly.** The glow is the signature, so it is rare: the
-   seam under the top bar and over the tab bar, the top edge of a signal
-   panel, the leader of the movers table, primary buttons. A screen full of
-   glow is a screen with no emphasis.
-4. **Instruments speak monospace.** Labels, ranks, deltas and reasons are set
-   in JetBrains Mono capitals; words people read are Space Grotesk.
+2. **Red means something.** One red marks the primary action (one filled
+   button per screen), links, and what is rising: trend lines and the growth
+   figure in a reason ("**+2.2k** GitHub stars this week"). Nothing else is
+   red — not ranks, not selection, not icons in a list, not prices.
+3. **Nothing at rest glows.** No glow, no gradient, no shadow on anything
+   lying on the page. Surfaces are told apart by a tone step and a 1px
+   hairline; shadows are only for what floats (menus, dialogs).
+4. **One typeface.** Space Grotesk for words and figures alike, with tabular
+   numerals where figures line up. No monospace, no capital letter-spaced
+   labels, no eyebrows above headings, no "01–06" numbering.
 5. **Hierarchy by type and light, not boxes.** A new container is the last
    resort. On black, a raised thing is a slightly lighter surface with a
    hairline, never a drop shadow.
@@ -48,15 +49,15 @@ text and UI at least 3:1 — and the sweep checks it on every screen.
 
 | Token | Value | Job |
 |---|---|---|
-| `canvas` | `#050506` | App background |
-| `surface` | `#0D0E11` | Cards, panels, sidebar, sheets |
-| `surfaceMuted` | `#121318` | Menus, quiet fills |
-| `surfaceHover` | `#191A20` | Hover fills, logo and avatar tiles |
-| `hairline` | `#1F2128` | Card borders, separators |
-| `hairlineStrong` | `#2E313A` | Inputs, outlines, unselected pills |
-| `textPrimary` | `#F4F5F7` | Titles, body |
-| `textSecondary` | `#A3A7B1` | Taglines, metadata, placeholders, labels |
-| `textTertiary` | `#6F7380` | Chevrons, disabled — never text |
+| `canvas` | `#09090B` | App background; the sidebar and rail share it |
+| `surface` | `#111114` | Cards, panels, sheets |
+| `surfaceMuted` | `#16161A` | Inputs, secondary buttons, menus |
+| `surfaceHover` | `#1C1C21` | Hover fills; the selected nav row, segment and pill |
+| `hairline` | `#232329` | Card borders, separators, bar edges |
+| `hairlineStrong` | `#33333B` | Input and button outlines |
+| `textPrimary` | `#EDEDF0` | Titles, body |
+| `textSecondary` | `#A1A1AA` | Taglines, metadata, placeholders, labels, unselected nav |
+| `textTertiary` | `#71717A` | Separators, chevrons, the selected pill's edge — never text |
 
 ### Red
 
@@ -65,8 +66,8 @@ text and UI at least 3:1 — and the sweep checks it on every screen.
 | `accent` | `#FF3B3B` | Red text, icons, lines, focus (5.4:1 on `surface`) |
 | `accentFill` | `#D7141A` | Behind white text: primary buttons, badges (5.2:1 with white) |
 | `accentHover` | `#FF5C5C` | Hover on red text |
-| `accentSoft` | red @ 14% | Selected pills and segments, tonal buttons |
-| `glow` | `#FF2A2A` | The light of the light lines — only ever blurred |
+| `accentSoft` | red @ 12% | Tinted badges ("New", "AI") |
+| `glow` | `#FF2A2A` | Kept as a token; nothing is drawn with it since §10 |
 | `rising` | `#FF3B3B` | The same red: in Signal, rising *is* the signal |
 
 ### Meaning
@@ -91,36 +92,32 @@ someone else's light website.
 Both fonts are bundled variable fonts subset to Latin (`assets/fonts`, SIL Open
 Font Licence beside them), never fetched at run time.
 
-- **Space Grotesk** — everything people read. Geometric, slightly technical,
-  legible at body sizes.
-- **JetBrains Mono** — instruments: `LizText.label` (11px capitals, 1.0
-  tracking: "SIGNAL · 30 DAYS", "RANK", column headings, eyebrows) and
-  `LizText.mono` (13px: ranks "01", deltas "+1.6k in 29 days", reasons
-  "+2.2k GitHub stars this week"). Write label text in capitals; the style
-  does not transform it.
+- **Space Grotesk** — everything: words and figures. Geometric, slightly
+  technical, legible at body sizes. `LizText.label` (12px, sentence case) is
+  for column headings and group titles; `LizText.mono` is the text face with
+  tabular numerals, for ranks, counts and deltas. JetBrains Mono is still
+  bundled but no longer used.
 
 | Role | Size / line | Weight | Tracking | Used for |
 |---|---|---|---|---|
-| `display` | 44 / 46 | 700 | −1.4 | Desktop hero |
-| `largeTitle` | 32 / 36 | 700 | −0.9 | Page titles |
-| `title1` | 26 / 31 | 700 | −0.6 | Tool name; phone page titles |
-| `title2` | 21 / 26 | 600 | −0.3 | Section headers |
-| `title3` | 18 / 23 | 600 | −0.2 | Card group titles, wordmark |
+| `display` | 40 / 44 | 600 | −1.2 | Sign-in claim |
+| `largeTitle` | 28 / 34 | 600 | −0.7 | Page titles |
+| `title1` | 24 / 30 | 600 | −0.5 | Tool name; phone page titles |
+| `title2` | 19 / 25 | 600 | −0.3 | Section headers |
+| `title3` | 17 / 23 | 600 | −0.2 | Card group titles, bar titles |
 | `headline` | 15 / 21 | 600 | −0.1 | Card titles, list rows |
 | `body` | 15 / 22 | 400 | 0 | Paragraphs |
 | `callout` | 14 / 20 | 400 | 0 | Taglines, secondary copy |
 | `subhead` | 13 / 18 | 500 | 0 | Metadata lines |
 | `footnote` | 12 / 16 | 500 | 0.1 | Timestamps, counts |
 | `caption` | 11 / 14 | 600 | 0.3 | Badges |
-| `label` | 11 / 14 mono | 500 | 1.0 | Instrument labels, eyebrows |
-| `mono` | 13 / 18 mono | 500 | 0 | Ranks, deltas, reasons |
+| `label` | 12 / 16 | 500 | 0 | Column headings, group titles (sentence case) |
+| `mono` | 13 / 18 tabular | 500 | 0 | Ranks, counts, deltas |
 
 Rules: nothing under 11px; no weight under 400; at most three sizes on a card.
 
-**Eyebrow.** A page or section may carry one short mono line above its title,
-in red with a faint glow: `// MOMENTUM, NOT HYPE`, `// TOP MOVERS · 7 DAYS`
-(`PageHeader(eyebrow:)`, `SectionHeader(eyebrow:)`). Only where it adds
-meaning; most sections have none.
+**No eyebrows.** The small red mono line that used to sit above titles is
+gone (§10); a title says what the section is, and its subtitle says the rest.
 
 ---
 
@@ -140,10 +137,10 @@ corners (`RoundedSuperellipseBorder`).
 
 | Token | Radius | Used for |
 |---|---|---|
-| `xs` | 4 | Badges, filter pills, selected segments |
-| `sm` | 6 | Buttons, inputs, list rows, sidebar items |
-| `md` | 10 | Cards, panels, the movers table |
-| `lg` | 14 | Dialogs |
+| `xs` | 6 | Badges, filter pills, selected segments |
+| `sm` | 8 | Buttons, inputs, list rows, sidebar items |
+| `md` | 12 | Cards, panels, the movers table |
+| `lg` | 16 | Dialogs |
 | `xl` | 20 | Large hero panels |
 
 Tool logos stay app-icon squircles at 22.5% of their size. Touch targets are at
@@ -161,15 +158,13 @@ hairline. Light is reserved for emphasis.
 | base | `surface` | `hairline` | none | Cards, panels at rest |
 | raised | `surface` | `hairlineStrong` | none | Hovered cards |
 | floating | `surfaceMuted` | `hairlineStrong` | black shadow | Menus, popovers, snackbars |
-| bar | `canvas` @ 82% + 24px blur | a `GlowLine` | seam | Phone top bar and tab bar |
-| lit | — | `accent` | `LizShadows.glow` | Primary button, selected tab icon, the movers leader |
+| bar | `canvas` @ 92% over a blur | `hairline` | none | Phone top bar and tab bar; `LizTopBar` |
 
-**`GlowLine`** (theme.dart) is the light line: 1px, brightest in the middle,
-fading to nothing at both ends, with an 8px red glow. Bars use strength 0.85;
-a signal panel's top edge 0.8; inside content, less.
+`GlowLine` and `LizShadows.glow` remain as names so older call sites compile;
+the first draws a plain hairline and the second is empty.
 
-**Trend lines** (`SignalSparkline`) are drawn as light: a blurred red stroke
-under a crisp one, a fill fading to nothing beneath, and a lit dot on today.
+**Trend lines** (`SignalSparkline`) are a crisp red line over a flat 10% red
+area, with a solid dot on today. No blur, no gradient.
 
 ---
 
@@ -189,38 +184,44 @@ Cards lift on hover; pages fade forward; skeletons shimmer, never spin.
 ## 7. Components
 
 **Navigation.** Phone: a bar-material tab bar, five labelled destinations; the
-selected one is red with a glow on its icon. Tablet: a 72px rail; the selected
-button is lit (red edge, faint red fill). Desktop: a 248px sidebar on
-`surface` — *Browse* and *Library* groups with mono labels, search at the top,
-the account at the bottom; the selected row has a faint red fill and a red bar
-on its leading edge.
+selected one is white, the others grey. Tablet: a 72px rail; the selected
+button sits on a `surfaceHover` tile. Desktop: a 240px sidebar on the canvas
+with one hairline at its edge — *Browse* and *Library* groups with sentence-case
+labels, search at the top, the account at the bottom; the selected row is a
+neutral `surfaceHover` pill with white text, the rest grey.
+
+**Top bar** (`LizTopBar`, pages that open over the app: a tool, Compare,
+Alerts, Settings, legal pages, alternatives). A back button that always works —
+to the previous page, or a fallback when the page was opened by its address —
+and on wider windows the trail "Liz / Discover / Lensflow".
 
 **Wordmark.** The glyph in red with a blurred copy behind it as glow, and
 "LIZ" in spaced capitals (read by screen readers as "Liz").
 
-**Buttons.** *Primary* — `accentFill`, white label, lit (a red glow that
-strengthens on hover). *Tonal* (`LizButtons.tonal`) — red outline at 70% on
-`accentSoft`, white label, not lit. *Outlined* — `hairlineStrong` outline that
-turns red on hover. *Text* — red label. Heights 44 phone, 40 desktop.
+**Buttons.** *Primary* — `accentFill`, white label, flat; one per screen.
+*Secondary* (`LizButtons.tonal`) — `surfaceMuted` with a `hairlineStrong`
+edge and a white label. *Outlined* — `hairlineStrong` outline that brightens
+on hover. *Text* — red label. Heights 44 phone, 40 desktop.
 
-**Filter pills and segmented controls.** Off: an outline on `surface`,
-secondary text. On: lit — a red edge on `accentSoft`, primary text, a faint
-glow. Square-ish (`xs`), not capsules.
+**Filter pills and segmented controls.** Off: transparent with a `hairline`
+edge, grey text. On: `surfaceHover` with a lighter edge and white text.
+Square-ish (`xs`), not capsules.
 
-**Inputs.** `surface` fill, `hairlineStrong` outline, red outline on focus.
+**Inputs.** `surfaceMuted` fill, `hairlineStrong` outline, a light grey
+outline on focus.
 
 **Top movers table** (`TopMovers`, Discover). The ranked list of the week's
-fastest growers. Wide (≥ 760 of room): a table with mono headings — RANK ·
-TOOL · WHAT IT DOES · 14-DAY SIGNAL · WHY IT'S RISING · PRICE. Narrow: rank,
-logo, name, the reason in mono red, and a small trend line. Ranks are mono
-"01"–"06", red for the top three. The leader's row is lit: a red seam on its
-leading edge and red light fading across it.
+fastest growers. Wide (≥ 760 of room): a table with sentence-case headings —
+# · Tool · What it does · Last 14 days · Why it's rising · Price; from 1280px
+the filter pills sit beside the section title. Narrow: rank, logo, name, the
+reason and a small trend line. Ranks are plain grey figures. Reasons are
+`ReasonText`: the growth figure in red, the words in grey. Prices are
+`PricingLabel` (a dot and a word, no box).
 
 **Signal panel** (`ToolSignalsSection`, the tool page). Right after the facts
-strip, before any words about the tool: a `surface` panel with a `GlowLine`
-along its top, "SIGNAL · N DAYS" and the reason in mono, the trend line full
-width, then the change in mono ("GitHub stars: 3.0k → 4.6k since 2 Sep",
-"+1.6k in 29 days").
+strip: a `surface` panel, "Last N days" and the reason, the trend line full
+width, then the change ("GitHub stars: 3.0k → 4.6k since 2 Sep", "+1.6k in
+29 days").
 
 **Tool card.** Logo, name (`headline`), two-line tagline (`callout`,
 secondary), one metadata line (`● Freemium · Video · ★ 4.7`). Bookmark as a
@@ -234,8 +235,8 @@ edge, the initial in white. No colour per tool.
 ringed in red. No colour per person.
 
 **Grouped list** (Settings, Profile). Rows in a `surface` group, hairlines
-inset past the icon; icons white on a dark tile — only a destructive row is
-coloured. Group titles are mono labels.
+inset past the icon; icons grey or white — only a destructive row is
+coloured. Group titles are sentence-case labels.
 
 **Empty state.** An icon, a `title3`, one sentence, at most one action.
 
@@ -243,9 +244,12 @@ coloured. Group titles are mono labels.
 
 ## 8. Screens
 
-- **Discover.** Eyebrow and title, a large search field, then the *Top
+- **Discover.** Title and subtitle, a large search field, then the *Top
   movers* table, *New this week*, *For you*, and the catalog: category pills,
   the sort segmented control, the price filter and the card grid.
+- **Sign in.** Wide: a brand panel (the claim, one sentence, and a preview of
+  *Rising this week* drawn as the product draws it) beside the form. Narrow:
+  the wordmark and the form. A first visit opens on *Create account*.
 - **Tool page.** Logo, name, tagline; *Visit website* (primary) with *Save*
   and *Compare* (tonal); the facts strip with mono labels; the **signal
   panel**; then *Summary*, *About*, timeline, similar tools, in the news,
@@ -268,6 +272,24 @@ by light alone, and decorative lines are excluded from semantics.
 ---
 
 ## 10. What changed, and why
+
+### 27 October 2026 — the enterprise refinement
+
+| Before | Now | Why |
+|---|---|---|
+| JetBrains Mono capitals for labels, ranks and reasons | Space Grotesk throughout, sentence case, tabular figures | Mono labels read as costume, not instruments |
+| Red eyebrows (`// MOMENTUM, NOT HYPE`) | None | A title should say it; an eyebrow repeats it |
+| Ranks "01"–"06", red for the top three; a lit leader row | Plain grey figures; no lit row | Order is the data; colour belongs on growth |
+| Reasons all in red mono | Growth figure in red, words in grey | One red element per row, on the number that matters |
+| Glow on buttons, tabs, seams, sparklines, the leader | No glow at rest; plain hairlines | A glow everywhere is emphasis nowhere |
+| Red-tinted selection (pills, segments, nav, rail) | Neutral raised tone, white text | Selection is not an action; red is kept for actions and data |
+| Red-outlined secondary buttons | Neutral secondary buttons | One primary per screen, unmistakable |
+| Sidebar on `surface` with a red bar | On the canvas, neutral pill | Navigation recedes; content leads |
+| Sign-in panel with neon seams and a drawn trend | The claim and a preview of the product | Show the product, not decoration |
+| Pages over the app had a back arrow only when opened by tapping | `LizTopBar`: back always works; "Liz / Discover / …" on wide windows | Every screen names the product and the way back |
+| 4–20 radii | 6 / 8 / 12 / 16 / 20 | Fewer, more deliberate corners |
+
+### 1 October 2026 — Signal
 
 | Before (28 Sep) | Now (Signal, 1 Oct) | Why |
 |---|---|---|
