@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -309,6 +311,7 @@ class _RisingPreview extends StatelessWidget {
 
   static const _rows = [
     (
+      _PreviewLogo.lens,
       'Lensflow',
       'Video',
       '2.2k',
@@ -316,6 +319,7 @@ class _RisingPreview extends StatelessWidget {
       [2.0, 2.1, 2.3, 2.4, 2.8, 3.3, 4.1, 5.0, 6.4, 8.0],
     ),
     (
+      _PreviewLogo.review,
       'Reviewer',
       'Dev tools',
       '1.6k',
@@ -323,6 +327,7 @@ class _RisingPreview extends StatelessWidget {
       [3.0, 3.1, 3.0, 3.3, 3.6, 3.7, 4.4, 5.2, 5.9, 6.6],
     ),
     (
+      _PreviewLogo.loop,
       'Taskloop',
       'Agents',
       '276',
@@ -376,12 +381,12 @@ class _RisingPreview extends StatelessWidget {
 class _PreviewRow extends StatelessWidget {
   const _PreviewRow({required this.rank, required this.row});
   final int rank;
-  final (String, String, String, String, List<double>) row;
+  final (_PreviewLogo, String, String, String, String, List<double>) row;
 
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    final (name, category, figure, unit, trend) = row;
+    final (logo, name, category, figure, unit, trend) = row;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
@@ -396,23 +401,8 @@ class _PreviewRow extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: ShapeDecoration(
-              color: p.surfaceHover,
-              shape: LizRadius.shape(
-                LizRadius.sm,
-                side: BorderSide(color: p.hairlineStrong),
-              ),
-            ),
-            child: Text(
-              name[0],
-              style: LizText.headline.copyWith(color: p.textPrimary),
-            ),
-          ),
-          const SizedBox(width: 12),
+          logo,
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,6 +442,157 @@ class _PreviewRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A logo for one of the preview's sample tools: an app-icon tile in the
+/// tool's own colour with a white mark drawn on it — a lens, a review, a
+/// loop. Drawn rather than loaded, so it is sharp at any density and the
+/// signed-out page fetches nothing for it.
+class _PreviewLogo extends StatelessWidget {
+  const _PreviewLogo._(this.top, this.bottom, this.mark);
+
+  static const lens = _PreviewLogo._(
+    Color(0xFF7C5CFF),
+    Color(0xFF3B1FB8),
+    _Mark.lens,
+  );
+  static const review = _PreviewLogo._(
+    Color(0xFF14B88A),
+    Color(0xFF07624A),
+    _Mark.review,
+  );
+  static const loop = _PreviewLogo._(
+    Color(0xFF38A6F5),
+    Color(0xFF0B5A9E),
+    _Mark.loop,
+  );
+
+  final Color top;
+  final Color bottom;
+  final _Mark mark;
+
+  static const size = 36.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: ShapeDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [top, bottom],
+        ),
+        // A faint inner edge, as an app icon has against a dark page.
+        shape: LizRadius.shape(
+          9,
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+        ),
+      ),
+      child: CustomPaint(painter: _MarkPainter(mark)),
+    );
+  }
+}
+
+enum _Mark { lens, review, loop }
+
+class _MarkPainter extends CustomPainter {
+  const _MarkPainter(this.mark);
+  final _Mark mark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Drawn on a 24-unit grid, centred in the tile with room around it.
+    final unit = size.width / 36;
+    canvas
+      ..save()
+      ..translate(size.width / 2 - 12 * unit, size.height / 2 - 12 * unit)
+      ..scale(unit);
+    final stroke = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final fill = Paint()..color = Colors.white;
+
+    switch (mark) {
+      case _Mark.lens:
+        // A lens ring with a play triangle in it: video.
+        canvas.drawCircle(const Offset(12, 12), 8.6, stroke);
+        canvas.drawPath(
+          Path()
+            ..moveTo(10.2, 8.4)
+            ..lineTo(16, 12)
+            ..lineTo(10.2, 15.6)
+            ..close(),
+          fill,
+        );
+      case _Mark.review:
+        // Code brackets around a tick: a reviewed change.
+        canvas
+          ..drawPath(
+            Path()
+              ..moveTo(7.2, 6.8)
+              ..lineTo(2.6, 12)
+              ..lineTo(7.2, 17.2),
+            stroke,
+          )
+          ..drawPath(
+            Path()
+              ..moveTo(16.8, 6.8)
+              ..lineTo(21.4, 12)
+              ..lineTo(16.8, 17.2),
+            stroke,
+          )
+          ..drawPath(
+            Path()
+              ..moveTo(8.9, 12.2)
+              ..lineTo(11.1, 14.4)
+              ..lineTo(15.1, 9.6),
+            stroke,
+          );
+      case _Mark.loop:
+        // A loop that closes on an arrowhead: work that comes round again.
+        // The ring is open at the top; it runs clockwise from just right of
+        // the top round to just left of it, and the arrow points across the
+        // gap, the way it travels.
+        const r = 8.0;
+        const gap = 0.55;
+        const start = -math.pi / 2 + gap;
+        const sweep = 2 * math.pi - 2 * gap;
+        canvas.drawArc(
+          Rect.fromCircle(center: const Offset(12, 12), radius: r),
+          start,
+          sweep,
+          false,
+          stroke,
+        );
+        const end = start + sweep;
+        final tip = Offset(12 + r * math.cos(end), 12 + r * math.sin(end));
+        // Clockwise on screen, the direction of travel at an angle is
+        // (-sin, cos).
+        final ahead = Offset(-math.sin(end), math.cos(end));
+        Offset back(double turn) {
+          final c = math.cos(turn), s = math.sin(turn);
+          final d = Offset(-ahead.dx, -ahead.dy);
+          return tip + Offset(d.dx * c - d.dy * s, d.dx * s + d.dy * c) * 4.2;
+        }
+
+        canvas.drawPath(
+          Path()
+            ..moveTo(back(0.75).dx, back(0.75).dy)
+            ..lineTo(tip.dx, tip.dy)
+            ..lineTo(back(-0.75).dx, back(-0.75).dy),
+          stroke,
+        );
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_MarkPainter old) => old.mark != mark;
 }
 
 /// Fades and lifts its child in once, when the page opens. Nothing moves for
