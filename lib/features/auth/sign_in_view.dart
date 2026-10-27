@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/auth_gate.dart' show welcomePending;
 import '../../app/settings_controller.dart';
 import '../../app/theme.dart';
 import '../../core/auth/auth_repository.dart';
@@ -14,6 +15,7 @@ import '../../shared/widgets/google_logo.dart';
 import '../../shared/widgets/page_header.dart';
 import 'auth_controller.dart';
 import '../../shared/widgets/liz_notice.dart';
+import '../../shared/widgets/liz_sheet.dart';
 import 'auth_frame.dart';
 import 'password_validation.dart';
 
@@ -159,11 +161,18 @@ class _SignInViewState extends ConsumerState<SignInView> {
     final auth = ref.read(authControllerProvider.notifier);
     _guard(() async {
       if (_isSignUp) {
-        await auth.signUp(
-          _email.text.trim(),
-          _password.text,
-          _name.text.trim(),
-        );
+        // Set first: the router moves on as soon as the session appears.
+        welcomePending.value = true;
+        try {
+          await auth.signUp(
+            _email.text.trim(),
+            _password.text,
+            _name.text.trim(),
+          );
+        } catch (_) {
+          welcomePending.value = false;
+          rethrow;
+        }
       } else {
         await auth.signInWithEmail(_email.text.trim(), _password.text);
       }
@@ -561,13 +570,17 @@ class _TwoStepCodeDialogState extends ConsumerState<_TwoStepCodeDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.liz;
     return AlertDialog(
       title: const Text('Two-step verification'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Enter the code from your authenticator app.'),
+          Text(
+            'Enter the six-digit code your authenticator app shows for Liz.',
+            style: LizText.body.copyWith(color: p.textSecondary),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _code,
@@ -584,14 +597,28 @@ class _TwoStepCodeDialogState extends ConsumerState<_TwoStepCodeDialog> {
           ),
         ],
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       actions: [
-        TextButton(
-          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _busy ? null : _submit,
-          child: const Text('Verify'),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                style: LizSheetButtons.outlined,
+                onPressed: _busy
+                    ? null
+                    : () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                style: LizSheetButtons.filled,
+                onPressed: _busy ? null : _submit,
+                child: const Text('Verify'),
+              ),
+            ),
+          ],
         ),
       ],
     );

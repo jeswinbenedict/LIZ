@@ -17,7 +17,6 @@ import 'discover_controller.dart';
 import 'new_this_week.dart';
 import 'tool_headlines.dart';
 import 'top_movers.dart';
-import 'welcome_card.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key, this.initialCategory});
@@ -156,7 +155,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                       TopMovers(category: pageCategory),
                       SectionHeader(title: 'All $categoryName tools'),
                     ] else ...[
-                      const WelcomeCard(),
                       const TopMovers(),
                       const ToolHeadlines(),
                       const ForYou(),

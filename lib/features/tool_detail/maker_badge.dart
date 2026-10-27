@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../core/config/env.dart';
 import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/widgets/liz_sheet.dart';
 import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/tool_link.dart';
 
@@ -59,17 +60,9 @@ Future<void> showMakerBadgeSheet(
 }) async {
   final badge = MakerBadge.from(tool, base ?? Env.resolvedSiteUrl);
   if (badge == null) return;
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (ctx) => ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 560,
-        maxHeight: MediaQuery.sizeOf(ctx).height * 0.85,
-      ),
-      child: _BadgeSheet(badge: badge),
-    ),
+  return showLizSheet<void>(
+    context,
+    builder: (ctx) => _BadgeSheet(badge: badge),
   );
 }
 
@@ -127,57 +120,49 @@ class _BadgeSheetState extends State<_BadgeSheet> {
     final p = context.liz;
     final tool = widget.badge.tool;
     final badge = MakerBadge(tool: tool, base: widget.badge.base, dark: _dark);
-    return ListView(
-      shrinkWrap: true,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      children: [
-        Text(
-          'A badge for ${tool.name}',
-          style: LizText.title3.copyWith(color: p.textPrimary),
-        ),
-        const SizedBox(height: 4),
-        Text(
+    return LizSheet(
+      title: 'A badge for ${tool.name}',
+      subtitle:
           'Links visitors to this page. It reads “Rising on Liz” while the '
           'tool is rising and “Listed on Liz” otherwise, updated daily.',
-          style: LizText.callout.copyWith(color: p.textSecondary),
-        ),
-        const SizedBox(height: 20),
-        SegmentedButton<bool>(
-          segments: const [
-            ButtonSegment(value: false, label: Text('Light')),
-            ButtonSegment(value: true, label: Text('Dark')),
-          ],
-          selected: {_dark},
-          showSelectedIcon: false,
-          onSelectionChanged: (s) => setState(() => _dark = s.first),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _dark ? LizPalette.ares.canvas : LizPalette.lightSite.canvas,
-            borderRadius: BorderRadius.circular(LizRadius.md),
-            border: Border.all(color: p.hairline),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LizSegmented<bool>(
+            segments: const {false: 'Light', true: 'Dark'},
+            value: _dark,
+            onChanged: (v) => setState(() => _dark = v),
           ),
-          child: BadgePreview(
-            rising: tool.isRising,
-            palette: _dark ? LizPalette.ares : LizPalette.lightSite,
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _dark
+                  ? LizPalette.ares.canvas
+                  : LizPalette.lightSite.canvas,
+              borderRadius: BorderRadius.circular(LizRadius.md),
+              border: Border.all(color: p.hairline),
+            ),
+            child: BadgePreview(
+              rising: tool.isRising,
+              palette: _dark ? LizPalette.ares : LizPalette.lightSite,
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
-        _Snippet(
-          label: 'HTML',
-          code: badge.html,
-          onCopy: () => _copy(badge.html, 'HTML'),
-        ),
-        const SizedBox(height: 12),
-        _Snippet(
-          label: 'Markdown (for a README)',
-          code: badge.markdown,
-          onCopy: () => _copy(badge.markdown, 'Markdown'),
-        ),
-      ],
+          const SizedBox(height: 20),
+          _Snippet(
+            label: 'HTML',
+            code: badge.html,
+            onCopy: () => _copy(badge.html, 'HTML'),
+          ),
+          const SizedBox(height: 12),
+          _Snippet(
+            label: 'Markdown (for a README)',
+            code: badge.markdown,
+            onCopy: () => _copy(badge.markdown, 'Markdown'),
+          ),
+        ],
+      ),
     );
   }
 }

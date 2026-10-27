@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/responsive/adaptive_shell.dart' show LizWordmark;
 import '../../app/theme.dart';
+import 'grouped_list.dart';
 
 class LoadingView extends StatelessWidget {
   const LoadingView({super.key});
@@ -111,21 +113,128 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// Shown for any address the app does not know.
+/// Shown for any address the app does not know (docs/DESIGN.md §8): the
+/// wordmark, what happened and at which address, the two ways back in, and
+/// the main places as a short list.
 class NotFoundScreen extends StatelessWidget {
-  const NotFoundScreen({super.key});
+  const NotFoundScreen({super.key, this.path});
+
+  /// The address that was asked for.
+  final String? path;
 
   @override
   Widget build(BuildContext context) {
+    final p = context.liz;
+    final phone = MediaQuery.sizeOf(context).width < 600;
+    final asked = path != null && path!.isNotEmpty && path != '/';
     return Scaffold(
-      body: EmptyView(
-        icon: Icons.explore_off_outlined,
-        title: 'This page is not here',
-        headingLevel: 1,
-        message: 'The link may be mistyped, or the page may have moved.',
-        action: FilledButton(
-          onPressed: () => context.go('/'),
-          child: const Text('Go to Discover'),
+      backgroundColor: p.canvas,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Semantics(
+                  link: true,
+                  label: 'Liz, Discover',
+                  child: InkWell(
+                    onTap: () => context.go('/'),
+                    customBorder: LizRadius.shape(LizRadius.sm),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: ExcludeSemantics(child: LizWordmark(size: 24)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Divider(height: 1, color: p.hairline),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: phone ? 20 : 32,
+                    vertical: 40,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Error 404',
+                          style: LizText.subhead.copyWith(
+                            color: p.textSecondary,
+                            fontFeatures: LizText.tabular,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Semantics(
+                          container: true,
+                          header: true,
+                          headingLevel: 1,
+                          child: Text(
+                            'This page is not here',
+                            style: (phone ? LizText.title1 : LizText.largeTitle)
+                                .copyWith(color: p.textPrimary),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          asked
+                              ? 'Nothing lives at $path. The link may be '
+                                    'mistyped, or the page may have moved.'
+                              : 'The link may be mistyped, or the page may '
+                                    'have moved.',
+                          style: LizText.body.copyWith(color: p.textSecondary),
+                        ),
+                        const SizedBox(height: 24),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            FilledButton(
+                              onPressed: () => context.go('/'),
+                              child: const Text('Go to Discover'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () => context.go('/search'),
+                              icon: const Icon(Icons.search, size: 18),
+                              label: const Text('Search tools'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 40),
+                        LizGroup(
+                          title: 'Or go to',
+                          children: [
+                            LizGroupRow(
+                              icon: Icons.question_answer_outlined,
+                              title: 'Ask Liz',
+                              onTap: () => context.go('/ask'),
+                            ),
+                            LizGroupRow(
+                              icon: Icons.article_outlined,
+                              title: 'News',
+                              onTap: () => context.go('/news'),
+                            ),
+                            LizGroupRow(
+                              icon: Icons.bookmark_outline,
+                              title: 'Saved',
+                              onTap: () => context.go('/saved'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -114,4 +114,75 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/saved');
   });
+
+  group('a new account', () {
+    test('goes by way of the welcome, keeping where it was going', () {
+      String? fresh(String location) => authRedirect(
+        location: Uri.parse(location),
+        restored: true,
+        signedIn: true,
+        welcome: true,
+      );
+      expect(fresh('/signin'), '/welcome');
+      expect(fresh('/signin?from=%2Fsaved'), '/welcome?from=%2Fsaved');
+      expect(fresh('/welcome'), isNull);
+      expect(safeReturnPath('/welcome'), isNull);
+    });
+
+    testWidgets('creating one opens the welcome, and finishing it goes on', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      addTearDown(() => welcomePending.value = false);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWith((_) => prefs)],
+      );
+      addTearDown(container.dispose);
+      final auth = container.read(authRepositoryProvider);
+      await tester.runAsync(() => auth.restored);
+      final gate = AuthGate(auth);
+      addTearDown(gate.dispose);
+      final router = buildRouter(gate);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: LizTheme.app(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      router.go('/news');
+      await tester.pumpAndSettle();
+
+      // A browser nobody has signed in on opens on "Create account".
+      expect(find.text('Create your account'), findsOneWidget);
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Ada');
+      await tester.enterText(fields.at(1), 'ada@example.com');
+      await tester.enterText(fields.at(2), 'a long enough phrase');
+      await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/welcome');
+      expect(find.text('Welcome to Liz, Ada'), findsOneWidget);
+
+      await tester.tap(find.text('Skip this step'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hear when it matters'), findsOneWidget);
+
+      await tester.tap(find.text('Go to Discover'));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/news');
+      expect(welcomePending.value, isFalse);
+    });
+  });
 }

@@ -86,13 +86,21 @@ class PreferencesController extends Notifier<UserPrefs> {
     await local.setBool(_askedKey, true);
     return true;
   }
+
+  /// Records that interests have been asked about (by the welcome), so the
+  /// picker does not come back after the second save.
+  Future<void> markAsked() async {
+    final local = await _prefs();
+    await local?.setBool(_askedKey, true);
+  }
 }
 
 final preferencesProvider = NotifierProvider<PreferencesController, UserPrefs>(
   PreferencesController.new,
 );
 
-/// The interest picker: the categories Liz has, as pills to tap.
+/// The interest picker, as a sheet: offered after the second save and from
+/// Settings. The same pills as the welcome.
 Future<void> showInterestPicker(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
@@ -121,51 +129,118 @@ class _InterestPickerState extends ConsumerState<_InterestPicker> {
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    final categories = ref.watch(categoriesProvider).value ?? const [];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'What are you looking for?',
-            style: LizText.title3.copyWith(color: p.textPrimary),
+          Semantics(
+            container: true,
+            header: true,
+            child: Text(
+              'What are you looking for?',
+              style: LizText.title2.copyWith(color: p.textPrimary),
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             'Discover adds a shelf of what is rising in these. Change it any '
             'time in Settings.',
             style: LizText.callout.copyWith(color: p.textSecondary),
           ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final c in categories)
-                LizFilterPill(
-                  label: c.name,
-                  selected: _picked.contains(c.slug),
-                  onTap: () => setState(() {
-                    if (!_picked.remove(c.slug)) _picked.add(c.slug);
-                  }),
-                ),
-            ],
-          ),
           const SizedBox(height: 20),
-          FilledButton(
-            style: LizButtons.capsule,
-            onPressed: () async {
-              await ref
-                  .read(preferencesProvider.notifier)
-                  .setInterests(_picked.toList()..sort());
-              if (context.mounted) Navigator.of(context).pop();
-            },
-            child: Text(_picked.isEmpty ? 'Not now' : 'Save'),
+          InterestPills(
+            picked: _picked,
+            onToggle: (slug) => setState(() {
+              if (!_picked.remove(slug)) _picked.add(slug);
+            }),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Not now'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  onPressed: () async {
+                    await ref
+                        .read(preferencesProvider.notifier)
+                        .setInterests(_picked.toList()..sort());
+                    if (context.mounted) Navigator.of(context).pop();
+                  },
+                  child: const Text('Save'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The categories Liz has, as pills to tap, with how many are chosen under
+/// them. Used by the welcome and the picker sheet.
+class InterestPills extends ConsumerWidget {
+  const InterestPills({
+    super.key,
+    required this.picked,
+    required this.onToggle,
+  });
+  final Set<String> picked;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.liz;
+    final categories = ref.watch(categoriesProvider).value;
+    if (categories == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final c in categories)
+              LizFilterPill(
+                label: c.name,
+                icon: picked.contains(c.slug) ? Icons.check : null,
+                selected: picked.contains(c.slug),
+                onTap: () => onToggle(c.slug),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            picked.isEmpty
+                ? 'None chosen yet.'
+                : picked.length == 1
+                ? '1 chosen'
+                : '${picked.length} chosen',
+            style: LizText.footnote.copyWith(color: p.textSecondary),
+          ),
+        ),
+      ],
     );
   }
 }

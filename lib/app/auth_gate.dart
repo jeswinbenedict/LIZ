@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/auth/auth_repository.dart';
+import '../shared/widgets/liz_mark.dart';
 import 'theme.dart';
 
 /// Liz is for signed-in people: every page sends a signed-out visitor to
@@ -21,6 +22,14 @@ const publicPaths = {
 /// moment of Liz rather than a flash of the sign-in form.
 const startingPath = '/starting';
 
+/// The welcome a new account opens on: interests, then alerts.
+const welcomePath = '/welcome';
+
+/// Set while an account is being created, so the first page after it is the
+/// welcome rather than Discover. Cleared when the welcome is finished or
+/// skipped, and when creating the account fails.
+final welcomePending = ValueNotifier<bool>(false);
+
 /// Where a navigation to [location] should go instead, or null to let it be.
 ///
 /// [restored] is false until the session a returning visitor left behind has
@@ -30,6 +39,7 @@ String? authRedirect({
   required Uri location,
   required bool restored,
   required bool signedIn,
+  bool welcome = false,
 }) {
   final path = location.path;
   if (publicPaths.contains(path) && path != '/signin') return null;
@@ -46,8 +56,10 @@ String? authRedirect({
     return _with('/signin', location);
   }
 
-  // Signed in: the sign-in and starting pages have nothing left to do.
+  // Signed in: the sign-in and starting pages have nothing left to do. A
+  // new account goes by way of the welcome.
   if (path == '/signin' || path == startingPath) {
+    if (welcome) return _with(welcomePath, from);
     return from?.toString() ?? '/';
   }
   return null;
@@ -71,7 +83,11 @@ Uri? safeReturnPath(String? raw) {
   }
   final uri = Uri.tryParse(raw);
   if (uri == null || uri.hasScheme || uri.hasAuthority) return null;
-  if (publicPaths.contains(uri.path) || uri.path == startingPath) return null;
+  if (publicPaths.contains(uri.path) ||
+      uri.path == startingPath ||
+      uri.path == welcomePath) {
+    return null;
+  }
   return uri;
 }
 
@@ -107,7 +123,9 @@ class AuthGate extends ChangeNotifier {
   }
 }
 
-/// The moment between opening Liz and knowing who is there.
+/// The moment between opening Liz and knowing who is there: the mark, and a
+/// quiet line that moves under it. It fades in, so a session restored in a
+/// blink shows nothing at all.
 class StartingScreen extends StatelessWidget {
   const StartingScreen({super.key});
 
@@ -122,12 +140,29 @@ class StartingScreen extends StatelessWidget {
           liveRegion: true,
           label: 'Starting Liz',
           child: ExcludeSemantics(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: p.accent,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: LizMotion.of(
+                context,
+                const Duration(milliseconds: 600),
+              ),
+              curve: const Interval(0.4, 1, curve: Curves.easeOut),
+              builder: (context, t, child) => Opacity(opacity: t, child: child),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const LizMark(size: 44),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: 96,
+                    child: LinearProgressIndicator(
+                      minHeight: 2,
+                      color: p.textSecondary,
+                      backgroundColor: p.hairline,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

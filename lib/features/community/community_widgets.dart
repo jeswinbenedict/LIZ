@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../shared/models/post.dart';
 import '../../shared/models/profile.dart';
 import '../../shared/models/review.dart';
+import '../../shared/widgets/liz_sheet.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/user_avatar.dart';
@@ -98,33 +99,9 @@ Future<void> showReportSheet(
   required String targetType,
   required String targetId,
 }) async {
-  const reasons = [
-    'Spam or misleading',
-    'Harassment or hate',
-    'Inappropriate content',
-    'Off-topic',
-    'Other',
-  ];
-  final reason = await showModalBottomSheet<String>(
-    context: context,
-    showDragHandle: true,
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
-            child: Text(
-              'Report content',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-            ),
-          ),
-          for (final r in reasons)
-            ListTile(title: Text(r), onTap: () => Navigator.of(ctx).pop(r)),
-        ],
-      ),
-    ),
+  final reason = await showLizSheet<String>(
+    context,
+    builder: (ctx) => _ReportSheet(what: targetType == 'post' ? 'post' : null),
   );
   if (reason == null) return;
   if (!context.mounted) return;
@@ -143,6 +120,88 @@ Future<void> showReportSheet(
       }
     },
   );
+}
+
+/// Why something is being reported: one reason, chosen, then sent — a
+/// report is not something to file by a slip of the thumb.
+class _ReportSheet extends StatefulWidget {
+  const _ReportSheet({this.what});
+
+  /// "post", or null for anything else.
+  final String? what;
+
+  @override
+  State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _ReportSheetState extends State<_ReportSheet> {
+  static const _reasons = [
+    ('Spam or misleading', 'Ads, scams, or claims that are not true.'),
+    ('Harassment or hate', 'Attacks a person or a group.'),
+    ('Inappropriate content', 'Sexual, violent or otherwise not for here.'),
+    ('Off-topic', 'Nothing to do with AI tools.'),
+    ('Other', 'Something else a moderator should see.'),
+  ];
+  String? _reason;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return LizSheet(
+      title: widget.what == null ? 'Report' : 'Report this ${widget.what}',
+      subtitle: 'A moderator will look at it. Choose the closest reason.',
+      actions: [
+        OutlinedButton(
+          style: LizSheetButtons.outlined,
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: LizSheetButtons.filled,
+          onPressed: _reason == null
+              ? null
+              : () => Navigator.of(context).pop(_reason),
+          child: const Text('Send report'),
+        ),
+      ],
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: p.surface,
+          shape: LizRadius.shape(
+            LizRadius.md,
+            side: BorderSide(color: p.hairline),
+          ),
+        ),
+        child: ClipRSuperellipse(
+          borderRadius: BorderRadius.circular(LizRadius.md),
+          child: RadioGroup<String>(
+            groupValue: _reason,
+            onChanged: (v) => setState(() => _reason = v),
+            child: Column(
+              children: [
+                for (var i = 0; i < _reasons.length; i++) ...[
+                  if (i > 0) Divider(height: 1, color: p.hairline),
+                  RadioListTile<String>(
+                    value: _reasons[i].$1,
+                    contentPadding: const EdgeInsets.fromLTRB(16, 2, 12, 2),
+                    controlAffinity: ListTileControlAffinity.trailing,
+                    title: Text(
+                      _reasons[i].$1,
+                      style: LizText.body.copyWith(color: p.textPrimary),
+                    ),
+                    subtitle: Text(
+                      _reasons[i].$2,
+                      style: LizText.footnote.copyWith(color: p.textSecondary),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class PostCard extends ConsumerWidget {

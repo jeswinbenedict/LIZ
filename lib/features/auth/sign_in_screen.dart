@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/auth_gate.dart' show safeReturnPath;
+import '../../app/auth_gate.dart'
+    show safeReturnPath, welcomePath, welcomePending;
 import 'auth_frame.dart';
 import 'sign_in_view.dart';
 
@@ -20,7 +21,20 @@ class SignInScreen extends StatelessWidget {
   /// Back to where they were going. The router would get there too once it
   /// sees the session; going now saves a frame of the form after success.
   void _done(BuildContext context) {
-    context.go(safeReturnPath(returnTo)?.toString() ?? '/');
+    final next = safeReturnPath(returnTo)?.toString();
+    // A new account opens on the welcome, carrying where it was going.
+    if (welcomePending.value) {
+      context.go(
+        next == null
+            ? welcomePath
+            : Uri(
+                path: welcomePath,
+                queryParameters: {'from': next},
+              ).toString(),
+      );
+      return;
+    }
+    context.go(next ?? '/');
   }
 
   @override

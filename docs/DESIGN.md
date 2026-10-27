@@ -267,6 +267,19 @@ coloured. Group titles are sentence-case labels.
 
 **Empty state.** An icon, a `title3`, one sentence, at most one action.
 
+**Sheets** (`liz_sheet.dart`). Every bottom sheet opens through
+`showLizSheet` — a drag handle, at most 560 wide and 90% high, above the
+keyboard — and is laid out by `LizSheet`: its title (`title2`) as a heading,
+one grey line, the body (scrolling if it must), and the actions in a row along
+the foot sharing the width, the way out outlined and the action filled
+(`LizSheetButtons`). Choices inside a sheet sit in one framed list. Used by
+the review and post composers, Report (pick a reason, then *Send report*),
+*Compare with…*, the maker badge and the interest picker.
+
+**Confirmation** (`showLizConfirm`). A title, one plain sentence of what will
+happen, *Cancel* outlined and the action filled — red only when it cannot be
+undone (*Delete account*).
+
 ---
 
 ## 8. Screens
@@ -288,6 +301,20 @@ coloured. Group titles are sentence-case labels.
   The step away from signing in has *← Back to sign in* above its title. A
   first visit opens on *Create account*, whose Terms and Privacy links are
   underlined in the sentence.
+- **Welcome.** Where a new account opens (`/welcome`, after *Create
+  account*; then on to the page it was going to). The wordmark and *Skip* in
+  a bar; a thin progress line in two segments, ink up to the current step;
+  the step's title as the page's heading ("Welcome to Liz, Ada"), one line,
+  and its choices — the categories as pills (`InterestPills`, shared with
+  the picker sheet in Settings and after a second save), then the two alerts
+  as switches (`LizGroupSwitch`, shared with Settings). *Back* and the
+  primary button sit in a bar along the foot.
+- **Not found.** The wordmark (a link home) in a bar; *Error 404* in grey,
+  *This page is not here* as the heading, the address that was asked for;
+  *Go to Discover* and *Search tools*; then *Or go to* as a short grouped
+  list.
+- **Starting.** The mark, and a short grey line moving under it, faded in
+  so a quick restore shows nothing.
 - **Privacy policy and Terms.** A document: the title as the page's heading
   with the date under it, *In short* in a framed panel, then sections between
   hairlines. Wide: an *On this page* rail that stays in view as the text
@@ -357,6 +384,15 @@ coloured. Group titles are sentence-case labels.
   and hold reason, *Publish* as the filled action of the bulk bar.
   *News* and *Moderation*: panels, with *Hide*, *Restore* and *Dismiss* as
   outlined buttons and *Hide post* the filled one.
+- **Alternatives.** "Alternatives to X" with how many were found under it
+  and *Compare* beside it; the tool it started from as a framed row that
+  leads back to it; then *Closest first* and Discover's cards. Nothing close:
+  a framed sentence and *Search the catalog*.
+- **Two-step verification** (before the admin console). The top bar, a
+  neutral shield tile, the title as the heading, one paragraph; when setting
+  up, *1 Scan this code* (the QR on white in a framed panel, with the key to
+  type in and copy) and *2 Enter the code it shows*; the code field, a
+  `LizNotice` for a problem, and *Verify* full width.
 - **Search.** The field is the page: large, under the top bar, with the
   count ("**2 tools** for “voice”") and the price filter on the line below.
   Before typing: popular searches as chips and a pointer to Ask Liz. Three

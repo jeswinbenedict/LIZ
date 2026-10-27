@@ -167,3 +167,65 @@ class LizGroupRow extends StatelessWidget {
     );
   }
 }
+
+/// A [LizGroup] row with a switch: the same icon tile and insets as
+/// [LizGroupRow], a title, an optional line, and the switch. Settings and
+/// onboarding both use it.
+class LizGroupSwitch extends StatelessWidget {
+  const LizGroupSwitch({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    // Its own transparent Material: the group behind it is a coloured box,
+    // which would otherwise hide the row's ink.
+    return Material(
+      type: MaterialType.transparency,
+      child: MergeSemantics(
+        child: SwitchListTile(
+          // The same icon tile and insets as LizGroupRow, so the hairlines
+          // between rows line up.
+          contentPadding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
+          horizontalTitleGap: 14,
+          secondary: Container(
+            width: 30,
+            height: 30,
+            decoration: ShapeDecoration(
+              color: p.surfaceHover,
+              shape: LizRadius.shape(
+                LizRadius.sm,
+                side: BorderSide(color: p.hairlineStrong),
+              ),
+            ),
+            child: Icon(icon, size: 17, color: p.textPrimary),
+          ),
+          title: Text(
+            title,
+            style: LizText.body.copyWith(color: p.textPrimary),
+          ),
+          subtitle: subtitle == null
+              ? null
+              : Text(
+                  subtitle!,
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
+                ),
+          value: value,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}

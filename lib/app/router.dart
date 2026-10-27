@@ -16,6 +16,7 @@ import '../features/tool_detail/alternatives_screen.dart';
 import '../features/discover/discover_screen.dart';
 import '../features/discover/search_screen.dart';
 import '../features/legal/legal_screen.dart';
+import '../features/onboarding/welcome_screen.dart';
 import '../shared/widgets/states.dart';
 import '../features/news/news_screen.dart';
 import '../features/profile/profile_screen.dart';
@@ -52,6 +53,7 @@ GoRouter buildRouter(AuthGate gate) {
         location: state.uri,
         restored: gate.restored,
         signedIn: gate.signedIn,
+        welcome: welcomePending.value,
       );
       if (elsewhere != null) return elsewhere;
       CrashReporter.currentRoute = state.uri.toString();
@@ -61,7 +63,7 @@ GoRouter buildRouter(AuthGate gate) {
     // A mistyped or stale link used to land on go_router's bare debug page:
     // unstyled text and nothing to do. This is a page of the app, with a way
     // back into it.
-    errorBuilder: (context, state) => const NotFoundScreen(),
+    errorBuilder: (context, state) => NotFoundScreen(path: state.uri.path),
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) =>
@@ -204,6 +206,13 @@ GoRouter buildRouter(AuthGate gate) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (c, s) => NoTransitionPage(
           child: SignInScreen(returnTo: s.uri.queryParameters['from']),
+        ),
+      ),
+      GoRoute(
+        path: welcomePath,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (c, s) => NoTransitionPage(
+          child: WelcomeScreen(returnTo: s.uri.queryParameters['from']),
         ),
       ),
       GoRoute(

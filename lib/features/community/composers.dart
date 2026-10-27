@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../core/storage/storage_service.dart';
+import '../../shared/widgets/liz_sheet.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../auth/guard.dart';
 import 'community_controller.dart';
@@ -33,18 +34,13 @@ Future<void> showReviewComposer(
   int initialRating = 0,
   String initialBody = '',
 }) async {
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-      child: _ReviewComposer(
-        toolId: toolId,
-        toolName: toolName,
-        initialRating: initialRating,
-        initialBody: initialBody,
-      ),
+  await showLizSheet<void>(
+    context,
+    builder: (ctx) => _ReviewComposer(
+      toolId: toolId,
+      toolName: toolName,
+      initialRating: initialRating,
+      initialBody: initialBody,
     ),
   );
 }
@@ -78,67 +74,92 @@ class _ReviewComposerState extends ConsumerState<_ReviewComposer> {
     super.dispose();
   }
 
+  Future<void> _post() async {
+    setState(() => _busy = true);
+    await runGuardedAction(
+      context,
+      ref: ref,
+      prompt: 'Sign in to leave a review.',
+      action: () => ref
+          .read(communityActionsProvider)
+          .upsertReview(
+            toolId: widget.toolId,
+            rating: _rating,
+            body: _body.text.trim(),
+          ),
+      onDone: () {
+        if (mounted) Navigator.of(context).pop();
+      },
+    );
+    if (mounted) setState(() => _busy = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(LizSpacing.lg),
+    final p = context.liz;
+    const words = ['Tap a star', 'Poor', 'Fair', 'Good', 'Very good', 'Great'];
+    return LizSheet(
+      title: widget.initialRating == 0
+          ? 'Review ${widget.toolName}'
+          : 'Edit your review',
+      subtitle:
+          'Your rating and a few words for the next person deciding. One '
+          'review per tool; you can change it later.',
+      actions: [
+        OutlinedButton(
+          style: LizSheetButtons.outlined,
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: LizSheetButtons.filled,
+          onPressed: _rating == 0 || _busy ? null : _post,
+          child: _busy
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Post review'),
+        ),
+      ],
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Rate ${widget.toolName}',
-            style: Theme.of(context).textTheme.titleLarge,
+            'Your rating',
+            style: LizText.subhead.copyWith(color: p.textSecondary),
           ),
-          const SizedBox(height: 12),
-          Center(
-            child: RatingInput(
-              value: _rating,
-              onChanged: (v) => setState(() => _rating = v),
-            ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Transform.translate(
+                offset: const Offset(-6, 0),
+                child: RatingInput(
+                  value: _rating,
+                  onChanged: (v) => setState(() => _rating = v),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                words[_rating.clamp(0, 5)],
+                style: LizText.callout.copyWith(
+                  color: _rating == 0 ? p.textSecondary : p.textPrimary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           TextField(
             controller: _body,
             minLines: 3,
             maxLines: 6,
             maxLength: 500,
+            textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(
-              hintText: 'Share what worked (or didn\'t)…',
-            ),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton(
-              onPressed: _rating == 0 || _busy
-                  ? null
-                  : () async {
-                      setState(() => _busy = true);
-                      await runGuardedAction(
-                        context,
-                        ref: ref,
-                        prompt: 'Sign in to leave a review.',
-                        action: () => ref
-                            .read(communityActionsProvider)
-                            .upsertReview(
-                              toolId: widget.toolId,
-                              rating: _rating,
-                              body: _body.text.trim(),
-                            ),
-                        onDone: () {
-                          if (context.mounted) Navigator.of(context).pop();
-                        },
-                      );
-                      if (mounted) setState(() => _busy = false);
-                    },
-              child: _busy
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Post review'),
+              labelText: 'Your review (optional)',
+              hintText: 'What worked, and what didn’t?',
+              alignLabelWithHint: true,
             ),
           ),
         ],
@@ -154,14 +175,9 @@ Future<void> showPostComposer(
   String? toolId,
   String? toolName,
 }) async {
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-      child: _PostComposer(toolId: toolId, toolName: toolName),
-    ),
+  await showLizSheet<void>(
+    context,
+    builder: (ctx) => _PostComposer(toolId: toolId, toolName: toolName),
   );
 }
 
@@ -207,129 +223,118 @@ class _PostComposerState extends ConsumerState<_PostComposer> {
     });
   }
 
+  Future<void> _post() async {
+    setState(() => _busy = true);
+    await runGuardedAction(
+      context,
+      ref: ref,
+      prompt: 'Sign in to post.',
+      action: () async {
+        String? imageUrl;
+        final bytes = _imageBytes;
+        if (bytes != null) {
+          imageUrl = await ref
+              .read(storageServiceProvider)
+              .uploadImage(
+                bucket: Buckets.postImages,
+                bytes: bytes,
+                ext: _imageExt,
+                contentType: _mimeFor(_imageExt),
+              );
+        }
+        await ref
+            .read(communityActionsProvider)
+            .createPost(
+              content: _content.text.trim(),
+              toolId: widget.toolId,
+              imageUrl: imageUrl,
+            );
+      },
+      onDone: () {
+        if (mounted) Navigator.of(context).pop();
+      },
+    );
+    if (mounted) setState(() => _busy = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.all(LizSpacing.lg),
+    final p = context.liz;
+    return LizSheet(
+      title: 'New post',
+      subtitle: widget.toolName != null
+          ? 'Linked to ${widget.toolName}. Everyone on Liz can read it.'
+          : 'A find, a question, a comparison. Everyone on Liz can read it.',
+      actions: [
+        OutlinedButton(
+          style: LizSheetButtons.outlined,
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: LizSheetButtons.filled,
+          onPressed: _content.text.trim().isEmpty || _busy ? null : _post,
+          child: _busy
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Post'),
+        ),
+      ],
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Share with the community',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          if (widget.toolName != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.link, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  'Linked to ${widget.toolName}',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 12),
           TextField(
             controller: _content,
             autofocus: true,
             minLines: 4,
             maxLines: 8,
             maxLength: 1000,
+            textCapitalization: TextCapitalization.sentences,
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
-              hintText: 'What did you discover? Share your experience…',
+              hintText: 'What did you discover?',
             ),
           ),
-          if (_imageBytes != null) ...[
-            const SizedBox(height: 10),
+          const SizedBox(height: 8),
+          if (_imageBytes != null)
             Stack(
               children: [
-                ClipRRect(
+                ClipRSuperellipse(
                   borderRadius: BorderRadius.circular(LizRadius.md),
                   child: Image.memory(
                     _imageBytes!,
-                    height: 150,
+                    height: 160,
                     width: double.infinity,
                     fit: BoxFit.cover,
                     semanticLabel: 'Selected image',
                   ),
                 ),
                 Positioned(
-                  top: 4,
-                  right: 4,
+                  top: 6,
+                  right: 6,
                   child: IconButton.filledTonal(
                     tooltip: 'Remove image',
-                    visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.close, size: 18),
                     onPressed: () => setState(() => _imageBytes = null),
                   ),
                 ),
               ],
-            ),
-          ],
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              IconButton(
-                tooltip: 'Add image',
-                onPressed: _busy ? null : _pickImage,
-                icon: Icon(
-                  Icons.image_outlined,
-                  color: scheme.onSurfaceVariant,
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: p.textSecondary,
                 ),
+                onPressed: _busy ? null : _pickImage,
+                icon: const Icon(Icons.image_outlined, size: 18),
+                label: const Text('Add an image'),
               ),
-              const Spacer(),
-              FilledButton(
-                onPressed: _content.text.trim().isEmpty || _busy
-                    ? null
-                    : () async {
-                        setState(() => _busy = true);
-                        await runGuardedAction(
-                          context,
-                          ref: ref,
-                          prompt: 'Sign in to post.',
-                          action: () async {
-                            String? imageUrl;
-                            final bytes = _imageBytes;
-                            if (bytes != null) {
-                              imageUrl = await ref
-                                  .read(storageServiceProvider)
-                                  .uploadImage(
-                                    bucket: Buckets.postImages,
-                                    bytes: bytes,
-                                    ext: _imageExt,
-                                    contentType: _mimeFor(_imageExt),
-                                  );
-                            }
-                            await ref
-                                .read(communityActionsProvider)
-                                .createPost(
-                                  content: _content.text.trim(),
-                                  toolId: widget.toolId,
-                                  imageUrl: imageUrl,
-                                );
-                          },
-                          onDone: () {
-                            if (context.mounted) Navigator.of(context).pop();
-                          },
-                        );
-                        if (mounted) setState(() => _busy = false);
-                      },
-                child: _busy
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Post'),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );

@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
 import '../../shared/widgets/grouped_list.dart';
+import '../../shared/widgets/liz_sheet.dart';
 import '../auth/auth_controller.dart';
 import 'data_export.dart';
 import 'preferences.dart';
@@ -83,7 +84,7 @@ class SettingsScreen extends ConsumerWidget {
                     'What Liz tells you about the tools you saved. Alerts '
                     'appear under the bell.',
                 children: [
-                  _SwitchRow(
+                  LizGroupSwitch(
                     icon: Icons.sell_outlined,
                     title: 'Price changes',
                     subtitle: 'A plan is added, removed or repriced.',
@@ -92,7 +93,7 @@ class SettingsScreen extends ConsumerWidget {
                         .read(preferencesProvider.notifier)
                         .setPricingAlerts(v),
                   ),
-                  _SwitchRow(
+                  LizGroupSwitch(
                     icon: Icons.trending_up,
                     title: 'Rising into the top ten',
                     subtitle: 'It breaks into this week\u2019s top movers.',
@@ -199,29 +200,16 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          'This permanently deletes your account, posts, and reviews. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await showLizConfirm(
+      context,
+      title: 'Delete your account?',
+      message:
+          'Your profile, saves, follows, reviews, posts and comments are '
+          'removed at once. This cannot be undone.',
+      confirmLabel: 'Delete account',
+      destructive: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     // The actual deletion is performed server-side (Edge Function) using the
     // service role; here we request it and sign out.
     try {
@@ -308,66 +296,6 @@ class _Section extends StatelessWidget {
                 group,
               ],
             ),
-    );
-  }
-}
-
-/// A grouped-list row with a switch, at the same height and spacing as
-/// LizGroupRow.
-class _SwitchRow extends StatelessWidget {
-  const _SwitchRow({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.liz;
-    // Its own transparent Material: the group behind it is a coloured box,
-    // which would otherwise hide the row's ink.
-    return Material(
-      type: MaterialType.transparency,
-      child: MergeSemantics(
-        child: SwitchListTile(
-          // The same icon tile and insets as LizGroupRow, so the hairlines
-          // between rows line up.
-          contentPadding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
-          horizontalTitleGap: 14,
-          secondary: Container(
-            width: 30,
-            height: 30,
-            decoration: ShapeDecoration(
-              color: p.surfaceHover,
-              shape: LizRadius.shape(
-                LizRadius.sm,
-                side: BorderSide(color: p.hairlineStrong),
-              ),
-            ),
-            child: Icon(icon, size: 17, color: p.textPrimary),
-          ),
-          title: Text(
-            title,
-            style: LizText.body.copyWith(color: p.textPrimary),
-          ),
-          subtitle: subtitle == null
-              ? null
-              : Text(
-                  subtitle!,
-                  style: LizText.footnote.copyWith(color: p.textSecondary),
-                ),
-          value: value,
-          onChanged: onChanged,
-        ),
-      ),
     );
   }
 }
