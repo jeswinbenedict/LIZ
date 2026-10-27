@@ -29,7 +29,10 @@ class MockStore {
   final List<Post> posts;
   final List<Review> reviews;
   final List<NewsItem> news;
-  final Map<String, List<Comment>> commentsByPost = {};
+  final Map<String, List<Comment>> commentsByPost = {
+    for (final MapEntry(:key, :value) in MockData.comments.entries)
+      key: [...value],
+  };
 
   final Set<String> bookmarks = {};
   final Set<String> userFollows = {}; // followed user ids

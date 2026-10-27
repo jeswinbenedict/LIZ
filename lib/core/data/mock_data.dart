@@ -1,4 +1,5 @@
 import '../../shared/models/category.dart';
+import '../../shared/models/comment.dart';
 import '../../shared/models/news_item.dart';
 import '../../shared/models/post.dart';
 import '../../shared/models/profile.dart';
@@ -882,7 +883,6 @@ class MockData {
     String? toolId,
     String? toolName,
     int likes = 0,
-    int comments = 0,
   }) => Post(
     id: id,
     userId: userId,
@@ -891,11 +891,141 @@ class MockData {
     content: content,
     imageUrl: null,
     likeCount: likes,
-    commentCount: comments,
+    // Counted from the demo comments, so a post never claims a thread that
+    // is not there when it is opened.
+    commentCount: comments[id]?.length ?? 0,
     status: 'active',
     createdAt: _ago(hours: hoursAgo),
     author: profiles.firstWhere((p) => p.id == userId),
   );
+
+  static Comment _comment(
+    String id,
+    String postId,
+    String userId,
+    String body,
+    int hoursAgo,
+  ) => Comment(
+    id: id,
+    postId: postId,
+    userId: userId,
+    body: body,
+    status: 'active',
+    createdAt: _ago(hours: hoursAgo),
+    author: profiles.firstWhere((p) => p.id == userId),
+  );
+
+  /// The demo threads, newest last as the post page lists them. Each post's
+  /// comment count is the length of its thread here.
+  static final Map<String, List<Comment>> comments = {
+    'p-1': [
+      _comment(
+        'c-1',
+        'p-1',
+        'u-dev',
+        'Six shots is impressive. Did you have to describe the character '
+            'the same way each time?',
+        4,
+      ),
+      _comment(
+        'c-2',
+        'p-1',
+        'u-maya',
+        'Same reference image and a short description. It held the face and '
+            'the jacket, which nothing else has.',
+        3,
+      ),
+      _comment(
+        'c-3',
+        'p-1',
+        'u-lena',
+        'Trying it for a client storyboard this week. Will report back.',
+        1,
+      ),
+    ],
+    'p-2': [
+      _comment(
+        'c-4',
+        'p-2',
+        'u-lena',
+        'Same here. It catches the naming and the missing tests, so I get '
+            'to read for design.',
+        18,
+      ),
+      _comment(
+        'c-5',
+        'p-2',
+        'u-maya',
+        'Does it understand the codebase, or only the diff?',
+        12,
+      ),
+      _comment(
+        'c-6',
+        'p-2',
+        'u-dev',
+        'Mostly the diff, plus the files it touches. Good enough for a first '
+            'pass.',
+        10,
+      ),
+    ],
+    'p-3': [
+      _comment(
+        'c-7',
+        'p-3',
+        'u-dev',
+        'Cutting by deleting words still feels like magic.',
+        26,
+      ),
+      _comment(
+        'c-8',
+        'p-3',
+        'u-maya',
+        'For interviews it halved my edit time.',
+        22,
+      ),
+    ],
+    'p-4': [
+      _comment(
+        'c-9',
+        'p-4',
+        'u-lena',
+        'Offline is the whole point for legal recordings. Thanks for this.',
+        40,
+      ),
+      _comment(
+        'c-10',
+        'p-4',
+        'u-dev',
+        'How is the accuracy against the cloud ones?',
+        30,
+      ),
+    ],
+    'p-5': [
+      _comment(
+        'c-11',
+        'p-5',
+        'u-maya',
+        'Did the Figma export keep auto-layout?',
+        6,
+      ),
+      _comment(
+        'c-12',
+        'p-5',
+        'u-lena',
+        'It did, for the most part. Spacing needed a pass.',
+        5,
+      ),
+    ],
+    'p-6': [
+      _comment(
+        'c-13',
+        'p-6',
+        'u-maya',
+        'The audit trail is what sold my finance team.',
+        60,
+      ),
+    ],
+  };
 
   static final List<Post> posts = [
     _post(
@@ -906,7 +1036,6 @@ class MockData {
       toolId: 't-21',
       toolName: 'Lensflow',
       likes: 58,
-      comments: 12,
     ),
     _post(
       'p-2',
@@ -916,7 +1045,6 @@ class MockData {
       toolId: 't-6',
       toolName: 'Reviewer',
       likes: 44,
-      comments: 9,
     ),
     _post(
       'p-3',
@@ -926,7 +1054,6 @@ class MockData {
       toolId: 't-2',
       toolName: 'Framecut',
       likes: 31,
-      comments: 7,
     ),
     _post(
       'p-4',
@@ -936,7 +1063,6 @@ class MockData {
       toolId: 't-16',
       toolName: 'Transcribe Go',
       likes: 26,
-      comments: 4,
     ),
     _post(
       'p-5',
@@ -946,7 +1072,6 @@ class MockData {
       toolId: 't-5',
       toolName: 'Layoutly',
       likes: 22,
-      comments: 3,
     ),
     _post(
       'p-6',
@@ -956,7 +1081,6 @@ class MockData {
       toolId: 't-20',
       toolName: 'Datasketch',
       likes: 18,
-      comments: 2,
     ),
   ];
 
