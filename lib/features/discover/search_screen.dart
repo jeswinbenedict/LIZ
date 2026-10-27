@@ -14,6 +14,7 @@ import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/pricing_filter.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_card.dart';
+import '../../shared/widgets/top_bar.dart';
 
 /// Search across tool name, tagline, description, tags, and category.
 /// A search is the words and, optionally, a price. Both are part of the key,
@@ -74,6 +75,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     });
   }
 
+  /// Set the words from outside the field (a suggestion), and search now.
+  void _search(String value) {
+    _debounce?.cancel();
+    _controller.text = value;
+    _controller.selection = TextSelection.collapsed(offset: value.length);
+    setState(() => _query = value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final key = (query: _query, pricing: _pricing);
@@ -81,52 +90,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final columns = gridColumnsFor(width);
     final gutter = LizSpacing.gutter(width);
+    final phone = context.isPhone;
     final p = context.liz;
-    final count = _query.trim().length < 2 ? null : results.value?.length;
+    final searching = _query.trim().length >= 2;
+    final count = searching ? results.value?.length : null;
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        toolbarHeight: 64,
-        // Back always works: to the page before, or to Discover when search
-        // was opened by its address.
-        leading: BackButton(
-          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
-        ),
-        // The field is the title: this screen exists to be typed into. Its
-        // heading is for screen readers only — a visible "Search" above a
-        // search box would only repeat it.
-        title: Padding(
-          padding: EdgeInsets.only(right: gutter),
-          child: MaxWidth(
-            maxWidth: 720,
-            child: TextField(
-              controller: _controller,
-              autofocus: true,
-              textInputAction: TextInputAction.search,
-              onChanged: _onChanged,
-              style: LizText.body.copyWith(color: p.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Search tools, tags, categories…',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _controller.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Clear search',
-                        icon: const Icon(Icons.cancel, size: 18),
-                        onPressed: () {
-                          _controller.clear();
-                          setState(() => _query = '');
-                        },
-                      ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      // Back always works: to the page before, or to Discover when search
+      // was opened by its address. The page's heading is the field's.
+      appBar: const LizTopBar(title: 'Search', titleIsHeading: false),
       body: MaxWidth(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Semantics(
               container: true,
@@ -135,26 +110,85 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               label: 'Search tools',
               child: const SizedBox(width: 1, height: 1),
             ),
+            // The field is the page: this screen exists to be typed into.
             Padding(
-              padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 0),
+              padding: EdgeInsets.fromLTRB(gutter, phone ? 8 : 28, gutter, 0),
+              child: TextField(
+                controller: _controller,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onChanged: _onChanged,
+                style: (phone ? LizText.body : LizText.title3).copyWith(
+                  color: p.textPrimary,
+                  fontWeight: FontWeight.w400,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search tools, tags, categories…',
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: phone ? 14 : 18,
+                  ),
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(left: 6),
+                    child: Icon(Icons.search, size: 22),
+                  ),
+                  suffixIcon: _controller.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Clear search',
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () => _search(''),
+                        ),
+                ),
+              ),
+            ),
+            // What came back, and the one filter — on a line of their own.
+            Padding(
+              padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 12),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      count == null
-                          ? ''
-                          : count == 1
-                          ? '1 tool'
-                          : '$count tools',
-                      style: LizText.subhead.copyWith(color: p.textSecondary),
+                    child: count == null
+                        ? Text(
+                            searching ? 'Searching…' : 'Suggestions',
+                            style: LizText.subhead.copyWith(
+                              color: p.textSecondary,
+                            ),
+                          )
+                        : Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: count == 1 ? '1 tool' : '$count tools',
+                                  style: LizText.subhead.copyWith(
+                                    color: p.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontFeatures: LizText.tabular,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' for \u201c${_query.trim()}\u201d',
+                                  style: LizText.subhead.copyWith(
+                                    color: p.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                  ),
+                  if (searching)
+                    PricingFilter(
+                      selected: _pricing,
+                      onChanged: (value) => setState(() => _pricing = value),
                     ),
-                  ),
-                  PricingFilter(
-                    selected: _pricing,
-                    onChanged: (value) => setState(() => _pricing = value),
-                  ),
                 ],
               ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: gutter),
+              child: Divider(height: 1, color: p.hairline),
             ),
             Expanded(child: _results(results, columns, gutter)),
           ],
@@ -174,10 +208,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final p = context.liz;
     final q = _query.trim();
     return Padding(
-      padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 0),
+      padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 0),
       child: Material(
-        color: p.accentSoft,
-        shape: LizRadius.shape(LizRadius.md),
+        color: p.surface,
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairline),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => context.go(
@@ -187,20 +224,33 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                LizMark.icon(size: 20, color: p.textPrimary),
+                const LizMark(size: 20),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    'Ask Liz: \u201c$q\u201d',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LizText.callout.copyWith(
-                      color: p.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ask Liz: \u201c$q\u201d',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LizText.callout.copyWith(
+                          color: p.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Answers by what a tool does, not only its name.',
+                        style: LizText.footnote.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Icon(Icons.arrow_forward, size: 18, color: p.textPrimary),
+                const SizedBox(width: 12),
+                Icon(Icons.arrow_forward, size: 18, color: p.textSecondary),
               ],
             ),
           ),
@@ -229,11 +279,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     SearchKey key,
   ) {
     return _query.trim().length < 2
-        ? const EmptyView(
-            icon: Icons.search,
-            title: 'Search Liz',
-            message: 'Find AI tools by name, tag, or what they do.',
-          )
+        ? _Suggestions(gutter: gutter, onPick: _search)
         : results.when(
             loading: () => const ToolGridSkeleton(),
             error: (_, _) => ErrorView(
@@ -246,11 +292,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     // With a price chosen, the likelier culprit is the
                     // filter, not the words.
                     message: _pricing == null
-                        ? 'Try a broader term.'
+                        ? 'Try a broader term, or describe the job to Ask '
+                              'Liz.'
                         : 'Try a broader term, or any price.',
+                    action: _pricing == null
+                        ? OutlinedButton(
+                            onPressed: () => context.go(
+                              Uri(
+                                path: '/ask',
+                                queryParameters: {'q': _query.trim()},
+                              ).toString(),
+                            ),
+                            child: const Text('Ask Liz'),
+                          )
+                        : OutlinedButton(
+                            onPressed: () => setState(() => _pricing = null),
+                            child: const Text('Any price'),
+                          ),
                   )
                 : GridView.builder(
-                    padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 32),
+                    padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 32),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
                       mainAxisSpacing: 16,
@@ -261,5 +322,102 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     itemBuilder: (context, i) => ToolCard(tool: tools[i]),
                   ),
           );
+  }
+}
+
+/// Before anything is typed: what people look for, one tap away, and a
+/// pointer to Ask Liz for a job rather than a name. An empty page with a
+/// magnifying glass in the middle told nobody anything.
+class _Suggestions extends StatelessWidget {
+  const _Suggestions({required this.gutter, required this.onPick});
+  final double gutter;
+  final ValueChanged<String> onPick;
+
+  static const _popular = [
+    'video editing',
+    'transcription',
+    'image generation',
+    'coding assistant',
+    'voice',
+    'writing',
+    'open source',
+    'meeting notes',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return ListView(
+      padding: EdgeInsets.fromLTRB(gutter, 20, gutter, 32),
+      children: [
+        Text(
+          'Popular searches',
+          style: LizText.label.copyWith(color: p.textSecondary),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final term in _popular)
+              ActionChip(
+                avatar: Icon(Icons.search, size: 16, color: p.textSecondary),
+                label: Text(term),
+                onPressed: () => onPick(term),
+              ),
+          ],
+        ),
+        const SizedBox(height: 32),
+        Text(
+          'Know the job, not the name?',
+          style: LizText.label.copyWith(color: p.textSecondary),
+        ),
+        const SizedBox(height: 12),
+        Material(
+          color: p.surface,
+          shape: LizRadius.shape(
+            LizRadius.md,
+            side: BorderSide(color: p.hairline),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => context.go('/ask'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const LizMark(size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Ask Liz',
+                          style: LizText.callout.copyWith(
+                            color: p.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Describe what you need — \u201cturn a podcast into '
+                          'clips\u201d — and get tools that do it.',
+                          style: LizText.footnote.copyWith(
+                            color: p.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(Icons.arrow_forward, size: 18, color: p.textSecondary),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

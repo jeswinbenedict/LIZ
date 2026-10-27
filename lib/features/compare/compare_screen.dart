@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/config/env.dart';
 import '../../core/providers.dart';
@@ -37,27 +38,11 @@ class CompareScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(_compareProvider(toolIds.join(',')));
     return Scaffold(
-      appBar: LizTopBar(
+      appBar: const LizTopBar(
         title: 'Compare',
         section: ('Saved', '/saved'),
-        actions: [
-          // The address already holds the comparison (/compare?ids=…), so a
-          // copied link opens the same table for whoever receives it.
-          IconButton(
-            tooltip: 'Copy link to this comparison',
-            icon: const Icon(Icons.link),
-            onPressed: () {
-              final link =
-                  Env.permalink('/compare?ids=${toolIds.join(',')}') ?? '';
-              if (link.isEmpty) return;
-              Clipboard.setData(ClipboardData(text: link));
-              Analytics.track('share', props: {'what': 'compare'});
-              ScaffoldMessenger.of(context)
-                ..clearSnackBars()
-                ..showSnackBar(const SnackBar(content: Text('Link copied')));
-            },
-          ),
-        ],
+        // The page's heading is above the table.
+        titleIsHeading: false,
         // Comparisons start from Saved; a shared one opened by its address
         // goes back there too.
         fallback: '/saved',
@@ -81,7 +66,24 @@ class CompareScreen extends ConsumerWidget {
                           'Saved list.'
                     : 'Select tools from your Saved list.',
               )
-            : _CompareTable(tools: tools),
+            : _CompareTable(
+                tools: tools,
+                // The address already holds the comparison
+                // (/compare?ids=…), so a copied link opens the same table
+                // for whoever receives it.
+                onCopyLink: () {
+                  final link =
+                      Env.permalink('/compare?ids=${toolIds.join(',')}') ?? '';
+                  if (link.isEmpty) return;
+                  Clipboard.setData(ClipboardData(text: link));
+                  Analytics.track('share', props: {'what': 'compare'});
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(
+                      const SnackBar(content: Text('Link copied')),
+                    );
+                },
+              ),
       ),
     );
   }
@@ -92,11 +94,13 @@ class CompareScreen extends ConsumerWidget {
 /// the tool columns scroll beside them — the old table scrolled the labels
 /// away with everything else.
 class _CompareTable extends StatelessWidget {
-  const _CompareTable({required this.tools});
+  const _CompareTable({required this.tools, required this.onCopyLink});
   final List<Tool> tools;
+  final VoidCallback onCopyLink;
 
-  static const _labelWidth = 112.0;
+  static const _labelWidth = 132.0;
   static const _minColumn = 200.0;
+  static const _maxColumn = 300.0;
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +139,7 @@ class _CompareTable extends StatelessWidget {
     );
 
     final rows = <_Row>[
-      _Row('Pricing', 52, (t) => PricingBadge(t.pricingType)),
+      _Row('Pricing', 52, (t) => PricingLabel(t.pricingType)),
       _Row(
         'Price',
         52,
@@ -233,7 +237,7 @@ class _CompareTable extends StatelessWidget {
 
     Widget cell(double height, Widget child, {bool first = false}) => Container(
       height: height * scale,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: p.hairline)),
@@ -251,10 +255,7 @@ class _CompareTable extends StatelessWidget {
               row.height,
               Text(
                 row.label,
-                style: LizText.subhead.copyWith(
-                  color: p.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: LizText.subhead.copyWith(color: p.textSecondary),
               ),
             ),
         ],
@@ -268,11 +269,11 @@ class _CompareTable extends StatelessWidget {
           SizedBox(
             height: headerHeight * scale,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ToolLogo(tool: t, size: 52),
+                  ToolLogo(tool: t, size: 44),
                   const SizedBox(height: 10),
                   Text(
                     t.name,
@@ -292,12 +293,9 @@ class _CompareTable extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Transform.translate(
-                    offset: const Offset(-12, 0),
-                    child: TextButton(
-                      onPressed: () => context.push(toolPath(t)),
-                      child: const Text('View tool'),
-                    ),
+                  OutlinedButton(
+                    onPressed: () => context.push(toolPath(t)),
+                    child: const Text('View tool'),
                   ),
                 ],
               ),
@@ -308,37 +306,103 @@ class _CompareTable extends StatelessWidget {
       ),
     );
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 40),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final room = constraints.maxWidth - _labelWidth;
-          final fits = room / tools.length >= _minColumn;
-          if (fits) {
-            final width = (room / tools.length).clamp(_minColumn, 300.0);
-            return Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [labels, for (final t in tools) column(t, width)],
-              ),
-            );
-          }
+    final names = tools.map((t) => t.name).toList();
+    final subtitle = names.length == 2
+        ? '${names[0]} and ${names[1]}, side by side.'
+        : '${names.sublist(0, names.length - 1).join(', ')} and '
+              '${names.last}, side by side.';
+    final phone = context.isPhone;
+
+    final table = LayoutBuilder(
+      builder: (context, constraints) {
+        final room = constraints.maxWidth - _labelWidth;
+        final fits = room / tools.length >= _minColumn;
+        if (fits) {
+          final width = room / tools.length;
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
+            children: [labels, for (final t in tools) column(t, width)],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            labels,
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [for (final t in tools) column(t, _minColumn)],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return SingleChildScrollView(
+      child: MaxWidth(
+        // As wide as the columns need, so the title lines up with the table.
+        maxWidth: _labelWidth + tools.length * _maxColumn + gutter * 2,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(gutter, phone ? 8 : 36, gutter, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              labels,
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [for (final t in tools) column(t, _minColumn)],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Semantics(
+                          container: true,
+                          header: true,
+                          headingLevel: 1,
+                          child: Text(
+                            'Compare',
+                            style: (phone ? LizText.title1 : LizText.largeTitle)
+                                .copyWith(color: p.textPrimary),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          subtitle,
+                          style: LizText.body.copyWith(color: p.textSecondary),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 16),
+                  Tooltip(
+                    message: 'Copy link to this comparison',
+                    child: OutlinedButton.icon(
+                      onPressed: onCopyLink,
+                      icon: const Icon(Icons.link, size: 18),
+                      label: const Text('Copy link'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: p.surface,
+                  shape: LizRadius.shape(
+                    LizRadius.lg,
+                    side: BorderSide(color: p.hairline),
+                  ),
+                ),
+                child: ClipRSuperellipse(
+                  borderRadius: BorderRadius.circular(LizRadius.lg),
+                  child: table,
                 ),
               ),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }
