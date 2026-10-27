@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -67,6 +69,13 @@ void main() {
 
     final share = tester.getSemantics(find.byTooltip('Share'));
     expect(share.label, isNot(contains(_item.title)));
+
+    // The quick take's expanded state once rose to the story's own node and
+    // made the whole card a button, read out by its contents — or, scrolled
+    // half out of view, as a button with no name at all.
+    expect(quickTake.flagsCollection.isExpanded, isNot(Tristate.none));
+    expect(link.parent?.flagsCollection.isButton ?? false, isFalse);
+    expect(link.parent?.parent?.flagsCollection.isButton ?? false, isFalse);
     handle.dispose();
   });
 }

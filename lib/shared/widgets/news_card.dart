@@ -207,27 +207,31 @@ class _QuickTakeState extends State<_QuickTake> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Semantics(
-          button: true,
-          expanded: _open,
-          child: TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: p.textSecondary,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: const Size(48, 40),
-            ),
-            onPressed: () => setState(() => _open = !_open),
-            icon: const LizMark.icon(size: 16),
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Quick take'),
-                AnimatedRotation(
-                  turns: _open ? 0.5 : 0,
-                  duration: duration,
-                  child: const Icon(Icons.expand_more, size: 18),
-                ),
-              ],
+        // Merged into the button's own node. On their own, these flags rose
+        // to the story's node and made the whole card read as a button.
+        MergeSemantics(
+          child: Semantics(
+            button: true,
+            expanded: _open,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: p.textSecondary,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(48, 40),
+              ),
+              onPressed: () => setState(() => _open = !_open),
+              icon: const LizMark.icon(size: 16),
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Quick take'),
+                  AnimatedRotation(
+                    turns: _open ? 0.5 : 0,
+                    duration: duration,
+                    child: const Icon(Icons.expand_more, size: 18),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
