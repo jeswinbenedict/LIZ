@@ -6,6 +6,7 @@ import '../../core/providers.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
+import 'admin_widgets.dart';
 
 final moderationReportsProvider = FutureProvider.autoDispose<List<ReportEntry>>(
   (ref) => ref.watch(adminRepositoryProvider).openReports(),
@@ -31,86 +32,51 @@ class ModerationTab extends ConsumerWidget {
     final reports = ref.watch(moderationReportsProvider);
     final hidden = ref.watch(hiddenContentProvider);
 
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
     return RefreshIndicator(
       onRefresh: () async => ref
         ..invalidate(moderationReportsProvider)
         ..invalidate(hiddenContentProvider),
       child: ListView(
-        padding: const EdgeInsets.all(LizSpacing.md),
+        padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 48),
         children: [
-          const _Heading(
-            'Reported',
-            'What readers flagged. Hiding takes it off the page and closes '
+          AdminSection(
+            top: 24,
+            title: 'Reported',
+            description:
+                'What readers flagged. Hiding takes it off the page and closes '
                 'the report; dismissing leaves it up.',
-          ),
-          reports.when(
-            loading: () => const LoadingView(),
-            error: (_, _) => ErrorView(
-              onRetry: () => ref.invalidate(moderationReportsProvider),
+            child: reports.when(
+              loading: () => const LoadingView(),
+              error: (_, _) => ErrorView(
+                onRetry: () => ref.invalidate(moderationReportsProvider),
+              ),
+              data: (list) => AdminPanel(
+                children: list.isEmpty
+                    ? const [AdminEmpty('Nothing reported.')]
+                    : [for (final r in list) _ReportRow(report: r)],
+              ),
             ),
-            data: (list) => list.isEmpty
-                ? const _Quiet('Nothing reported.')
-                : Column(
-                    children: [for (final r in list) _ReportRow(report: r)],
-                  ),
           ),
-          const SizedBox(height: 28),
-          const _Heading(
-            'Hidden',
-            'Off the page right now, by a moderator or because three '
+          AdminSection(
+            title: 'Hidden',
+            description:
+                'Off the page right now, by a moderator or because three '
                 'established accounts reported it. Restore anything hidden '
                 'by mistake.',
-          ),
-          hidden.when(
-            loading: () => const LoadingView(),
-            error: (_, _) =>
-                ErrorView(onRetry: () => ref.invalidate(hiddenContentProvider)),
-            data: (list) => list.isEmpty
-                ? const _Quiet('Nothing hidden.')
-                : Column(children: [for (final h in list) _HiddenRow(item: h)]),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Heading extends StatelessWidget {
-  const _Heading(this.title, this.detail);
-  final String title;
-  final String detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(
-            detail,
-            style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant),
+            child: hidden.when(
+              loading: () => const LoadingView(),
+              error: (_, _) => ErrorView(
+                onRetry: () => ref.invalidate(hiddenContentProvider),
+              ),
+              data: (list) => AdminPanel(
+                children: list.isEmpty
+                    ? const [AdminEmpty('Nothing hidden.')]
+                    : [for (final h in list) _HiddenRow(item: h)],
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Quiet extends StatelessWidget {
-  const _Quiet(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(
-        text,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -159,72 +125,69 @@ class _ReportRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final gone = report.preview.isEmpty;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.flag_outlined, size: 18, color: scheme.error),
-                const SizedBox(width: 6),
-                Text(
-                  _label(report.targetType),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.flag_outlined, size: 16, color: LizColors.warn),
+              const SizedBox(width: 8),
+              Text(
+                _label(report.targetType),
+                style: LizText.callout.copyWith(
+                  color: p.textPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${report.reason.isEmpty ? 'No reason given' : report.reason}'
-                    ' · ${timeAgo(report.createdAt)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // What was reported, so the decision can be made here rather than
-            // after a trip to the database.
-            Text(
-              gone ? 'Already deleted by its author.' : report.preview,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontStyle: gone ? FontStyle.italic : null,
-                color: gone ? scheme.onSurfaceVariant : null,
               ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => _dismiss(ref),
-                  child: const Text('Dismiss'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${report.reason.isEmpty ? 'No reason given' : report.reason}'
+                  ' · ${timeAgo(report.createdAt)} ago',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
                 ),
-                const SizedBox(width: 4),
-                // Nothing left to hide once the author deleted it.
-                if (!gone)
-                  FilledButton.tonal(
-                    onPressed: () => _hide(context, ref),
-                    child: Text(
-                      'Hide ${_label(report.targetType).toLowerCase()}',
-                    ),
-                  ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // What was reported, so the decision can be made here rather than
+          // after a trip to the database.
+          Text(
+            gone ? 'Already deleted by its author.' : report.preview,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: LizText.callout.copyWith(
+              color: gone ? p.textSecondary : p.textPrimary,
+              fontStyle: gone ? FontStyle.italic : null,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: () => _dismiss(ref),
+                child: const Text('Dismiss'),
+              ),
+              const SizedBox(width: 8),
+              // Nothing left to hide once the author deleted it.
+              if (!gone)
+                FilledButton(
+                  onPressed: () => _hide(context, ref),
+                  child: Text(
+                    'Hide ${_label(report.targetType).toLowerCase()}',
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -236,30 +199,46 @@ class _HiddenRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        Icons.visibility_off_outlined,
-        color: scheme.onSurfaceVariant,
-      ),
-      title: Text(
-        item.preview.isEmpty ? '(no text)' : item.preview,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        '${_label(item.targetType)} · ${timeAgo(item.createdAt)}',
-        style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-      ),
-      trailing: TextButton(
-        onPressed: () async {
-          await ref
-              .read(adminRepositoryProvider)
-              .setContentHidden(item.targetType, item.targetId, hidden: false);
-          ref.invalidate(hiddenContentProvider);
-        },
-        child: const Text('Restore'),
+    final p = context.liz;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Row(
+        children: [
+          Icon(Icons.visibility_off_outlined, size: 18, color: p.textSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.preview.isEmpty ? '(no text)' : item.preview,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LizText.callout.copyWith(color: p.textPrimary),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_label(item.targetType)} · ${timeAgo(item.createdAt)} ago',
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          OutlinedButton(
+            onPressed: () async {
+              await ref
+                  .read(adminRepositoryProvider)
+                  .setContentHidden(
+                    item.targetType,
+                    item.targetId,
+                    hidden: false,
+                  );
+              ref.invalidate(hiddenContentProvider);
+            },
+            child: const Text('Restore'),
+          ),
+        ],
       ),
     );
   }

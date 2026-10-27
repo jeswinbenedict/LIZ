@@ -6,7 +6,9 @@ import '../../core/providers.dart';
 import '../../shared/models/news_item.dart';
 import '../../shared/models/tool.dart' show PublishStatus;
 import '../../shared/widgets/states.dart';
+import '../../shared/widgets/news_card.dart' show newsSourceLabel;
 import '../../shared/widgets/time_ago.dart';
+import 'admin_widgets.dart';
 
 final adminNewsProvider = FutureProvider.autoDispose<List<NewsItem>>(
   (ref) => ref.watch(adminRepositoryProvider).allNews(),
@@ -38,11 +40,27 @@ class NewsTab extends ConsumerWidget {
             )
           : RefreshIndicator(
               onRefresh: () async => ref.invalidate(adminNewsProvider),
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: items.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, i) => _ArticleRow(item: items[i]),
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  LizSpacing.gutter(MediaQuery.sizeOf(context).width),
+                  0,
+                  LizSpacing.gutter(MediaQuery.sizeOf(context).width),
+                  48,
+                ),
+                children: [
+                  AdminSection(
+                    top: 24,
+                    title: 'Articles',
+                    description:
+                        '${items.length} newest first. Hiding takes one off '
+                        'the news feed; it can be restored.',
+                    child: AdminPanel(
+                      children: [
+                        for (final item in items) _ArticleRow(item: item),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
     );
@@ -86,34 +104,65 @@ class _ArticleRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final hidden = item.status == PublishStatus.hidden;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: LizSpacing.md),
-      title: Text(
-        item.title,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          decoration: hidden ? TextDecoration.lineThrough : null,
-          color: hidden ? scheme.onSurfaceVariant : null,
-        ),
-      ),
-      subtitle: Text(
-        '${item.source ?? 'unknown source'} · ${timeAgo(item.publishedAt)}'
-        '${hidden ? ' · hidden' : ''}',
-        style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-      ),
-      trailing: hidden
-          ? TextButton(
-              onPressed: () => _set(context, ref, PublishStatus.published),
-              child: const Text('Restore'),
-            )
-          : TextButton(
-              onPressed: () => _set(context, ref, PublishStatus.hidden),
-              child: const Text('Hide'),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LizText.callout.copyWith(
+                    color: hidden ? p.textSecondary : p.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    decoration: hidden ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${newsSourceLabel(item.source)} · '
+                        '${timeAgo(item.publishedAt)} ago',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LizText.footnote.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                    ),
+                    if (hidden) ...[
+                      const SizedBox(width: 10),
+                      const AdminStatusLabel(
+                        AdminStatus.neutral,
+                        label: 'Hidden',
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ),
+          ),
+          const SizedBox(width: 12),
+          hidden
+              ? OutlinedButton(
+                  onPressed: () => _set(context, ref, PublishStatus.published),
+                  child: const Text('Restore'),
+                )
+              : OutlinedButton(
+                  onPressed: () => _set(context, ref, PublishStatus.hidden),
+                  child: const Text('Hide'),
+                ),
+        ],
+      ),
     );
   }
 }

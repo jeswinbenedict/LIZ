@@ -35,8 +35,8 @@ void main() {
     testWidgets('shows each signal with its measurement', (tester) async {
       await _pump(tester);
 
-      expect(find.textContaining('catalog freshness'), findsOneWidget);
-      expect(find.textContaining('ai summary coverage'), findsOneWidget);
+      expect(find.textContaining('Catalog freshness'), findsOneWidget);
+      expect(find.textContaining('AI summary coverage'), findsOneWidget);
       // Percentages read as whole numbers when they are whole.
       expect(find.text('71'), findsOneWidget);
     });
@@ -55,6 +55,8 @@ void main() {
     testWidgets('says so plainly when there are no crashes', (tester) async {
       await _pump(tester);
 
+      // Below the signal tiles: scroll to it, as an admin would.
+      await tester.scrollUntilVisible(find.text('Nothing reported.'), 200);
       expect(find.text('Nothing reported.'), findsOneWidget);
     });
   });

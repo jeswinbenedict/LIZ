@@ -151,11 +151,18 @@ class PostCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final author = post.author;
-    return Card(
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairline),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(LizSpacing.md),
+        padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -170,13 +177,15 @@ class PostCard extends ConsumerWidget {
                       children: [
                         Text(
                           author?.displayName ?? 'Someone',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: LizText.callout.copyWith(
+                            color: p.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         Text(
                           '@${author?.username ?? 'user'} · ${timeAgo(post.createdAt)}',
-                          style: TextStyle(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 12.5,
+                          style: LizText.footnote.copyWith(
+                            color: p.textSecondary,
                           ),
                         ),
                       ],
@@ -195,10 +204,16 @@ class PostCard extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: () => context.push('/post/${post.id}'),
-              child: Text(post.content, style: const TextStyle(height: 1.35)),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: InkWell(
+                onTap: () => context.push('/post/${post.id}'),
+                child: Text(
+                  post.content,
+                  style: LizText.body.copyWith(color: p.textPrimary),
+                ),
+              ),
             ),
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -235,11 +250,14 @@ class PostCard extends ConsumerWidget {
                   icon: Icon(
                     Icons.mode_comment_outlined,
                     size: 18,
-                    color: scheme.onSurfaceVariant,
+                    color: p.textSecondary,
                   ),
                   label: Text(
                     compactCount(post.commentCount),
-                    style: TextStyle(color: scheme.onSurfaceVariant),
+                    style: LizText.footnote.copyWith(
+                      color: p.textSecondary,
+                      fontFeatures: LizText.tabular,
+                    ),
                   ),
                   style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
                 ),

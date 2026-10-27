@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../core/repository/repositories.dart';
+import '../../shared/widgets/equal_height_grid.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
+import 'admin_widgets.dart';
 
 final healthProvider = FutureProvider.autoDispose<List<HealthSignal>>(
   (ref) => ref.watch(adminRepositoryProvider).health(),
@@ -36,6 +38,7 @@ class HealthTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final health = ref.watch(healthProvider);
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -46,7 +49,7 @@ class HealthTab extends ConsumerWidget {
           ..invalidate(recentErrorsProvider);
       },
       child: ListView(
-        padding: const EdgeInsets.all(LizSpacing.md),
+        padding: EdgeInsets.fromLTRB(gutter, 24, gutter, 48),
         children: [
           health.when(
             loading: () => const LoadingView(),
@@ -55,19 +58,35 @@ class HealthTab extends ConsumerWidget {
               onRetry: () => ref.invalidate(healthProvider),
             ),
             data: (signals) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _Verdict(signals: signals),
-                const SizedBox(height: 12),
-                for (final s in signals) _SignalTile(signal: s),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, box) => EqualHeightGrid(
+                    columns: box.maxWidth >= 900
+                        ? 4
+                        : box.maxWidth >= 480
+                        ? 2
+                        : 1,
+                    children: [
+                      for (final s in signals)
+                        AdminStat(
+                          label: _display(s.label),
+                          value: s.value == s.value.roundToDouble()
+                              ? s.value.toStringAsFixed(0)
+                              : s.value.toStringAsFixed(1),
+                          detail: s.detail,
+                          status: adminStatusFrom(s.status),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
           const _JobRuns(),
-          const SizedBox(height: 24),
           const _RecentErrors(),
-          const SizedBox(height: 24),
           const _Usage(),
         ],
       ),
@@ -75,17 +94,10 @@ class HealthTab extends ConsumerWidget {
   }
 }
 
-Color _colorFor(String status, ColorScheme scheme) => switch (status) {
-  'fail' => scheme.error,
-  'warn' => LizColors.rising,
-  _ => LizColors.positive,
-};
-
-IconData _iconFor(String status) => switch (status) {
-  'fail' => Icons.error_outline,
-  'warn' => Icons.warning_amber_outlined,
-  _ => Icons.check_circle_outline,
-};
+/// "ai summary coverage %" → "AI summary coverage %".
+String _display(String label) => sentenceCase(
+  label,
+).replaceAll(RegExp(r'\bai\b', caseSensitive: false), 'AI');
 
 /// One line at the top saying whether anything needs doing, so the panel can
 /// be read at a glance rather than scanned.
@@ -95,80 +107,46 @@ class _Verdict extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final failing = signals.where((s) => s.status == 'fail').length;
     final warning = signals.where((s) => s.status == 'warn').length;
-    final status = failing > 0 ? 'fail' : (warning > 0 ? 'warn' : 'ok');
-    final colour = _colorFor(status, scheme);
+    final status = failing > 0
+        ? AdminStatus.failing
+        : (warning > 0 ? AdminStatus.watch : AdminStatus.ok);
 
     final text = switch (status) {
-      'fail' =>
+      AdminStatus.failing =>
         '$failing signal${failing == 1 ? '' : 's'} failing — admins have been notified',
-      'warn' => '$warning to keep an eye on, nothing failing',
+      AdminStatus.watch => '$warning to keep an eye on, nothing failing',
       _ => 'Everything is running',
     };
+    final icon = switch (status) {
+      AdminStatus.failing => Icons.error_outline,
+      AdminStatus.watch => Icons.warning_amber_rounded,
+      _ => Icons.check_circle_outline,
+    };
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colour.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(LizRadius.md),
-      ),
-      child: Row(
-        children: [
-          Icon(_iconFor(status), color: colour),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                // The status colour on a tint of itself: amber on pale amber
-                // read at 2.25:1. Same hue, dark enough to read.
-                color: LizColors.legibleOn(
-                  colour,
-                  Color.alphaBlend(
-                    colour.withValues(alpha: 0.10),
-                    scheme.surface,
+    return AdminPanel(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: adminStatusColor(p, status)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  text,
+                  style: LizText.callout.copyWith(
+                    color: p.textPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SignalTile extends StatelessWidget {
-  const _SignalTile({required this.signal});
-  final HealthSignal signal;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final colour = _colorFor(signal.status, scheme);
-    final value = signal.value == signal.value.roundToDouble()
-        ? signal.value.toStringAsFixed(0)
-        : signal.value.toStringAsFixed(1);
-
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(_iconFor(signal.status), color: colour, size: 20),
-      title: Text(
-        signal.label,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        signal.detail,
-        style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-      ),
-      trailing: Text(
-        value,
-        style: TextStyle(fontWeight: FontWeight.w700, color: colour),
-      ),
+        ),
+      ],
     );
   }
 }
@@ -178,16 +156,20 @@ class _SignalTile extends StatelessWidget {
 class _Usage extends ConsumerWidget {
   const _Usage();
 
-  static const _rows = [
+  /// The four that say most, as tiles; the rest as rows under them.
+  static const _headline = [
     ('visitors', 'Visitors'),
-    ('returning_visitors', 'Came back on another day'),
     ('page_views', 'Pages viewed'),
+    ('saves', 'Saves'),
+    ('sign_ups', 'Sign-ups'),
+  ];
+
+  static const _rows = [
+    ('returning_visitors', 'Came back on another day'),
     ('tool_views', 'Tool pages viewed'),
     ('website_visits', 'Sent to a tool\'s website'),
     ('searches', 'Searches and questions'),
-    ('saves', 'Saves'),
     ('visitors_who_saved', 'Visitors who saved something'),
-    ('sign_ups', 'Sign-ups'),
     ('came_back_this_week', 'Visited last week and again this week'),
     ('visitors_last_week', 'Visitors last week'),
     ('first_frame_ms_median', 'First screen, median (ms)'),
@@ -196,44 +178,128 @@ class _Usage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final usage = ref.watch(usageProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Last 7 days', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Text(
+    return AdminSection(
+      title: 'Last 7 days',
+      description:
           'Counted by Liz itself: a random id per browser, no cookies, no IP '
           'addresses kept.',
-          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+      child: usage.when(
+        loading: () => const LoadingView(),
+        error: (_, _) => const AdminPanel(
+          children: [AdminEmpty('Usage could not be loaded.')],
         ),
-        const SizedBox(height: 8),
-        usage.when(
-          loading: () => const LoadingView(),
-          error: (_, _) => const SizedBox.shrink(),
-          data: (m) => Column(
-            children: [
-              for (final (key, label) in _rows)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(label)),
-                      Text(
-                        compactCount(m[key] ?? 0),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontFeatures: LizText.tabular,
+        data: (m) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LayoutBuilder(
+              builder: (context, box) => EqualHeightGrid(
+                columns: box.maxWidth >= 900 ? 4 : 2,
+                children: [
+                  for (final (key, label) in _headline)
+                    AdminStat(label: label, value: compactCount(m[key] ?? 0)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            AdminPanel(
+              children: [
+                for (final (key, label) in _rows)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: LizText.callout.copyWith(
+                              color: p.textSecondary,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                        Text(
+                          compactCount(m[key] ?? 0),
+                          style: LizText.callout.copyWith(
+                            color: p.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontFeatures: LizText.tabular,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A row in a panel: a status icon, a line, and a line under it.
+class _StatusRow extends StatelessWidget {
+  const _StatusRow({
+    required this.status,
+    required this.title,
+    required this.detail,
+    this.icon,
+  });
+
+  final AdminStatus status;
+  final String title;
+  final String detail;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(
+              icon ??
+                  (status == AdminStatus.ok
+                      ? Icons.check_circle_outline
+                      : Icons.error_outline),
+              size: 18,
+              color: adminStatusColor(p, status),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LizText.callout.copyWith(
+                    color: p.textPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -243,60 +309,33 @@ class _JobRuns extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
     final runs = ref.watch(jobRunsProvider);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Scheduled jobs', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Text(
+    return AdminSection(
+      title: 'Scheduled jobs',
+      description:
           'Whether the attempt was made. The signals above say whether the '
           'work landed.',
-          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 8),
-        runs.when(
-          loading: () => const LoadingView(),
-          error: (_, _) => const SizedBox.shrink(),
-          data: (list) => list.isEmpty
-              ? Text(
-                  'No runs recorded.',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                )
-              : Column(
-                  children: [
-                    for (final run in list)
-                      ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          run.status == 'succeeded'
-                              ? Icons.check_circle_outline
-                              : Icons.error_outline,
-                          size: 20,
-                          color: run.status == 'succeeded'
-                              ? LizColors.positive
-                              : scheme.error,
-                        ),
-                        title: Text(run.jobName),
-                        subtitle: Text(
-                          '${timeAgo(run.startedAt)} · '
+      child: runs.when(
+        loading: () => const LoadingView(),
+        error: (_, _) => const SizedBox.shrink(),
+        data: (list) => AdminPanel(
+          children: list.isEmpty
+              ? const [AdminEmpty('No runs recorded.')]
+              : [
+                  for (final run in list)
+                    _StatusRow(
+                      status: run.status == 'succeeded'
+                          ? AdminStatus.ok
+                          : AdminStatus.failing,
+                      title: run.jobName,
+                      detail:
+                          '${timeAgo(run.startedAt)} ago · '
                           '${run.durationSeconds.toStringAsFixed(2)}s'
                           '${run.message.isEmpty ? '' : ' · ${run.message}'}',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -306,58 +345,32 @@ class _RecentErrors extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
     final errors = ref.watch(recentErrorsProvider);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Crashes', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Text(
+    return AdminSection(
+      title: 'Crashes',
+      description:
           'Grouped by fault, so one broken screen reads as a single problem '
           'with a count.',
-          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 8),
-        errors.when(
-          loading: () => const LoadingView(),
-          error: (_, _) => const SizedBox.shrink(),
-          data: (list) => list.isEmpty
-              ? Text(
-                  'Nothing reported.',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                )
-              : Column(
-                  children: [
-                    for (final e in list)
-                      ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          Icons.bug_report_outlined,
-                          size: 20,
-                          color: scheme.error,
-                        ),
-                        title: Text(
-                          e.message,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
+      child: errors.when(
+        loading: () => const LoadingView(),
+        error: (_, _) => const SizedBox.shrink(),
+        data: (list) => AdminPanel(
+          children: list.isEmpty
+              ? const [AdminEmpty('Nothing reported.')]
+              : [
+                  for (final e in list)
+                    _StatusRow(
+                      status: AdminStatus.failing,
+                      icon: Icons.bug_report_outlined,
+                      title: e.message,
+                      detail:
                           '${e.occurrences}× · ${e.affectedUsers} affected · '
-                          '${timeAgo(e.lastSeen)}'
+                          '${timeAgo(e.lastSeen)} ago'
                           '${e.route == null ? '' : ' · ${e.route}'}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
         ),
-      ],
+      ),
     );
   }
 }

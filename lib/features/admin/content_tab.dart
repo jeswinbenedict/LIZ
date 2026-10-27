@@ -9,8 +9,10 @@ import '../../core/ui_state.dart';
 import '../../core/repository/repositories.dart';
 import '../../shared/models/paginated.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/tool_logo.dart';
+import 'admin_widgets.dart';
 
 /// What the admin is currently looking at.
 final adminQueryProvider = uiStateProvider<AdminToolQuery>(
@@ -103,7 +105,9 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     final page = ref.watch(adminToolsProvider(query));
     final selection = ref.watch(adminSelectionProvider);
 
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Filters(
           query: query,
@@ -112,11 +116,14 @@ class _ContentTabState extends ConsumerState<ContentTab> {
           onStatus: _setStatus,
         ),
         if (selection.isNotEmpty)
-          _BulkBar(
-            count: selection.length,
-            onPublish: () => _applyToSelection(PublishStatus.published),
-            onHide: () => _applyToSelection(PublishStatus.hidden),
-            onClear: () => ref.read(adminSelectionProvider.notifier).set({}),
+          Padding(
+            padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
+            child: _BulkBar(
+              count: selection.length,
+              onPublish: () => _applyToSelection(PublishStatus.published),
+              onHide: () => _applyToSelection(PublishStatus.hidden),
+              onClear: () => ref.read(adminSelectionProvider.notifier).set({}),
+            ),
           ),
         Expanded(
           child: page.when(
@@ -185,49 +192,61 @@ class _Filters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+    final field = TextField(
+      controller: controller,
+      onChanged: onSearch,
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: 'Search name or tagline…',
+        prefixIcon: const Icon(Icons.search, size: 20),
+        suffixIcon: controller.text.isEmpty
+            ? null
+            : IconButton(
+                tooltip: 'Clear search',
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () {
+                  controller.clear();
+                  onSearch('');
+                },
+              ),
+      ),
+    );
+    final pills = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final entry in _options.entries)
+          LizFilterPill(
+            label: entry.value,
+            selected: query.status == entry.key,
+            onTap: () => onStatus(entry.key),
+          ),
+      ],
+    );
+    // One toolbar on a wide window: the status filter, then search.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: controller,
-            onChanged: onSearch,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: 'Search name or tagline…',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: controller.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Clear search',
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        controller.clear();
-                        onSearch('');
-                      },
-                    ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final entry in _options.entries)
-                ChoiceChip(
-                  label: Text(entry.value),
-                  selected: query.status == entry.key,
-                  showCheckmark: false,
-                  onSelected: (_) => onStatus(entry.key),
-                ),
-            ],
-          ),
-        ],
+      padding: EdgeInsets.fromLTRB(gutter, 24, gutter, 16),
+      child: LayoutBuilder(
+        builder: (context, box) => box.maxWidth >= 760
+            ? Row(
+                children: [
+                  pills,
+                  const Spacer(),
+                  SizedBox(width: 320, child: field),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [field, const SizedBox(height: 12), pills],
+              ),
       ),
     );
   }
 }
 
+/// What to do with the ticked rows: publish (the action this queue exists
+/// for, so the one filled button) or hide.
 class _BulkBar extends StatelessWidget {
   const _BulkBar({
     required this.count,
@@ -243,9 +262,15 @@ class _BulkBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.secondaryContainer,
+    final p = context.liz;
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.surfaceMuted,
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairlineStrong),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
         child: Row(
@@ -253,22 +278,24 @@ class _BulkBar extends StatelessWidget {
             Expanded(
               child: Text(
                 '$count selected',
-                style: TextStyle(
+                style: LizText.callout.copyWith(
+                  color: p.textPrimary,
                   fontWeight: FontWeight.w600,
-                  color: scheme.onSecondaryContainer,
                 ),
               ),
             ),
-            TextButton.icon(
-              onPressed: onPublish,
-              icon: const Icon(Icons.check, size: 18),
-              label: const Text('Publish'),
-            ),
-            TextButton.icon(
+            OutlinedButton.icon(
               onPressed: onHide,
               icon: const Icon(Icons.visibility_off_outlined, size: 18),
               label: const Text('Hide'),
             ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: onPublish,
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text('Publish'),
+            ),
+            const SizedBox(width: 4),
             IconButton(
               tooltip: 'Clear selection',
               icon: const Icon(Icons.close, size: 20),
@@ -302,109 +329,162 @@ class _ToolList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
 
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 24),
-      itemCount: tools.length + 2,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, i) {
-        if (i == 0) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
-            child: Row(
-              children: [
-                Text(
-                  'Showing ${offset + 1}–${offset + tools.length}',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: scheme.onSurfaceVariant,
-                  ),
+    return ListView(
+      padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 48),
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Showing ${offset + 1}–${offset + tools.length}',
+                style: LizText.footnote.copyWith(
+                  color: p.textSecondary,
+                  fontFeatures: LizText.tabular,
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: onSelectAll,
-                  child: const Text('Select page'),
-                ),
-              ],
+              ),
             ),
-          );
-        }
-
-        if (i == tools.length + 1) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton.icon(
-                  onPressed: offset == 0 ? null : () => onPage(-1),
-                  icon: const Icon(Icons.chevron_left, size: 18),
-                  label: const Text('Previous'),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: hasMore ? () => onPage(1) : null,
-                  icon: const Icon(Icons.chevron_right, size: 18),
-                  label: const Text('Next'),
-                ),
-              ],
+            TextButton(
+              onPressed: onSelectAll,
+              child: const Text('Select page'),
             ),
-          );
-        }
+          ],
+        ),
+        const SizedBox(height: 8),
+        AdminPanel(
+          children: [
+            for (final tool in tools)
+              _ToolRow(
+                tool: tool,
+                selected: selection.contains(tool.id),
+                onToggle: () => onToggle(tool.id),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            OutlinedButton.icon(
+              onPressed: offset == 0 ? null : () => onPage(-1),
+              icon: const Icon(Icons.chevron_left, size: 18),
+              label: const Text('Previous'),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              onPressed: hasMore ? () => onPage(1) : null,
+              icon: const Icon(Icons.chevron_right, size: 18),
+              label: const Text('Next'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
-        final tool = tools[i - 1];
-        final selected = selection.contains(tool.id);
+/// One tool in the queue: tick, logo, name and status, tagline, where it
+/// came from, and — when the gate held it — why.
+class _ToolRow extends StatelessWidget {
+  const _ToolRow({
+    required this.tool,
+    required this.selected,
+    required this.onToggle,
+  });
 
-        return CheckboxListTile(
-          value: selected,
-          onChanged: (_) => onToggle(tool.id),
-          controlAffinity: ListTileControlAffinity.leading,
-          secondary: ToolLogo(tool: tool, size: 40),
-          title: Text(tool.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Column(
+  final Tool tool;
+  final bool selected;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return MergeSemantics(
+      child: InkWell(
+        onTap: onToggle,
+        child: Container(
+          color: selected ? p.surfaceMuted : null,
+          padding: const EdgeInsets.fromLTRB(8, 10, 16, 10),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                tool.tagline,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: scheme.onSurfaceVariant),
+              Checkbox(value: selected, onChanged: (_) => onToggle()),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: ToolLogo(tool: tool, size: 36),
               ),
-              const SizedBox(height: 3),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  _StatusPill(status: tool.status),
-                  Text(
-                    '${tool.source ?? 'manual'} · ${tool.category}',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: scheme.onSurfaceVariant,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            tool.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LizText.callout.copyWith(
+                              color: p.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        _StatusPill(status: tool.status),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              // The reason the gate held it, so the queue can be worked
-              // through by cause rather than row by row.
-              if (tool.holdReason != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  tool.holdReason!,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontStyle: FontStyle.italic,
-                    color: scheme.error,
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      tool.tagline,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LizText.footnote.copyWith(color: p.textSecondary),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${tool.source ?? 'manual'} · ${tool.category}',
+                      style: LizText.footnote.copyWith(color: p.textTertiary),
+                    ),
+                    // The reason the gate held it, so the queue can be
+                    // worked through by cause rather than row by row.
+                    if (tool.holdReason != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 1),
+                            child: Icon(
+                              Icons.info_outline,
+                              size: 14,
+                              color: LizColors.warn,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              tool.holdReason!,
+                              style: LizText.footnote.copyWith(
+                                color: p.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
-          isThreeLine: true,
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -414,27 +494,18 @@ class _StatusPill extends StatelessWidget {
   final PublishStatus status;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final (color, label) = switch (status) {
-      PublishStatus.published => (LizColors.positive, 'Published'),
-      PublishStatus.pending => (LizColors.rising, 'Pending'),
-      PublishStatus.hidden => (scheme.onSurfaceVariant, 'Hidden'),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(LizRadius.sm),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => switch (status) {
+    PublishStatus.published => const AdminStatusLabel(
+      AdminStatus.ok,
+      label: 'Published',
+    ),
+    PublishStatus.pending => const AdminStatusLabel(
+      AdminStatus.watch,
+      label: 'Pending',
+    ),
+    PublishStatus.hidden => const AdminStatusLabel(
+      AdminStatus.neutral,
+      label: 'Hidden',
+    ),
+  };
 }

@@ -20,7 +20,7 @@ made independently from the same brief, landed on the same layout.
    Ranks, trend lines and the reason in words lead every screen they appear
    on; the description comes after.
 2. **Red means something.** One red marks the primary action (one filled
-   button per screen), links, and what is rising: trend lines and the growth
+   button per screen) and what is rising: trend lines and the growth
    figure in a reason ("**+2.2k** GitHub stars this week"). Nothing else is
    red — not ranks, not selection, not icons in a list, not prices.
 3. **Nothing at rest glows.** No glow, no gradient, no shadow on anything
@@ -226,7 +226,9 @@ is as tall as the tallest.
 **Buttons.** *Primary* — `accentFill`, white label, flat; one per screen.
 *Secondary* (`LizButtons.tonal`) — `surfaceMuted` with a `hairlineStrong`
 edge and a white label. *Outlined* — `hairlineStrong` outline that brightens
-on hover. *Text* — red label. Heights 44 phone, 40 desktop.
+on hover. *Text* — white label, a neutral wash on hover (28 October 2026:
+it was red, which put red on every secondary action). Heights 44 phone,
+40 desktop.
 
 **Filter pills and segmented controls.** Off: transparent with a `hairline`
 edge, grey text. On: `surfaceHover` with a lighter edge and white text.
@@ -309,6 +311,20 @@ coloured. Group titles are sentence-case labels.
   what it is for in a 260px column on the left, its rows on the right,
   sections divided by hairlines. Narrow: name and sentence above the rows.
   Switches are white when on — a state, not an action, so not red.
+- **Community.** The top bar, a title with *New post* (the primary action,
+  in place of a floating button) beside it, *Newest / Trending* as the
+  segmented control, and posts as framed cards in a 720px column.
+- **Admin console.** The top bar, a title, and tabs with their icons beside
+  their names, in line with the content (the selected tab white, not red).
+  Every tab is built from `admin_widgets.dart`: `AdminSection` (heading and
+  one line of purpose), `AdminPanel` (rows in a frame), `AdminStatusLabel`
+  (a dot and a word — OK green, Watch amber, Failing red) and `AdminStat`
+  (a figure as a tile). *Health*: the verdict, the signals as tiles, jobs,
+  crashes, then the last seven days as tiles and rows. *Content*: status
+  pills and search on one line, the queue in a panel with each tool's status
+  and hold reason, *Publish* as the filled action of the bulk bar.
+  *News* and *Moderation*: panels, with *Hide*, *Restore* and *Dismiss* as
+  outlined buttons and *Hide post* the filled one.
 - **Search.** The field is the page: large, under the top bar, with the
   count ("**2 tools** for “voice”") and the price filter on the line below.
   Before typing: popular searches as chips and a pointer to Ask Liz. Three
@@ -351,6 +367,7 @@ by light alone, and decorative lines are excluded from semantics.
 | Section actions in red, each placed its own way | `SectionAction`: grey, on the title's line, at the edge | One section reads like every other |
 | Cards lit red under the pointer; "New" and "AI" badges in red | A lighter edge and tone; grey badges | Hover and labels are not actions |
 | Headline and example cards ragged in height | Rows of equal height | A grid should read as a grid |
+| Red text buttons and a red tab underline | White text buttons and tab | Secondary actions and selection are not the primary action |
 | Red switches, red *Mark all read* and *Turn on* | White switches; neutral outlined secondary actions | Red stays on the one primary action and on rising data |
 
 ### 1 October 2026 — Signal

@@ -605,8 +605,14 @@ class LizTheme {
           ),
           shape: WidgetStatePropertyAll(controlShape),
           textStyle: WidgetStatePropertyAll(buttonText),
-          foregroundColor: WidgetStatePropertyAll(p.accent),
-          overlayColor: overlay(p.accent),
+          // Ink, not red: a text button is a secondary action, and red is
+          // kept for the one primary action and for rising data.
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.disabled)
+                ? p.textTertiary
+                : p.textPrimary,
+          ),
+          overlayColor: overlay(p.textPrimary),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -788,7 +794,9 @@ class LizTheme {
         unselectedLabelColor: p.textSecondary,
         labelStyle: buttonText,
         unselectedLabelStyle: buttonText.copyWith(fontWeight: FontWeight.w500),
-        indicatorColor: p.accent,
+        // The selected tab is told by its white label and a white bar; red
+        // is not a selection colour.
+        indicatorColor: p.textPrimary,
         dividerColor: p.hairline,
         indicatorSize: TabBarIndicatorSize.label,
         overlayColor: overlay(p.textPrimary),
