@@ -277,16 +277,23 @@ them, and treating them as expiry would send someone round a loop.
 
 ## Still open
 
-- **Firebase setup is the owner's to do** (AUTH.md, "One-time setup"): enable
-  the providers, register Firebase under Supabase third-party auth, and add
-  the deployed domain to Firebase's authorized domains. Until then the new
-  sign-in cannot complete.
 - **Moderator two-step needs Identity Platform** and TOTP switched on
   (`tool/firebase_enable_totp.ts`). Until a moderator enrols, the requirement
   stays off, as it always has.
-- **Malware screening is one list.** New and existing tools are checked against
-  URLhaus (`liz_scraper.threats`); a listed site is held back. Other lists
-  would need an API key.
-- **The scraper machine holds the full service key** (`~/.liz/n8n.env`). A
-  narrower credential that can only write the staging columns would limit what
-  a compromised laptop exposes.
+
+## Closed
+
+- **Firebase setup** (AUTH.md, "One-time setup") is done: the deployed domain
+  (`liz-cfp.pages.dev`) is among Firebase's authorized domains.
+- **Malware and phishing screening** (`liz_scraper.threats`). New and existing
+  tools are checked against two lists: URLhaus's malware hosts, and the
+  phishing hosts on OpenPhish, PhishTank and PhishStats, both read from the
+  malware-filter project's free mirrors, which leave out popular domains. A
+  listed site is held back with a reason naming the list. abuse.ch's own
+  download, the only list until October 2026, began answering 410 Gone and the
+  check had been screening nothing; a list that cannot be read is now named in
+  the run, and the daily check fails when no list could be read.
+- **The scraper machine holds no Supabase key.** `~/.liz/n8n.env` carries
+  `LIZ_INGEST_KEY`, which opens only the `scraper-ingest` function: look up
+  published tools, write new listings, retry held ones. A lost laptop cannot
+  read profiles or rewrite the catalog.

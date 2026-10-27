@@ -141,8 +141,10 @@ jobs:
           python -m liz_scraper.store_logos --apply --limit 200
 
       # A site can be compromised after it was listed. Hold any published tool
-      # whose host is on abuse.ch URLhaus's malware list (liz_scraper.threats).
-      - name: Check sites against the malware list
+      # whose host is on the malware or phishing list (liz_scraper.threats).
+      # Fails the run when no list could be fetched, so screening never stops
+      # unnoticed.
+      - name: Check sites against the malware and phishing lists
         if: ${{ inputs.dry_run != true }}
         working-directory: scrapers
         env:

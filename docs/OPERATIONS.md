@@ -126,10 +126,10 @@ what it would do; add `--apply` to do it.
 |---|---|
 | `python -m liz_scraper.dedupe_tools` | hides duplicate listings of one site, keeping the oldest and its signals |
 | `python -m liz_scraper.store_logos` | copies logos into the `logos` Storage bucket as 128px WebP |
-| `python -m liz_scraper.threats` | holds back any tool whose site is on the URLhaus malware list |
+| `python -m liz_scraper.threats` | holds back any tool whose site is on the malware list (URLhaus) or the phishing list (OpenPhish, PhishTank, PhishStats); exits 1 if neither list could be fetched |
 | `python -m liz_scraper.backfill_pricing` | fills in missing prices from tool sites |
 
-New listings are checked for duplicates (`site_key`) and malware on the way in;
+New listings are checked for duplicates (`site_key`), malware and phishing on the way in;
 these commands are for the catalog that already exists.
 
 **News linking** (migrations 0052–0053) joins a headline to a tool when it
@@ -158,7 +158,7 @@ To make someone an admin, set `profiles.role`; their next request sees it.
 | `SUPABASE_SERVICE_ROLE_KEY` | GitHub Actions | scrapers, `fetch-news.yml` |
 | `INGEST_KEY` / `LIZ_INGEST_KEY` | Supabase function secret; `~/.liz/n8n.env` | the laptop scraper, through `scraper-ingest` only |
 | `SUPABASE_FUNCTIONS_URL` | GitHub Actions | `fetch-news.yml` |
-| `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` | GitHub Actions | `deploy-supabase.yml` |
+| `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` | GitHub Actions | `deploy-supabase.yml`. The access token expires: renew it (Supabase → Account → Access Tokens) before about 3 January 2027, or backend deploys fail |
 | `SUPABASE_DB_URL` | GitHub Actions | `backup-db.yml` |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SITE_URL` | GitHub Actions | `deploy-web.yml` |
 | `FCM_VAPID_KEY` | GitHub Actions | web build (browser notifications) |

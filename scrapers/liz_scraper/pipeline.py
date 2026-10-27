@@ -23,9 +23,9 @@ from .normalize import (
 from .quality import assess
 from .sources import ALL_SOURCES
 from .supabase_sink import SupabaseSink
-from .threats import REASON as THREAT_REASON
-from .threats import fetch_hosts as fetch_threat_hosts
-from .threats import is_listed
+from .threats import Fetched as ThreatLists
+from .threats import fetch_lists as fetch_threat_lists
+from .threats import reason_for as threat_reason_for
 
 log = logging.getLogger(__name__)
 
@@ -80,9 +80,10 @@ def run(
         candidates = [c for c in candidates if content_hash(c.url) not in known]
         result.skipped_existing = before - len(candidates)
 
-    # Hosts currently serving malware (abuse.ch URLhaus). Only on real runs: a
-    # dry run should not depend on the network beyond the sources themselves.
-    threat_hosts = fetch_threat_hosts() if sink is not None else set()
+    # Hosts serving malware or phishing (liz_scraper.threats). Only on real
+    # runs: a dry run should not depend on the network beyond the sources
+    # themselves.
+    threats = fetch_threat_lists() if sink is not None else ThreatLists()
 
     rows: list[dict] = []
     for candidate in candidates:
@@ -127,10 +128,11 @@ def run(
         # enrichment managed to follow the listing through to the product.
         verdict = assess(row)
         row["status"] = status or verdict.status
-        # No override publishes a site known to serve malware.
-        if is_listed(row["website_url"], threat_hosts):
+        # No override publishes a site known to serve malware or phish.
+        threat = threat_reason_for(row["website_url"], threats)
+        if threat is not None:
             row["status"] = "pending"
-            verdict.reasons.insert(0, THREAT_REASON)
+            verdict.reasons.insert(0, threat)
         if row["status"] == "published":
             row["hold_reason"] = None
             result.published += 1

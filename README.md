@@ -175,16 +175,29 @@ address in both; without it they point to account deletion and Report instead.
 The deploy reads it from the repository variable `LEGAL_CONTACT`.
 They were written from the code, not by a lawyer.
 
+## Where it stands
+
+Live at <https://liz-cfp.pages.dev>. Every push to `main` is checked by CI and,
+when it passes, deployed: the web app to Cloudflare Pages, migrations and Edge
+Functions to Supabase. The database is backed up daily, new tools are scraped
+daily, and news is fetched hourly by the database itself.
+
 ## Still to do
 
-Everything left needs an account or a credential only the owner can create.
+Everything left needs an account, a credential or a decision only the owner
+has.
 
-- **Deployment.** The workflows are written and gated on CI; they need the
-  Cloudflare and Supabase secrets listed in
-  [docs/OPERATIONS.md](docs/OPERATIONS.md#8-secrets). Add the deployed domain
-  to Firebase's authorized domains at the same time.
-- **Backups and deploys from CI**: the `SUPABASE_DB_URL`,
-  `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` secrets
-  ([docs/OPERATIONS.md](docs/OPERATIONS.md#8-secrets)).
-- **A legal read** of the privacy policy and terms before launch.
-- **Search Console**: submit `sitemap.xml` once the site is live.
+- **Renew `SUPABASE_ACCESS_TOKEN`** before about 3 January 2027 (Supabase →
+  Account → Access Tokens, then the GitHub secret). Backend deploys fail once
+  it expires.
+- **A custom domain** for Cloudflare Pages. `*.pages.dev` addresses are
+  blocked by some networks, including some in India; add the new domain to
+  Firebase's authorized domains and to the `SITE_URL` secret at the same time.
+- **A legal read** of the privacy policy and terms.
+- **Search Console**: verify the site and submit `sitemap.xml`.
+- **Moderator two-step**: switch on Identity Platform and TOTP in Firebase
+  (`tool/firebase_enable_totp.ts`), then enrol from the admin console.
+- **LinkedIn's preview of the site**: refresh it in LinkedIn's Post Inspector.
+- **The pre-push check**, once per clone: `git config core.hooksPath
+  tool/hooks` runs CI's fast checks before every push
+  ([tool/qa/README.md](tool/qa/README.md)).
