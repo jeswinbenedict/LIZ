@@ -13,6 +13,7 @@ import '../../core/providers.dart';
 import '../../shared/widgets/google_logo.dart';
 import '../../shared/widgets/page_header.dart';
 import 'auth_controller.dart';
+import '../../shared/widgets/liz_notice.dart';
 import 'auth_frame.dart';
 import 'password_validation.dart';
 
@@ -247,7 +248,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
             // Only the providers this project offers. A switched-off one
             // dead-ends on an error.
             if (providers.google && inAppBrowser != null) ...[
-              AuthMessage(
+              LizNotice(
                 text:
                     'You opened Liz inside $inAppBrowser, where Google blocks '
                     'its sign-in. Open this page in Chrome or Safari (menu ⋯ '
@@ -364,7 +365,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
 
             if (_error != null) ...[
               const SizedBox(height: 8),
-              AuthMessage(
+              LizNotice(
                 text: _error!,
                 color: p.danger,
                 icon: Icons.error_outline,
@@ -372,7 +373,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
             ],
             if (_info != null) ...[
               const SizedBox(height: 8),
-              AuthMessage(
+              LizNotice(
                 text: _info!,
                 color: p.positive,
                 icon: Icons.check_circle_outline,

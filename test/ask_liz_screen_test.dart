@@ -79,4 +79,19 @@ void main() {
 
     expect(find.text('What do you want to do?'), findsOneWidget);
   });
+
+  testWidgets('an answer says how many fit, and New question starts over', (
+    tester,
+  ) async {
+    await _pump(tester);
+
+    await tester.enterText(find.byType(TextField), 'video');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(find.textContaining('fit, best first'), findsOneWidget);
+    await tester.tap(find.text('New question'));
+    await tester.pumpAndSettle();
+    expect(find.text('What do you want to do?'), findsOneWidget);
+  });
 }

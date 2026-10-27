@@ -432,6 +432,27 @@ class PhoneTopBar extends StatelessWidget {
   }
 }
 
+/// [PhoneTopBar] for a screen whose body is not a sliver list (Ask Liz): the
+/// same wordmark bar, as a Scaffold's app bar.
+class PhoneBar extends StatelessWidget implements PreferredSizeWidget {
+  const PhoneBar({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: 56,
+      backgroundColor: Colors.transparent,
+      titleSpacing: 16,
+      flexibleSpace: const GlassBar(child: SizedBox.expand()),
+      title: const LizWordmark(size: 24),
+    );
+  }
+}
+
 /// A page's own title as its one level-1 heading, for pages whose title sits
 /// in an app bar or a form rather than a [PageHeader]. Screen reader users
 /// jump to it to learn where they are; an app bar title alone is announced

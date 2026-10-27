@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import '../../shared/widgets/liz_notice.dart';
 import 'auth_frame.dart';
 import 'password_validation.dart';
 
@@ -106,11 +107,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          AuthMessage(
-            text: _error!,
-            color: p.danger,
-            icon: Icons.error_outline,
-          ),
+          LizNotice(text: _error!, color: p.danger, icon: Icons.error_outline),
         ],
         const SizedBox(height: LizSpacing.md),
         AuthSubmitButton(
@@ -143,7 +140,7 @@ class _Sent extends StatelessWidget {
           subtitle: 'The link to choose a new password is on its way.',
         ),
         const SizedBox(height: LizSpacing.lg),
-        AuthMessage(
+        LizNotice(
           text:
               'If $email has an account, a reset link is on its way. '
               'It expires in an hour.',

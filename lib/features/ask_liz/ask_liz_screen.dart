@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/responsive/breakpoints.dart';
@@ -11,6 +12,8 @@ import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/equal_height_grid.dart';
 import '../../shared/widgets/liz_card.dart';
 import '../../shared/widgets/liz_mark.dart';
+import '../../shared/widgets/liz_notice.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
@@ -173,6 +176,13 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     }
   }
 
+  void _reset() => setState(() {
+    _answered = null;
+    _results = [];
+    _notice = null;
+    _controller.clear();
+  });
+
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
@@ -185,10 +195,11 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     }
 
     // Before a question, the page is the question: a title, the field in the
-    // middle of it, and a few examples. Afterwards the field moves to the foot
-    // of the page and the answer takes its place.
+    // middle of it, and a few examples. Afterwards the field moves to a bar
+    // along the foot of the page and the answer takes its place.
     if (_answered == null) {
       return Scaffold(
+        appBar: phone ? const PhoneBar() : null,
         body: SafeArea(
           child: _Intro(
             controller: _controller,
@@ -200,7 +211,20 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
       );
     }
 
+    final String status;
+    if (_loading) {
+      status = 'Looking through the catalog…';
+    } else if (_notice != null) {
+      status = 'No answer this time.';
+    } else if (_results.isEmpty) {
+      status = 'Nothing in the catalog fits well enough.';
+    } else {
+      final n = _results.length;
+      status = n == 1 ? 'One tool fits.' : '$n tools fit, best first.';
+    }
+
     return Scaffold(
+      appBar: phone ? const PhoneBar() : null,
       body: SafeArea(
         child: Column(
           children: [
@@ -210,78 +234,99 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
                     gutter,
-                    phone ? 12 : 32,
+                    phone ? 12 : 36,
                     gutter,
-                    24,
+                    32,
                   ),
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const LizMark(size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Ask Liz',
-                          style: LizText.subhead.copyWith(
-                            color: p.textSecondary,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Semantics(
+                                container: true,
+                                header: true,
+                                headingLevel: 1,
+                                child: Text(
+                                  '“${_answered!}”',
+                                  style:
+                                      (phone ? LizText.title2 : LizText.title1)
+                                          .copyWith(color: p.textPrimary),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                status,
+                                style: LizText.body.copyWith(
+                                  color: p.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const Spacer(),
-                        TextButton.icon(
-                          onPressed: () => setState(() {
-                            _answered = null;
-                            _results = [];
-                            _notice = null;
-                            _controller.clear();
-                          }),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('New question'),
-                        ),
+                        const SizedBox(width: 16),
+                        if (phone)
+                          IconButton.outlined(
+                            tooltip: 'New question',
+                            onPressed: _reset,
+                            icon: const Icon(Icons.add),
+                          )
+                        else
+                          OutlinedButton.icon(
+                            onPressed: _reset,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('New question'),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Semantics(
-                      container: true,
-                      header: true,
-                      headingLevel: 1,
-                      child: Text(
-                        '“${_answered!}”',
-                        style: (phone ? LizText.title2 : LizText.title1)
-                            .copyWith(color: p.textPrimary),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     if (_loading)
                       const _ThinkingRows()
                     else if (_notice != null)
-                      _Notice(text: _notice!)
-                    else if (_results.isEmpty)
-                      Text(
-                        "I couldn't find a great match for that. Try describing what you want to do.",
-                        style: LizText.body.copyWith(color: p.textSecondary),
+                      LizNotice(
+                        text: _notice!,
+                        color: p.caution,
+                        icon: Icons.hourglass_bottom,
                       )
+                    else if (_results.isEmpty)
+                      _NoMatch(query: _answered!)
                     else ...[
-                      Text(
-                        "Here's what fits best",
-                        style: LizText.subhead.copyWith(
-                          color: p.textSecondary,
-                          fontWeight: FontWeight.w600,
+                      Semantics(
+                        container: true,
+                        header: true,
+                        child: Text(
+                          "Here's what fits best",
+                          style: LizText.title3.copyWith(color: p.textPrimary),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      for (var i = 0; i < _results.length; i++) ...[
-                        _Answer(rank: i + 1, suggestion: _results[i]),
-                        const SizedBox(height: 12),
-                      ],
+                      _Panel(
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < _results.length; i++) ...[
+                              if (i > 0) Divider(height: 1, color: p.hairline),
+                              _Answer(rank: i + 1, suggestion: _results[i]),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Picked from the tools Liz tracks, by what they '
+                        'say they do. Check pricing on each tool’s page.',
+                        style: LizText.footnote.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
                     ],
                   ],
                 ),
               ),
             ),
-            MaxWidth(
-              maxWidth: 760 + gutter * 2,
-              child: _InputBar(controller: _controller, onSubmit: _ask),
-            ),
+            _InputBar(controller: _controller, onSubmit: _ask),
           ],
         ),
       ),
@@ -289,7 +334,32 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
   }
 }
 
-/// One answer: its place, the tool, and why it fits.
+/// The frame round the answers, and round their placeholders.
+class _Panel extends StatelessWidget {
+  const _Panel({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairline),
+        ),
+      ),
+      child: ClipRSuperellipse(
+        borderRadius: BorderRadius.circular(LizRadius.md),
+        child: Material(type: MaterialType.transparency, child: child),
+      ),
+    );
+  }
+}
+
+/// One answer, as a row of the list: its place, the tool, and why it fits
+/// in Liz's voice under it.
 class _Answer extends StatelessWidget {
   const _Answer({required this.rank, required this.suggestion});
   final int rank;
@@ -300,112 +370,127 @@ class _Answer extends StatelessWidget {
     final tool = suggestion.tool;
     return ToolLink(
       tool: tool,
-      builder: (context, open) => _card(context, open),
+      builder: (context, open) => _row(context, open),
     );
   }
 
-  Widget _card(BuildContext context, VoidCallback open) {
+  Widget _row(BuildContext context, VoidCallback open) {
     final p = context.liz;
     final tool = suggestion.tool;
-    return LizCard(
+    return InkWell(
       onTap: open,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 24,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 28,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10),
                 child: Text(
                   '$rank',
-                  style: LizText.title3.copyWith(
+                  style: LizText.headline.copyWith(
                     color: p.textSecondary,
                     fontFeatures: LizText.tabular,
                   ),
                 ),
               ),
-              ToolLogo(tool: tool, size: 44),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tool.name,
-                      style: LizText.headline.copyWith(color: p.textPrimary),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      tool.tagline,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: LizText.callout.copyWith(color: p.textSecondary),
-                    ),
-                    const SizedBox(height: 8),
-                    ToolMeta(tool),
-                  ],
-                ),
-              ),
-              Transform.translate(
-                offset: const Offset(10, -10),
-                child: BookmarkButton(toolId: tool.id),
-              ),
-            ],
-          ),
-          if (suggestion.reason.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              decoration: ShapeDecoration(
-                color: p.surfaceMuted,
-                shape: LizRadius.shape(LizRadius.sm),
-              ),
-              child: Row(
+            ),
+            ToolLogo(tool: tool, size: 44),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 1),
-                    child: LizMark.icon(size: 16, color: p.accent),
+                  Text(
+                    tool.name,
+                    style: LizText.headline.copyWith(color: p.textPrimary),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      suggestion.reason,
-                      style: LizText.callout.copyWith(color: p.textPrimary),
+                  const SizedBox(height: 2),
+                  Text(
+                    tool.tagline,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: LizText.callout.copyWith(color: p.textSecondary),
+                  ),
+                  const SizedBox(height: 8),
+                  ToolMeta(tool),
+                  if (suggestion.reason.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: LizMark.icon(size: 14, color: p.accent),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            suggestion.reason,
+                            style: LizText.callout.copyWith(
+                              color: p.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
+            BookmarkButton(toolId: tool.id),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
-/// While Liz looks, the shape of three answers.
+/// While Liz looks, the shape of three answers in the answers' frame.
 class _ThinkingRows extends StatelessWidget {
   const _ThinkingRows();
 
   @override
   Widget build(BuildContext context) {
+    final p = context.liz;
     return Semantics(
       container: true,
       label: 'Finding tools',
       liveRegion: true,
       child: ExcludeSemantics(
-        child: Shimmer(
-          child: Column(
-            children: [
-              for (var i = 0; i < 3; i++)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: SkeletonBox(height: 96, radius: LizRadius.md),
-                ),
-            ],
+        child: _Panel(
+          child: Shimmer(
+            child: Column(
+              children: [
+                for (var i = 0; i < 3; i++) ...[
+                  if (i > 0) Divider(height: 1, color: p.hairline),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(44, 16, 16, 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SkeletonBox(width: 44, height: 44),
+                        SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SkeletonBox(width: 140, height: 16),
+                              SizedBox(height: 8),
+                              SkeletonBox(height: 14),
+                              SizedBox(height: 14),
+                              SkeletonBox(width: 220, height: 14),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -413,31 +498,46 @@ class _ThinkingRows extends StatelessWidget {
   }
 }
 
-class _Notice extends StatelessWidget {
-  const _Notice({required this.text});
-  final String text;
+/// Nothing fits: say so, and offer the catalog's own search for the words.
+class _NoMatch extends StatelessWidget {
+  const _NoMatch({required this.query});
+  final String query;
 
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: ShapeDecoration(
-        color: p.caution.withValues(alpha: 0.10),
-        shape: LizRadius.shape(LizRadius.md),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.hourglass_bottom, size: 20, color: p.caution),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: LizText.callout.copyWith(color: p.textPrimary),
+    return _Panel(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.search_off, size: 20, color: p.textSecondary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "I couldn't find a great match for that. Try describing "
+                    'what you want to do.',
+                    style: LizText.callout.copyWith(color: p.textPrimary),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(left: 32),
+              child: OutlinedButton(
+                onPressed: () => context.push(
+                  '/search?q=${Uri.encodeQueryComponent(query)}',
+                ),
+                child: const Text('Search the catalog'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -566,9 +666,14 @@ class _Intro extends StatelessWidget {
 
 /// The large field of the start page, with its send button inside it.
 class _Composer extends StatelessWidget {
-  const _Composer({required this.controller, required this.onSubmit});
+  const _Composer({
+    required this.controller,
+    required this.onSubmit,
+    this.raised = true,
+  });
   final TextEditingController controller;
   final ValueChanged<String> onSubmit;
+  final bool raised;
 
   @override
   Widget build(BuildContext context) {
@@ -580,7 +685,7 @@ class _Composer extends StatelessWidget {
           LizRadius.lg,
           side: BorderSide(color: p.hairlineStrong),
         ),
-        shadows: LizShadows.raised(p),
+        shadows: raised ? LizShadows.raised(p) : null,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 6, 8, 6),
@@ -637,6 +742,8 @@ class _SendButton extends StatelessWidget {
   }
 }
 
+/// The question box after an answer: a bar along the foot of the page, as
+/// on a post.
 class _InputBar extends StatelessWidget {
   const _InputBar({required this.controller, required this.onSubmit});
   final TextEditingController controller;
@@ -644,15 +751,32 @@ class _InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.liz;
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        gutter,
-        8,
-        gutter,
-        12 + MediaQuery.viewInsetsOf(context).bottom,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: p.canvas,
+        border: Border(top: BorderSide(color: p.hairline)),
       ),
-      child: _Composer(controller: controller, onSubmit: onSubmit),
+      child: Align(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 760 + gutter * 2),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              gutter,
+              12,
+              gutter,
+              12 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: _Composer(
+              controller: controller,
+              onSubmit: onSubmit,
+              raised: false,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

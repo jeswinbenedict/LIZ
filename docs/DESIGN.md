@@ -279,7 +279,7 @@ coloured. Group titles are sentence-case labels.
   (wide), the category pills under it, and the card grid.
 - **Sign in, and the other account pages.** *Forgot password* and *Choose a
   new password* share the sign-in page's frame (`auth_frame.dart`:
-  `AuthFrame`, `AuthHeading`, `AuthBackLink`, `AuthMessage`,
+  `AuthFrame`, `AuthHeading`, `AuthBackLink`, `LizNotice`,
   `AuthSubmitButton`). Wide: a brand panel (the claim, one sentence, and a
   preview of *Rising this week* with its figures in ink) beside the form, the
   two halves ending on one footer line. Narrow: the wordmark and the form.
@@ -301,12 +301,21 @@ coloured. Group titles are sentence-case labels.
   facts as a strip under the header. Then *Summary*, *About*, timeline,
   similar tools (Discover's card, two across), in the news, what's new,
   reviews, community.
-- **News.** A reading column: source in ink and the time in grey above each
+- **News.** A reading column: the title (*News*, as in the navigation) with
+  *Live* — a green dot and a word — beside it when the feed is connected;
+  the outlets as filter pills (one sideways line on a phone); then the
+  stories under *Today*, *Yesterday*, *This week* and *Earlier*, each day's
+  name over a firmer rule. Source in ink and the time in grey above each
   headline; the first story set larger (`NewsCard(lead:)`); *Quick take* a
   quiet grey control that opens the AI summary in a framed panel.
 - **Ask Liz.** Before a question, the question: the red mark on a neutral
-  tile, the title, the field and four example prompts. After, the answers
-  as cards with the reason in Liz's voice.
+  tile, the title, the field and four example prompts. After, the question
+  is the page's title, with how many tools fit under it and *New question*
+  (outlined) beside it; the answers in one framed, ranked list — logo, name,
+  tagline, facts, and the reason in Liz's voice behind the small red mark —
+  and the field in a bar along the foot, as on a post. Nothing fits: a framed
+  sentence and *Search the catalog*. A refusal (rate limit) is a `LizNotice`.
+  On a phone it has the wordmark bar like the other tabs (`PhoneBar`).
 - **Profile.** A header (avatar with a neutral ring, the name as the page's
   heading, a grey role badge, when they joined, the bio, and three figures —
   saved, reviews, posts — set as type). Wide: what you wrote on the left,

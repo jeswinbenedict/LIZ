@@ -5,6 +5,7 @@ import 'package:liz/app/theme.dart';
 import 'package:liz/features/admin/admin_screen.dart';
 import 'package:liz/features/news/news_screen.dart';
 import 'package:liz/features/track/saved_screen.dart';
+import 'package:liz/shared/widgets/news_card.dart';
 
 Future<void> _pump(WidgetTester tester, Widget screen) async {
   await tester.pumpWidget(
@@ -20,8 +21,37 @@ void main() {
     testWidgets('lists articles', (tester) async {
       await _pump(tester, const NewsScreen());
 
-      expect(find.text('Tech News'), findsOneWidget);
+      expect(find.text('News'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('stories sit under their day, and an outlet can be picked', (
+      tester,
+    ) async {
+      await _pump(tester, const NewsScreen());
+
+      // The newest mock stories are hours old: today, or yesterday when the
+      // test runs in the small hours.
+      expect(find.textContaining(RegExp(r'^(Today|Yesterday)$')), findsWidgets);
+      // The lead story is from Hacker News: its byline beside the pill.
+      expect(find.text('Hacker News'), findsNWidgets(2));
+      // The pills come before the stories, so the first is the pill.
+      await tester.tap(find.text('TechCrunch').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Hacker News'), findsOneWidget);
+      expect(find.byType(NewsCard), findsWidgets);
+
+      await tester.tap(find.text('All').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Hacker News'), findsNWidgets(2));
+    });
+
+    test('a story is filed under today, yesterday, this week or earlier', () {
+      final now = DateTime(2026, 10, 28, 15);
+      expect(newsDay(DateTime(2026, 10, 28, 1), now: now), 'Today');
+      expect(newsDay(DateTime(2026, 10, 27, 23), now: now), 'Yesterday');
+      expect(newsDay(DateTime(2026, 10, 23), now: now), 'This week');
+      expect(newsDay(DateTime(2026, 10, 1), now: now), 'Earlier');
     });
 
     testWidgets('survives a phone-width layout', (tester) async {

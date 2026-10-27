@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../core/auth/firebase_auth_repository.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import '../../shared/widgets/liz_notice.dart';
 import 'auth_frame.dart';
 import 'password_validation.dart';
 
@@ -135,11 +136,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          AuthMessage(
-            text: _error!,
-            color: p.danger,
-            icon: Icons.error_outline,
-          ),
+          LizNotice(text: _error!, color: p.danger, icon: Icons.error_outline),
         ],
         const SizedBox(height: LizSpacing.md),
         AuthSubmitButton(
