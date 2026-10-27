@@ -676,7 +676,9 @@ class _ShortcutHint extends StatelessWidget {
 
 /// The brand mark and name, for sidebars and phone top bars.
 class LizWordmark extends StatelessWidget {
-  const LizWordmark({super.key, this.size = 26});
+  const LizWordmark({super.key, this.size = 24});
+
+  /// The mark's height; the word is set to match it.
   final double size;
 
   @override
@@ -687,18 +689,21 @@ class LizWordmark extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ExcludeSemantics(child: LizMark(size: size)),
-        const SizedBox(width: 10),
-        // Set in spaced capitals; read as the name, not spelled out.
+        SizedBox(width: size * 0.3),
+        // Lowercase, bold and set tight: the l of the word repeats the stem
+        // of the mark beside it.
         Semantics(
           container: true,
           label: 'Liz',
           excludeSemantics: true,
           child: Text(
-            'LIZ',
+            'liz',
             style: LizText.title3.copyWith(
               color: context.liz.textPrimary,
+              fontSize: size * 0.95,
+              height: 1,
               fontWeight: FontWeight.w700,
-              letterSpacing: 3,
+              letterSpacing: -size * 0.03,
             ),
           ),
         ),

@@ -33,7 +33,7 @@ class ToolShelf extends ConsumerWidget {
 
     final width = MediaQuery.sizeOf(context).width;
     final gutter = LizSpacing.gutter(width);
-    final cardWidth = context.isPhone ? width * 0.78 : 320.0;
+    final phone = context.isPhone;
     final items = state.items.take(12).toList();
 
     return Column(
@@ -42,15 +42,27 @@ class ToolShelf extends ConsumerWidget {
         SectionHeader(title: title, subtitle: subtitle, action: action),
         SizedBox(
           height: toolCardExtent(context),
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: gutter),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 16),
-            itemBuilder: (context, i) => SizedBox(
-              width: cardWidth,
-              child: ToolCard(tool: items[i]),
-            ),
+          child: LayoutBuilder(
+            builder: (context, box) {
+              // On a wide window the cards are the width of the grid's
+              // columns below, so the shelf lines up with everything under
+              // it; the next card peeks in at the edge to say it scrolls.
+              final columns = gridColumnsFor(width);
+              final room = box.maxWidth - gutter * 2;
+              final cardWidth = phone
+                  ? width * 0.78
+                  : (room - 16 * (columns - 1)) / columns;
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: gutter),
+                itemCount: items.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 16),
+                itemBuilder: (context, i) => SizedBox(
+                  width: cardWidth,
+                  child: ToolCard(tool: items[i]),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -80,7 +92,7 @@ class NewThisWeek extends ConsumerWidget {
       ),
       action: onSeeAll == null
           ? null
-          : TextButton(onPressed: onSeeAll, child: const Text('See all')),
+          : SectionAction(label: 'See all', onPressed: onSeeAll!),
     );
   }
 }
@@ -102,9 +114,10 @@ class ForYou extends ConsumerWidget {
         pricing: ref.watch(discoverPricingProvider),
         categories: ([...interests]..sort()).join(','),
       ),
-      action: TextButton(
+      action: SectionAction(
+        label: 'Edit',
+        icon: Icons.tune,
         onPressed: () => showInterestPicker(context),
-        child: const Text('Edit'),
       ),
     );
   }

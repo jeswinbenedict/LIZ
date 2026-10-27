@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../core/repository/repositories.dart';
+import '../../shared/widgets/equal_height_grid.dart';
 import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/news_card.dart' show newsSourceLabel;
@@ -35,9 +36,9 @@ class ToolHeadlines extends ConsumerWidget {
         SectionHeader(
           title: 'Tools in the headlines',
           subtitle: 'Recent stories that name a tool Liz lists.',
-          action: TextButton(
+          action: SectionAction(
+            label: 'All news',
             onPressed: () => context.go('/news'),
-            child: const Text('All news'),
           ),
         ),
         Padding(
@@ -45,17 +46,9 @@ class ToolHeadlines extends ConsumerWidget {
           child: LayoutBuilder(
             builder: (context, box) {
               final columns = box.maxWidth >= 720 ? 2 : 1;
-              final width = (box.maxWidth - 16 * (columns - 1)) / columns;
-              return Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  for (final h in items)
-                    SizedBox(
-                      width: width,
-                      child: _HeadlineCard(headline: h),
-                    ),
-                ],
+              return EqualHeightGrid(
+                columns: columns,
+                children: [for (final h in items) _HeadlineCard(headline: h)],
               );
             },
           ),
@@ -88,74 +81,77 @@ class _HeadlineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            link: true,
-            linkUrl: Uri.tryParse(item.url),
-            label: '${item.title}, from ${item.source ?? 'the news'}',
-            container: true,
-            child: InkWell(
-              onTap: _open,
-              child: ExcludeSemantics(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '$source · ${timeAgo(item.publishedAt)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: LizText.label.copyWith(
-                                color: p.textSecondary,
+          Expanded(
+            child: Semantics(
+              link: true,
+              linkUrl: Uri.tryParse(item.url),
+              label: '${item.title}, from ${item.source ?? 'the news'}',
+              container: true,
+              child: InkWell(
+                onTap: _open,
+                child: ExcludeSemantics(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '$source · ${timeAgo(item.publishedAt)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: LizText.label.copyWith(
+                                  color: p.textSecondary,
+                                ),
                               ),
                             ),
-                          ),
-                          Icon(
-                            Icons.north_east,
-                            size: 15,
-                            color: p.textTertiary,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        item.title,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: LizText.headline.copyWith(
-                          color: p.textPrimary,
-                          fontSize: 16,
-                          height: 1.35,
+                            Icon(
+                              Icons.north_east,
+                              size: 15,
+                              color: p.textTertiary,
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          item.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: LizText.headline.copyWith(
+                            color: p.textPrimary,
+                            fontSize: 16,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 for (final t in headline.tools.take(3))
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(48, 40),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ActionChip(
+                    tooltip: 'Open ${t.name}',
+                    avatar: Icon(
+                      Icons.arrow_forward,
+                      size: 14,
+                      color: p.textSecondary,
                     ),
+                    label: Text(t.name),
                     onPressed: () => context.push(
                       t.slug.isEmpty
                           ? '/tool/${t.id}'
                           : '/tools/${Uri.encodeComponent(t.slug)}',
                     ),
-                    icon: const Icon(Icons.arrow_forward, size: 15),
-                    label: Text(t.name),
                   ),
               ],
             ),

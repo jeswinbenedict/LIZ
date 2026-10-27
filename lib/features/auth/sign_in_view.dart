@@ -49,6 +49,12 @@ class SignInView extends ConsumerStatefulWidget {
 }
 
 class _SignInViewState extends ConsumerState<SignInView> {
+  /// A link inside a sentence: tight padding, still a 48-wide target.
+  static final _inlineLink = TextButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 6),
+    minimumSize: const Size(48, 40),
+  );
+
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _name = TextEditingController();
@@ -395,19 +401,30 @@ class _SignInViewState extends ConsumerState<SignInView> {
             // Say what signing up agrees to before it happens, and let it be
             // read without losing what has been typed into the form.
             if (_isSignUp)
-              Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              // The sentence on one line and its two links on the next,
+              // set close: a wrap of full-size buttons left holes in it.
+              Column(
                 children: [
-                  Text('By creating an account you agree to the', style: small),
-                  TextButton(
-                    onPressed: () => _openPage('/terms', keepSheet: true),
-                    child: const Text('Terms'),
+                  Text(
+                    'By creating an account you agree to the',
+                    style: small,
+                    textAlign: TextAlign.center,
                   ),
-                  Text('and', style: small),
-                  TextButton(
-                    onPressed: () => _openPage('/privacy', keepSheet: true),
-                    child: const Text('Privacy policy'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        style: _inlineLink,
+                        onPressed: () => _openPage('/terms', keepSheet: true),
+                        child: const Text('Terms'),
+                      ),
+                      Text('and', style: small),
+                      TextButton(
+                        style: _inlineLink,
+                        onPressed: () => _openPage('/privacy', keepSheet: true),
+                        child: const Text('Privacy policy'),
+                      ),
+                    ],
                   ),
                 ],
               )

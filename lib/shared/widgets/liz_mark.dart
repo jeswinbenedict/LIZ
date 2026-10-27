@@ -1,34 +1,42 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 
-/// The Liz mark: the circled Z. It stands for Liz everywhere — the brand in
-/// the sidebar and top bar (LizWordmark), the head of Ask Liz, and every
-/// control or label that means "Liz does this" (Ask Liz, AI summaries), where
-/// a generic sparkle used to be.
+/// The Liz mark, "the Rise": the stem of the l, and beside it a blade rising
+/// from the baseline — a tool climbing past the rest. Two flat shapes on a
+/// 64-unit grid, no outline, no glow, so it holds from a 16-pixel favicon to
+/// a billboard (docs/DESIGN.md §2, Brand).
+///
+/// It stands for Liz everywhere: beside the wordmark ([LizWordmark]), at the
+/// head of Ask Liz, and on every control that means "Liz does this".
 class LizMark extends StatelessWidget {
-  /// The brand: accent red with a soft glow.
+  /// The brand: in accent red.
   const LizMark({super.key, double this.size = 28, this.color})
-    : glow = true,
-      _asIcon = false;
+    : _asIcon = false;
 
   /// In place of an [Icon]: the size and colour of the [IconTheme] around it
-  /// unless given (so buttons, nav bars and pills colour it as they would an
-  /// icon), and no glow unless asked for.
-  const LizMark.icon({super.key, this.size, this.color, this.glow = false})
-    : _asIcon = true;
+  /// unless given, so buttons, nav bars and pills colour it as they would an
+  /// icon.
+  const LizMark.icon({super.key, this.size, this.color}) : _asIcon = true;
 
   final double? size;
   final Color? color;
-  final bool glow;
   final bool _asIcon;
 
-  /// The artwork leaves a wider margin round the circle than an icon font
-  /// leaves round its glyph; drawn this much larger, the two read the same
-  /// size side by side.
-  static const _iconScale = 1.15;
+  /// The two shapes, in units of a 64-square: the stem, then the blade.
+  /// The same points draw the app icons (tool/brand/make_icons.py).
+  static const stem = [
+    Offset(10, 6),
+    Offset(24, 6),
+    Offset(24, 58),
+    Offset(10, 58),
+  ];
+  static const blade = [
+    Offset(30, 44),
+    Offset(56, 24),
+    Offset(56, 38),
+    Offset(30, 58),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -36,47 +44,32 @@ class LizMark extends StatelessWidget {
     final theme = IconTheme.of(context);
     final box = size ?? (_asIcon ? theme.size ?? 24 : 28);
     final ink = color ?? (_asIcon ? theme.color ?? p.textSecondary : p.accent);
-    final drawn = _asIcon ? box * _iconScale : box;
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-
-    // The artwork is a single near-black glyph on transparency, tinted.
-    // ColorFiltered rather than Image's own `color`: the latter renders
-    // nothing under CanvasKit. A blurred copy behind it is its glow.
-    Widget glyph(Color tint) => ColorFiltered(
-      colorFilter: ColorFilter.mode(tint, BlendMode.srcIn),
-      child: Image.asset(
-        'assets/branding/liz-logo-light.png',
-        width: drawn,
-        height: drawn,
-        cacheWidth: (drawn * dpr).round(),
-        cacheHeight: (drawn * dpr).round(),
-        filterQuality: FilterQuality.high,
-      ),
-    );
-
-    final mark = Stack(
-      alignment: Alignment.center,
-      children: [
-        if (glow)
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-            child: glyph(p.glow.withValues(alpha: 0.9)),
-          ),
-        glyph(ink),
-      ],
-    );
-    if (!_asIcon) return mark;
     return SizedBox.square(
       dimension: box,
-      // Minimums of zero: a button forcing its 48-pixel tap target on the
-      // box must not reach the glyph inside.
-      child: OverflowBox(
-        minWidth: 0,
-        minHeight: 0,
-        maxWidth: drawn,
-        maxHeight: drawn,
-        child: mark,
-      ),
+      child: CustomPaint(painter: LizMarkPainter(ink)),
     );
   }
+}
+
+/// Paints [LizMark.stem] and [LizMark.blade] scaled to the canvas.
+class LizMarkPainter extends CustomPainter {
+  const LizMarkPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final unit = size.shortestSide / 64;
+    final paint = Paint()
+      ..color = color
+      ..isAntiAlias = true;
+    for (final shape in const [LizMark.stem, LizMark.blade]) {
+      canvas.drawPath(
+        Path()..addPolygon([for (final o in shape) o * unit], true),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(LizMarkPainter old) => old.color != color;
 }

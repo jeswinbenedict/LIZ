@@ -64,7 +64,7 @@ void main() {
   ) async {
     await _pump(tester, const ToolHeadlines());
     expect(find.text('Tools in the headlines'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'Scriptly'));
+    await tester.tap(find.widgetWithText(ActionChip, 'Scriptly'));
     await tester.pumpAndSettle();
     expect(find.text('tool scriptly'), findsOneWidget);
   });

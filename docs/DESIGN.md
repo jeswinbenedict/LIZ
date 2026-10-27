@@ -156,7 +156,7 @@ hairline. Light is reserved for emphasis.
 | Material | Fill | Edge | Light | Used for |
 |---|---|---|---|---|
 | base | `surface` | `hairline` | none | Cards, panels at rest |
-| raised | `surface` | `hairlineStrong` | none | Hovered cards |
+| raised | `surfaceMuted` | `hairlineStrong` | none | Hovered cards |
 | floating | `surfaceMuted` | `hairlineStrong` | black shadow | Menus, popovers, snackbars |
 | bar | `canvas` @ 92% over a blur | `hairline` | none | Phone top bar and tab bar; `LizTopBar` |
 
@@ -195,8 +195,33 @@ Alerts, Settings, legal pages, alternatives). A back button that always works �
 to the previous page, or a fallback when the page was opened by its address —
 and on wider windows the trail "Liz / Discover / Lensflow".
 
-**Wordmark.** The glyph in red with a blurred copy behind it as glow, and
-"LIZ" in spaced capitals (read by screen readers as "Liz").
+**Brand mark — "the Rise"** (`LizMark`, 28 October 2026). Two flat shapes on
+a 64-unit square: the stem of the *l*, and beside it a blade rising from the
+baseline — a tool climbing past the rest. No outline, no circle, no glow, so
+it holds from a 16px favicon to a billboard, in the manner of the Nike,
+Adidas and Apple marks. Red when it is the brand; the colour of the icons
+around it when it stands for "Liz does this" (`LizMark.icon`). Drawn by a
+painter from `LizMark.stem` and `LizMark.blade`; every raster copy (favicon,
+app icons, splash, link-preview card) is drawn from the same points by
+`tool/brand/make_icons.py` — change the points in both, then run it.
+
+**Wordmark** (`LizWordmark`). The mark, then "liz" in lowercase Space Grotesk
+Bold set tight (−3%), the word as tall as the mark: the *l* of the word repeats
+the stem beside it. Read by screen readers as "Liz".
+
+**Section header** (`SectionHeader`). The title (`title2`) with its action on
+the same line, centred on it, at the right edge; the subtitle under both.
+Tool pages use the same arrangement.
+
+**Section action** (`SectionAction`). The only way to put an action beside a
+section title: grey words, white under the pointer, never red. Going
+somewhere ("See all", "All news", "Get a badge") ends in an arrow; making
+something ("Write a review", "Post") starts with its icon. Moved right by its
+own padding so the words line up with the section's edge.
+
+**Equal rows** (`EqualHeightGrid`). Short lists of cards whose text runs to
+different lengths (headlines, Ask Liz examples) sit in rows where every card
+is as tall as the tallest.
 
 **Buttons.** *Primary* — `accentFill`, white label, flat; one per screen.
 *Secondary* (`LizButtons.tonal`) — `surfaceMuted` with a `hairlineStrong`
@@ -277,7 +302,13 @@ coloured. Group titles are sentence-case labels.
   what it is for in a 260px column on the left, its rows on the right,
   sections divided by hairlines. Narrow: name and sentence above the rows.
   Switches are white when on — a state, not an action, so not red.
-- **Search, Compare** take the theme without layouts of their own.
+- **Search.** The field is the page: large, under the top bar, with the
+  count ("**2 tools** for “voice”") and the price filter on the line below.
+  Before typing: popular searches as chips and a pointer to Ask Liz. Three
+  words or more also offer *Ask Liz* above the results.
+- **Compare.** A title naming the tools, *Copy link* beside it, and the table
+  in one framed panel: grey row labels, each tool's logo, name, tagline and
+  *View tool* at the head of its column.
 
 ---
 
@@ -309,6 +340,10 @@ by light alone, and decorative lines are excluded from semantics.
 | Sign-in panel with neon seams and a drawn trend | The claim and a preview of the product | Show the product, not decoration |
 | Pages over the app had a back arrow only when opened by tapping | `LizTopBar`: back always works; "Liz / Discover / …" on wide windows | Every screen names the product and the way back |
 | 4–20 radii | 6 / 8 / 12 / 16 / 20 | Fewer, more deliberate corners |
+| The circled Z with a glow; "LIZ" spaced | "The Rise" mark, flat; "liz" set tight | A mark that reads at 16px and says what Liz does |
+| Section actions in red, each placed its own way | `SectionAction`: grey, on the title's line, at the edge | One section reads like every other |
+| Cards lit red under the pointer; "New" and "AI" badges in red | A lighter edge and tone; grey badges | Hover and labels are not actions |
+| Headline and example cards ragged in height | Rows of equal height | A grid should read as a grid |
 | Red switches, red *Mark all read* and *Turn on* | White switches; neutral outlined secondary actions | Red stays on the one primary action and on rising data |
 
 ### 1 October 2026 — Signal

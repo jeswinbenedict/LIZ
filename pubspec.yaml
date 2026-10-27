@@ -107,10 +107,6 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  assets:
-    - assets/branding/
-
   # Fonts are bundled rather than fetched from fonts.gstatic.com at runtime:
   # fetching cost 1.6 MB per load, sent every visitor's IP to Google, and laid
   # the UI out with fallback metrics first (clipped chip labels). Both are

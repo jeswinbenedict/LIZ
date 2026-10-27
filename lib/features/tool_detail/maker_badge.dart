@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../core/config/env.dart';
 import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/tool_link.dart';
 
 /// The badge a maker embeds on their own site, linking back to the tool's
@@ -91,9 +92,9 @@ class MakerBadgeRow extends StatelessWidget {
               style: LizText.callout.copyWith(color: p.textSecondary),
             ),
           ),
-          TextButton(
+          SectionAction(
+            label: 'Get a badge',
             onPressed: () => showMakerBadgeSheet(context, tool),
-            child: const Text('Get a badge'),
           ),
         ],
       ),

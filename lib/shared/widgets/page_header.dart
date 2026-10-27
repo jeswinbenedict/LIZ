@@ -89,16 +89,17 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.liz;
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+    // The action sits on the title's line, centred on it, at the right
+    // edge of the section — the same place in every section of the app.
     return Padding(
       padding: padding ?? EdgeInsets.fromLTRB(gutter, 28, gutter, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
                   container: true,
                   header: true,
                   child: Text(
@@ -106,17 +107,76 @@ class SectionHeader extends StatelessWidget {
                     style: LizText.title2.copyWith(color: p.textPrimary),
                   ),
                 ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: LizText.callout.copyWith(color: p.textSecondary),
-                  ),
-                ],
-              ],
+              ),
+              if (action != null) ...[const SizedBox(width: 16), action!],
+            ],
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              style: LizText.callout.copyWith(color: p.textSecondary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The one way to put an action beside a section's title: quiet grey words
+/// that brighten under the pointer. Going somewhere ("See all") ends in an
+/// arrow; making something ("Write a review") starts with its [icon]. Red is
+/// kept for a page's one primary action, so section actions never use it.
+class SectionAction extends StatelessWidget {
+  const SectionAction({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    // Moved right by its own padding, so the words — not the invisible edge
+    // of the button — line up with the right edge of the section below.
+    return Transform.translate(
+      offset: const Offset(10, 0),
+      child: _button(context.liz),
+    );
+  }
+
+  Widget _button(LizPalette p) {
+    return TextButton(
+      style:
+          TextButton.styleFrom(
+            foregroundColor: p.textSecondary,
+            minimumSize: const Size(48, 40),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            textStyle: LizText.subhead.copyWith(fontWeight: FontWeight.w600),
+          ).copyWith(
+            foregroundColor: WidgetStateProperty.resolveWith(
+              (s) =>
+                  s.contains(WidgetState.hovered) ||
+                      s.contains(WidgetState.focused)
+                  ? p.textPrimary
+                  : p.textSecondary,
             ),
           ),
-          ?action,
+      onPressed: onPressed,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[Icon(icon, size: 16), const SizedBox(width: 6)],
+          Text(label),
+          if (icon == null) ...[
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_forward, size: 16),
+          ],
         ],
       ),
     );

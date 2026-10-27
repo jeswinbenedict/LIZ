@@ -73,7 +73,7 @@ class ToolCard extends StatelessWidget {
                         ),
                         if (tool.isNew) ...[
                           const SizedBox(width: 6),
-                          LizPill(label: 'New', color: p.accent),
+                          const LizPill(label: 'New'),
                         ],
                       ],
                     ),

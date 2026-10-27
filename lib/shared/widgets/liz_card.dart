@@ -52,15 +52,13 @@ class _LizCardState extends State<LizCard> {
       curve: LizMotion.ease,
       transform: Matrix4.translationValues(0, lifted && !reduce ? -2 : 0, 0),
       decoration: ShapeDecoration(
-        color: p.surface,
         shape: LizRadius.shape(
           widget.radius,
-          // Under the pointer a card is lit: a red edge and a faint glow.
-          side: BorderSide(
-            color: lifted ? p.accent.withValues(alpha: 0.65) : p.hairline,
-          ),
+          // Under the pointer a card lifts and its edge brightens — the
+          // same on every card, and never red: red means an action.
+          side: BorderSide(color: lifted ? p.hairlineStrong : p.hairline),
         ),
-        shadows: lifted ? LizShadows.glow(p, strength: 0.4) : const [],
+        color: lifted ? p.surfaceMuted : p.surface,
       ),
       child: Material(
         type: MaterialType.transparency,

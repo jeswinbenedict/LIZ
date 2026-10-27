@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../core/telemetry/analytics.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
+import '../../shared/widgets/equal_height_grid.dart';
 import '../../shared/widgets/liz_card.dart';
 import '../../shared/widgets/liz_mark.dart';
 import '../../shared/widgets/skeletons.dart';
@@ -486,7 +487,7 @@ class _Intro extends StatelessWidget {
                   ),
                 ),
                 alignment: Alignment.center,
-                child: const LizMark(size: 42),
+                child: const LizMark(size: 30),
               ),
               const SizedBox(height: 20),
               Semantics(
@@ -514,15 +515,12 @@ class _Intro extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final columns = constraints.maxWidth >= 520 ? 2 : 1;
-                  final width =
-                      (constraints.maxWidth - (columns - 1) * 12) / columns;
-                  return Wrap(
+                  return EqualHeightGrid(
+                    columns: columns,
                     spacing: 12,
-                    runSpacing: 12,
                     children: [
                       for (var i = 0; i < examples.length; i++)
                         SizedBox(
-                          width: width,
                           child: LizCard(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,

@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
 import '../../shared/widgets/liz_card.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 
@@ -56,9 +57,9 @@ class SimilarToolsSection extends ConsumerWidget {
                 ),
               ),
               if (slug != null)
-                TextButton(
+                SectionAction(
+                  label: 'See all',
                   onPressed: () => context.push('/alternatives/$slug'),
-                  child: const Text('See all'),
                 ),
             ],
           ),

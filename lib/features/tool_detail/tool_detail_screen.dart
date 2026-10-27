@@ -12,6 +12,7 @@ import '../../core/telemetry/analytics.dart';
 import '../../shared/models/review.dart';
 import '../../shared/models/tool.dart';
 import '../../shared/widgets/badges.dart';
+import '../../shared/widgets/page_header.dart';
 import '../../shared/widgets/page_title.dart';
 import '../../shared/widgets/rating_stars.dart';
 import '../../shared/widgets/states.dart';
@@ -198,7 +199,7 @@ class _ToolBody extends ConsumerWidget {
                         style: LizText.title1.copyWith(color: p.textPrimary),
                       ),
                     ),
-                    if (tool.isNew) LizPill(label: 'New', color: p.accent),
+                    if (tool.isNew) const LizPill(label: 'New'),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -326,15 +327,15 @@ class _ToolBody extends ConsumerWidget {
 
       _Section(
         title: 'Ratings & reviews',
-        trailing: TextButton.icon(
+        trailing: SectionAction(
+          label: 'Write a review',
+          icon: Icons.edit_outlined,
           onPressed: () => showReviewComposer(
             context,
             ref,
             toolId: tool.id,
             toolName: tool.name,
           ),
-          icon: const Icon(Icons.edit_outlined, size: 18),
-          label: const Text('Write a review'),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,15 +370,15 @@ class _ToolBody extends ConsumerWidget {
 
       _Section(
         title: 'From the community',
-        trailing: TextButton.icon(
+        trailing: SectionAction(
+          label: 'Post',
+          icon: Icons.edit_outlined,
           onPressed: () => showPostComposer(
             context,
             ref,
             toolId: tool.id,
             toolName: tool.name,
           ),
-          icon: const Icon(Icons.edit_outlined, size: 18),
-          label: const Text('Post'),
         ),
         child: postsAsync.when(
           loading: () =>
@@ -656,11 +657,7 @@ class _Section extends StatelessWidget {
               ),
               if (badge != null) ...[
                 const SizedBox(width: 8),
-                LizPill(
-                  label: badge!,
-                  color: p.accent,
-                  leading: const LizMark.icon(),
-                ),
+                LizPill(label: badge!, leading: const LizMark.icon()),
               ],
               const Spacer(),
               ?trailing,
