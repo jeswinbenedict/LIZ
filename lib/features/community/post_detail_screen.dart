@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
+import '../../app/theme.dart';
 import '../../shared/models/comment.dart';
 import '../../shared/models/post.dart';
 import '../../shared/widgets/states.dart';
 import '../../shared/widgets/time_ago.dart';
+import '../../shared/widgets/top_bar.dart';
 import '../../shared/widgets/user_avatar.dart';
 import '../auth/guard.dart';
 import 'community_controller.dart';
@@ -21,17 +23,10 @@ class PostDetailScreen extends ConsumerWidget {
     final postAsync = ref.watch(postByIdProvider(postId));
 
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/community');
-            }
-          },
-        ),
-        title: const Text('Post'),
+      appBar: const LizTopBar(
+        title: 'Post',
+        section: ('Community', '/community'),
+        fallback: '/community',
       ),
       body: postAsync.when(
         loading: () => const LoadingView(),
@@ -88,148 +83,224 @@ class _PostDetailBodyState extends ConsumerState<_PostDetailBody> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final post = widget.post;
     final author = post.author;
     final comments = ref.watch(commentsProvider(post.id));
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+    final phone = context.isPhone;
+    final count = comments.value?.length ?? post.commentCount;
 
-    return MaxWidth(
-      maxWidth: 720,
-      child: Column(
-        children: [
-          Expanded(
+    return Column(
+      children: [
+        Expanded(
+          child: MaxWidth(
+            maxWidth: 720 + gutter * 2,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              padding: EdgeInsets.fromLTRB(gutter, phone ? 12 : 32, gutter, 32),
               children: [
-                // Post
-                Row(
-                  children: [
-                    Expanded(
-                      child: AuthorLink(
-                        author: author,
-                        avatarRadius: 20,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                // The post, framed like it is in the feed, set larger.
+                DecoratedBox(
+                  decoration: ShapeDecoration(
+                    color: p.surface,
+                    shape: LizRadius.shape(
+                      LizRadius.lg,
+                      side: BorderSide(color: p.hairline),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              author?.displayName ?? 'Someone',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
+                            Expanded(
+                              child: AuthorLink(
+                                author: author,
+                                avatarRadius: 20,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      author?.displayName ?? 'Someone',
+                                      style: LizText.callout.copyWith(
+                                        color: p.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      '@${author?.username ?? 'user'} · '
+                                      '${timeAgo(post.createdAt)}',
+                                      style: LizText.footnote.copyWith(
+                                        color: p.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            Text(
-                              '@${author?.username ?? 'user'} · ${timeAgo(post.createdAt)}',
-                              style: TextStyle(
-                                color: scheme.onSurfaceVariant,
-                                fontSize: 12.5,
+                            IconButton(
+                              icon: const Icon(Icons.flag_outlined, size: 20),
+                              tooltip: 'Report',
+                              onPressed: () => showReportSheet(
+                                context,
+                                ref,
+                                targetType: 'post',
+                                targetId: post.id,
                               ),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 14),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Text(
+                            post.content,
+                            style: LizText.body.copyWith(
+                              color: p.textPrimary,
+                              fontSize: 17,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                        if (post.toolId != null && post.toolName != null) ...[
+                          const SizedBox(height: 14),
+                          ToolLinkChip(
+                            toolId: post.toolId!,
+                            name: post.toolName!,
+                          ),
+                        ],
+                        const SizedBox(height: 6),
+                        LikeButton(
+                          targetType: 'post',
+                          targetId: post.id,
+                          initialLiked: post.likedByMe,
+                          initialCount: post.likeCount,
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.flag_outlined),
-                      tooltip: 'Report',
-                      onPressed: () => showReportSheet(
-                        context,
-                        ref,
-                        targetType: 'post',
-                        targetId: post.id,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  post.content,
-                  style: const TextStyle(fontSize: 16, height: 1.4),
-                ),
-                if (post.toolId != null && post.toolName != null) ...[
-                  const SizedBox(height: 12),
-                  ToolLinkChip(toolId: post.toolId!, name: post.toolName!),
-                ],
-                const SizedBox(height: 8),
-                LikeButton(
-                  targetType: 'post',
-                  targetId: post.id,
-                  initialLiked: post.likedByMe,
-                  initialCount: post.likeCount,
-                ),
-                const Divider(height: 24),
-                Text(
-                  'Comments',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 32),
+                Semantics(
+                  container: true,
+                  header: true,
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Comments',
+                          style: LizText.title3.copyWith(color: p.textPrimary),
+                        ),
+                        if (count > 0)
+                          TextSpan(
+                            text: '  $count',
+                            style: LizText.title3.copyWith(
+                              color: p.textSecondary,
+                              fontWeight: FontWeight.w500,
+                              fontFeatures: LizText.tabular,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 comments.when(
                   loading: () => const Padding(
                     padding: EdgeInsets.all(20),
                     child: LoadingView(),
                   ),
                   error: (_, _) => const SizedBox.shrink(),
-                  data: (list) => list.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Text(
-                            'No comments yet — start the thread.',
-                            style: TextStyle(color: scheme.onSurfaceVariant),
+                  data: (list) => DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: p.surface,
+                      shape: LizRadius.shape(
+                        LizRadius.md,
+                        side: BorderSide(color: p.hairline),
+                      ),
+                    ),
+                    child: list.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text(
+                              'No comments yet — start the thread.',
+                              style: LizText.callout.copyWith(
+                                color: p.textSecondary,
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: [
+                              for (var i = 0; i < list.length; i++) ...[
+                                if (i > 0)
+                                  Divider(height: 1, color: p.hairline),
+                                _CommentTile(comment: list[i]),
+                              ],
+                            ],
                           ),
-                        )
-                      : Column(
-                          children: [
-                            for (final c in list) _CommentTile(comment: c),
-                          ],
-                        ),
+                  ),
                 ),
               ],
             ),
           ),
-          // Composer
-          SafeArea(
+        ),
+        // The reply box, along the foot of the page.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: p.surface,
+            border: Border(top: BorderSide(color: p.hairline)),
+          ),
+          child: SafeArea(
             top: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                12,
-                8,
-                12,
-                8 + MediaQuery.viewInsetsOf(context).bottom,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(
-                        hintText: 'Add a comment…',
+            child: Align(
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 720 + gutter * 2),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    gutter,
+                    10,
+                    gutter,
+                    10 + MediaQuery.viewInsetsOf(context).bottom,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          minLines: 1,
+                          maxLines: 4,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _send(),
+                          decoration: const InputDecoration(
+                            hintText: 'Add a comment…',
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        tooltip: 'Post comment',
+                        onPressed: _sending ? null : _send,
+                        icon: _sending
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.arrow_upward),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    tooltip: 'Post comment',
-                    onPressed: _sending ? null : _send,
-                    icon: _sending
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -240,10 +311,10 @@ class _CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.liz;
     final author = comment.author;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -267,34 +338,42 @@ class _CommentTile extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
+            )
+          else
+            const SizedBox(width: 48),
           const SizedBox(width: 4),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      author?.displayName ?? 'User',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13.5,
-                      ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: author?.displayName ?? 'User',
+                          style: LizText.subhead.copyWith(
+                            color: p.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        TextSpan(
+                          text: '  ${timeAgo(comment.createdAt)}',
+                          style: LizText.footnote.copyWith(
+                            color: p.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      timeAgo(comment.createdAt),
-                      style: TextStyle(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(comment.body, style: const TextStyle(height: 1.35)),
-              ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    comment.body,
+                    style: LizText.callout.copyWith(color: p.textPrimary),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

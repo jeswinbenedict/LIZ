@@ -314,6 +314,16 @@ coloured. Group titles are sentence-case labels.
 - **Community.** The top bar, a title with *New post* (the primary action,
   in place of a floating button) beside it, *Newest / Trending* as the
   segmented control, and posts as framed cards in a 720px column.
+- **Post.** The top bar ("Liz / Community / Post"); the post in a framed
+  card, set larger than in the feed, with *Report* as a flag in its corner;
+  *Comments* with their count, in one framed list; the reply box in a bar
+  along the foot of the page.
+- **Someone's profile.** The same page as your own, built from the same
+  parts (`profile_parts.dart`: `ProfileHeader`, `ProfileFigure`,
+  `ProfileHeading`, `ProfilePanel`, `ProfileEmptyPanel`): avatar, name as the
+  heading, role badge, handle and join date, bio, figures, and *Follow* (or
+  *Edit profile* on your own) beside the name; then *Reviews* in a framed
+  list and *Posts* as cards.
 - **Admin console.** The top bar, a title, and tabs with their icons beside
   their names, in line with the content (the selected tab white, not red).
   Every tab is built from `admin_widgets.dart`: `AdminSection` (heading and

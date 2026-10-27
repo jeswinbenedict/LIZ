@@ -3,16 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/responsive/breakpoints.dart';
+import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/profile.dart';
 import '../../shared/widgets/states.dart';
-import '../../shared/widgets/time_ago.dart';
+import '../../shared/widgets/top_bar.dart';
 import '../../shared/widgets/user_avatar.dart';
 import '../community/community_controller.dart';
 import '../community/community_widgets.dart';
 import '../track/follow_user_button.dart';
+import 'profile_parts.dart';
 
-/// Public profile for any user: bio, their reviews + posts, and a follow button.
+/// Anyone's public profile: who they are, Follow, and what they wrote — the
+/// same page as your own (ProfileScreen), without the account settings.
 class UserProfileScreen extends ConsumerWidget {
   const UserProfileScreen({super.key, required this.userId});
   final String userId;
@@ -22,17 +25,15 @@ class UserProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileByIdProvider(userId));
 
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/community');
-            }
-          },
+      appBar: LizTopBar(
+        title: profileAsync.maybeWhen(
+          data: (profile) => profile?.displayName ?? 'Profile',
+          orElse: () => null,
         ),
-        title: const Text('Profile'),
+        section: ('Community', '/community'),
+        fallback: '/community',
+        // The person's name is the page's heading, beside their avatar.
+        titleIsHeading: false,
       ),
       body: profileAsync.when(
         loading: () => const LoadingView(),
@@ -44,6 +45,7 @@ class UserProfileScreen extends ConsumerWidget {
                 icon: Icons.person_off_outlined,
                 title: 'User not found',
                 message: 'This profile may have been removed.',
+                headingLevel: 1,
               )
             : _Body(profile: profile),
       ),
@@ -57,130 +59,76 @@ class _Body extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final phone = context.isPhone;
+    final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
     final me = ref.watch(currentUserProvider);
     final isSelf = me?.id == profile.id;
     final reviews = ref.watch(reviewsByUserProvider(profile.id));
     final posts = ref.watch(postFeedProvider(PostFeedKey(userId: profile.id)));
+    final first = profile.displayName.split(' ').first;
 
     return MaxWidth(
-      maxWidth: 720,
+      maxWidth: 760 + gutter * 2,
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 40),
+        padding: EdgeInsets.fromLTRB(gutter, phone ? 12 : 36, gutter, 48),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    UserAvatar(profile: profile, radius: 34),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  profile.displayName,
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                              ),
-                              if (profile.role.canModerate) ...[
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.verified,
-                                  size: 18,
-                                  color: scheme.primary,
-                                ),
-                              ],
-                            ],
-                          ),
-                          Text(
-                            '@${profile.username}',
-                            style: TextStyle(color: scheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!isSelf) FollowUserButton(userId: profile.id),
-                  ],
-                ),
-                if (profile.bio != null && profile.bio!.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Text(profile.bio!, style: const TextStyle(height: 1.4)),
-                ],
-                const SizedBox(height: 12),
-                Text(
-                  'Joined ${timeAgo(profile.createdAt)} ago',
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 12.5,
-                  ),
-                ),
-              ],
-            ),
+          ProfileHeader(
+            profile: profile,
+            avatar: UserAvatar(profile: profile, radius: phone ? 32 : 40),
+            figures: [
+              (reviews.value?.length, 'reviews'),
+              (posts.value?.length, 'posts'),
+            ],
+            // Your own page, reached from a post: the way to edit it, rather
+            // than a Follow button aimed at yourself.
+            trailing: isSelf
+                ? OutlinedButton(
+                    onPressed: () => context.go('/profile'),
+                    child: const Text('Edit profile'),
+                  )
+                : FollowUserButton(userId: profile.id),
           ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(
-              'Reviews',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
+          SizedBox(height: phone ? 28 : 40),
+          const ProfileHeading('Reviews'),
           reviews.when(
             loading: () => const LoadingView(),
             error: (_, _) => const SizedBox.shrink(),
             data: (list) => list.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'No reviews yet.',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
+                ? ProfileEmptyPanel(
+                    icon: Icons.rate_review_outlined,
+                    text: '$first has not reviewed a tool yet.',
                   )
-                : Column(
-                    children: [
-                      for (final r in list)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: ReviewTile(review: r),
-                        ),
-                    ],
+                : ProfilePanel(
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < list.length; i++) ...[
+                          if (i > 0)
+                            Divider(height: 1, color: context.liz.hairline),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: ReviewTile(review: list[i]),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(
-              'Posts',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
+          const SizedBox(height: 32),
+          const ProfileHeading('Posts'),
           posts.when(
             loading: () => const LoadingView(),
             error: (_, _) => const SizedBox.shrink(),
             data: (list) => list.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                    child: Text(
-                      'No posts yet.',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
+                ? ProfileEmptyPanel(
+                    icon: Icons.forum_outlined,
+                    text: '$first has not posted yet.',
                   )
                 : Column(
                     children: [
-                      for (final p in list)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: PostCard(post: p),
-                        ),
+                      for (var i = 0; i < list.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 12),
+                        PostCard(post: list[i]),
+                      ],
                     ],
                   ),
           ),
