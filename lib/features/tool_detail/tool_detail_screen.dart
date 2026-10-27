@@ -20,6 +20,7 @@ import '../../shared/widgets/time_ago.dart';
 import '../../shared/widgets/tool_link.dart';
 import '../../shared/widgets/tool_logo.dart';
 import '../community/community_controller.dart';
+import '../discover/top_movers.dart' show ReasonText;
 import '../community/community_widgets.dart';
 import '../community/composers.dart';
 import '../compare/compare_sheet.dart';
@@ -258,8 +259,11 @@ class _ToolBody extends ConsumerWidget {
     ];
     // The facts and the signal: on a wide screen they stand in a rail beside
     // the reading column, so they stay in view while the page is read.
-    final rail = <Widget>[
-      _InfoStrip(tool: tool),
+    // Narrow: the facts as a strip under the header, App Store style.
+    // Wide: a framed panel of label and value rows in the rail, the same
+    // frame as the signal card under it.
+    List<Widget> rail({required bool wide}) => [
+      wide ? _AtAGlance(tool: tool) : _InfoStrip(tool: tool),
       // How it is moving — Signal's lead, before the words about it.
       ToolSignalsSection(tool: tool),
       _SignalLinks(tool: tool),
@@ -421,7 +425,7 @@ class _ToolBody extends ConsumerWidget {
                   gutter,
                   48,
                 ),
-                children: [...header, ...rail, ...body],
+                children: [...header, ...rail(wide: false), ...body],
               ),
             ),
           );
@@ -440,12 +444,12 @@ class _ToolBody extends ConsumerWidget {
                       children: [...header, ...body],
                     ),
                   ),
-                  const SizedBox(width: 40),
+                  const SizedBox(width: 48),
                   SizedBox(
-                    width: 360,
+                    width: 340,
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(0, 24, 0, 48),
-                      children: rail,
+                      children: rail(wide: true),
                     ),
                   ),
                 ],
@@ -545,6 +549,124 @@ class _InfoStrip extends StatelessWidget {
           }
           return Column(children: rows);
         },
+      ),
+    );
+  }
+}
+
+/// The facts, in the rail of a wide page: a framed list of label and value
+/// rows, read top to bottom like a spec sheet.
+class _AtAGlance extends StatelessWidget {
+  const _AtAGlance({required this.tool});
+  final Tool tool;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final rated = tool.ratingCount > 0;
+    final value = LizText.subhead.copyWith(
+      color: p.textPrimary,
+      fontWeight: FontWeight.w600,
+      fontFeatures: LizText.tabular,
+    );
+    final detail = LizText.footnote.copyWith(color: p.textSecondary);
+
+    final rows = <(String, Widget)>[
+      (
+        'Rating',
+        rated
+            ? Wrap(
+                spacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  RatingStars(tool.avgRating, size: 14),
+                  Text(tool.avgRating.toStringAsFixed(1), style: value),
+                  Text(
+                    '${compactCount(tool.ratingCount)} ratings',
+                    style: detail,
+                  ),
+                ],
+              )
+            : Text('No ratings yet', style: detail),
+      ),
+      (
+        'Price',
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PricingLabel(tool.pricingType),
+            if (tool.priceNote != null) ...[
+              const SizedBox(height: 2),
+              Text(tool.priceNote!, style: detail),
+            ],
+          ],
+        ),
+      ),
+      ('Category', Text(categoryLabel(tool.category), style: value)),
+      if (tool.platforms.isNotEmpty)
+        ('Platforms', Text(tool.platforms.join(', '), style: value)),
+      (
+        'First seen',
+        Text(
+          DateFormat('d MMM y').format(tool.createdAt.toLocal()),
+          style: value,
+        ),
+      ),
+      // What moved, in words, with its figure in red — the one red here.
+      if (tool.isRising)
+        (
+          tool.trendRank != null ? 'Rising #${tool.trendRank}' : 'Rising',
+          ReasonText(tool.trendReason!, maxLines: 3, small: true),
+        ),
+    ];
+
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairline),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            child: Semantics(
+              container: true,
+              header: true,
+              child: Text(
+                'At a glance',
+                style: LizText.headline.copyWith(color: p.textPrimary),
+              ),
+            ),
+          ),
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Divider(height: 1, color: p.hairline),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 96,
+                    child: Text(
+                      rows[i].$1,
+                      style: LizText.subhead.copyWith(color: p.textSecondary),
+                    ),
+                  ),
+                  Expanded(child: rows[i].$2),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 4),
+        ],
       ),
     );
   }
@@ -768,6 +890,7 @@ class _SourceLink extends StatelessWidget {
       uri: uri,
       target: LinkTarget.blank,
       builder: (context, follow) => TextButton.icon(
+        style: TextButton.styleFrom(foregroundColor: context.liz.textSecondary),
         onPressed: follow,
         icon: Icon(icon, size: 18),
         label: Text(label),

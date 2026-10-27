@@ -269,16 +269,23 @@ coloured. Group titles are sentence-case labels.
 
 ## 8. Screens
 
-- **Discover.** Title and subtitle, a large search field, then the *Top
-  movers* table, *New this week*, *For you*, and the catalog: category pills,
-  the sort segmented control, the price filter and the card grid.
+- **Discover.** Title and subtitle, with search beside them on a wide
+  window (under them otherwise); the *Rising this week* table; *Tools in the
+  headlines* as a framed list, one story per row with the tools it names at
+  the end; *For you*; *New this week*, its cards the width of the grid's
+  columns; then *All tools* — the sort and price filter on its title's line
+  (wide), the category pills under it, and the card grid.
 - **Sign in.** Wide: a brand panel (the claim, one sentence, and a preview of
   *Rising this week* drawn as the product draws it) beside the form. Narrow:
   the wordmark and the form. A first visit opens on *Create account*.
 - **Tool page.** Logo, name, tagline; *Visit website* (primary) with *Save*
-  and *Compare* (tonal); the facts strip with mono labels; the **signal
-  panel**; then *Summary*, *About*, timeline, similar tools, in the news,
-  what's new, reviews.
+  and *Compare*. Wide: a 340px rail with *At a glance* — a framed list of
+  label and value rows (rating, price, category, platforms, first seen, and
+  what is rising with its figure in red) — the **signal panel** in the same
+  frame, and the GitHub and Hacker News sources as grey links. Narrow: the
+  facts as a strip under the header. Then *Summary*, *About*, timeline,
+  similar tools (Discover's card, two across), in the news, what's new,
+  reviews, community.
 - **News.** A reading column: source in ink and the time in grey above each
   headline; the first story set larger (`NewsCard(lead:)`); *Quick take* a
   quiet grey control that opens the AI summary in a framed panel.

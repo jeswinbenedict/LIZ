@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
 import '../../shared/models/tool.dart';
-import '../../shared/widgets/badges.dart';
-import '../../shared/widgets/liz_card.dart';
 import '../../shared/widgets/page_header.dart';
-import '../../shared/widgets/tool_link.dart';
-import '../../shared/widgets/tool_logo.dart';
+import '../../shared/widgets/tool_card.dart';
 
 /// Tools close to this one by meaning.
 ///
@@ -64,76 +62,50 @@ class SimilarToolsSection extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 14),
-          SizedBox(
-            height:
-                132 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              itemCount: tools.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, i) => _SimilarCard(tool: tools[i]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SimilarCard extends StatelessWidget {
-  const _SimilarCard({required this.tool});
-  final Tool tool;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 232,
-      // Replace rather than push: hopping between related tools should not
-      // build a back stack ten deep to escape from.
-      child: ToolLink(
-        tool: tool,
-        replace: true,
-        builder: (context, open) => _card(context, open),
-      ),
-    );
-  }
-
-  Widget _card(BuildContext context, VoidCallback open) {
-    final p = context.liz;
-    return LizCard(
-      padding: const EdgeInsets.all(14),
-      onTap: open,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ToolLogo(tool: tool, size: 36),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  tool.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LizText.headline.copyWith(color: p.textPrimary),
+          // The same card as Discover's grid, at the width it is drawn for:
+          // two across in a reading column, up to two rows (the rest are a
+          // "See all" away). On a phone, a strip to swipe.
+          LayoutBuilder(
+            builder: (context, box) {
+              final height = toolCardExtent(context);
+              if (box.maxWidth >= 640) {
+                final shown = tools.take(4).toList();
+                return Column(
+                  children: [
+                    for (var r = 0; r < shown.length; r += 2) ...[
+                      if (r > 0) const SizedBox(height: 16),
+                      SizedBox(
+                        height: height,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(child: ToolCard(tool: shown[r])),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: r + 1 < shown.length
+                                  ? ToolCard(tool: shown[r + 1])
+                                  : const SizedBox(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              }
+              return SizedBox(
+                height: height,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
+                  itemCount: tools.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (context, i) =>
+                      SizedBox(width: 280, child: ToolCard(tool: tools[i])),
                 ),
-              ),
-            ],
+              );
+            },
           ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Text(
-              tool.tagline,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: LizText.subhead.copyWith(
-                color: p.textSecondary,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-          ToolMeta(tool, showCategory: false),
         ],
       ),
     );

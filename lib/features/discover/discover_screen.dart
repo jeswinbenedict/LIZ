@@ -78,6 +78,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               categoryLabel(pageCategory));
 
     final phone = context.isPhone;
+    // A wide window has room for search beside the title, which brings the
+    // table up the page.
+    final searchInHeader =
+        categoryName == null && MediaQuery.sizeOf(context).width >= 1100;
     final screen = Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -123,23 +127,31 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                             : 'New AI tools, ranked by how fast they are '
                                   'growing.',
                         // Tablets have no sidebar to carry alerts.
-                        trailing: context.isTablet ? const AlertsBell() : null,
-                        bottom: 16,
+                        trailing: searchInHeader
+                            ? const SizedBox(
+                                width: 400,
+                                child: SearchLauncher(),
+                              )
+                            : context.isTablet
+                            ? const AlertsBell()
+                            : null,
+                        bottom: searchInHeader ? 4 : 16,
                       ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: LizSpacing.gutter(
-                          MediaQuery.sizeOf(context).width,
+                    if (!searchInHeader)
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: LizSpacing.gutter(
+                            MediaQuery.sizeOf(context).width,
+                          ),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 640),
+                            child: SearchLauncher(large: !phone),
+                          ),
                         ),
                       ),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 640),
-                          child: SearchLauncher(large: !phone),
-                        ),
-                      ),
-                    ),
                     if (categoryName != null) ...[
                       TopMovers(category: pageCategory),
                       SectionHeader(title: 'All $categoryName tools'),
@@ -153,10 +165,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                             .read(discoverSortProvider.notifier)
                             .set(ToolSort.newest),
                       ),
-                      const SectionHeader(title: 'All tools'),
+                      SectionHeader(
+                        title: 'All tools',
+                        subtitle: 'Every tool Liz lists, by category.',
+                        // On a wide window, how to order sits on the title's
+                        // line rather than a row of its own.
+                        action: searchInHeader
+                            ? const _SortBar(inline: true)
+                            : null,
+                      ),
                       const _CategoryChips(),
                     ],
-                    const _SortBar(),
+                    if (!searchInHeader) const _SortBar(),
+                    if (searchInHeader) const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -233,7 +254,10 @@ class _CategoryChips extends ConsumerWidget {
 }
 
 class _SortBar extends ConsumerWidget {
-  const _SortBar();
+  const _SortBar({this.inline = false});
+
+  /// Beside a section title, without the bar's own padding.
+  final bool inline;
 
   static const _labels = {
     ToolSort.rising: 'Rising',
@@ -248,7 +272,9 @@ class _SortBar extends ConsumerWidget {
     // One toolbar: how to order, and what it may cost. The sort used to be a
     // second row of chips that looked like more categories.
     return Padding(
-      padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 8),
+      padding: inline
+          ? EdgeInsets.zero
+          : EdgeInsets.fromLTRB(gutter, 4, gutter, 8),
       child: Wrap(
         spacing: 12,
         runSpacing: 4,

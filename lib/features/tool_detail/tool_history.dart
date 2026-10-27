@@ -48,8 +48,8 @@ class ToolSignalsSection extends ConsumerWidget {
     final series = SignalSeries.pick(points);
     final since = DateFormat('d MMM').format(points.first.day);
 
-    // An instrument panel: Signal's signature on a tool page. A seam of red
-    // light along its top, the label and the reason in monospace, the line.
+    // An instrument panel: Signal's signature on a tool page. The label,
+    // the reason and the line, in the same frame as the facts above it.
     return Padding(
       padding: const EdgeInsets.only(top: 24),
       child: DecoratedBox(
@@ -62,12 +62,6 @@ class ToolSignalsSection extends ConsumerWidget {
         ),
         child: Stack(
           children: [
-            const Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: GlowLine(strength: 0.8),
-            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               child: Column(
