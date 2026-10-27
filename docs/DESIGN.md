@@ -254,9 +254,19 @@ coloured. Group titles are sentence-case labels.
   and *Compare* (tonal); the facts strip with mono labels; the **signal
   panel**; then *Summary*, *About*, timeline, similar tools, in the news,
   what's new, reviews.
-- **Search, Ask Liz, News, Saved, Compare, Alerts, Profile, Settings, Sign
-  in** take the theme without layouts of their own; their structure is as
-  before.
+- **News.** A reading column: source in ink and the time in grey above each
+  headline; the first story set larger (`NewsCard(lead:)`); *Quick take* a
+  quiet grey control that opens the AI summary in a framed panel.
+- **Ask Liz.** Before a question, the question: the red mark on a neutral
+  tile, the title, the field and four example prompts. After, the answers
+  as cards with the reason in Liz's voice.
+- **Profile.** A header (avatar with a neutral ring, the name as the page's
+  heading, a grey role badge, when they joined, the bio, and three figures —
+  saved, reviews, posts — set as type). Wide: what you wrote on the left,
+  *Your account* on the right; narrow: one column, the account first. Empty
+  sections keep their frame, with one way forward.
+- **Search, Saved, Compare, Alerts, Settings** take the theme without
+  layouts of their own; their structure is as before.
 
 ---
 

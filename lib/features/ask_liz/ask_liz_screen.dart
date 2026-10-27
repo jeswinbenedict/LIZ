@@ -216,12 +216,12 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
                   children: [
                     Row(
                       children: [
-                        LizMark.icon(size: 18, color: p.accent),
+                        const LizMark(size: 18),
                         const SizedBox(width: 8),
                         Text(
                           'Ask Liz',
                           style: LizText.subhead.copyWith(
-                            color: p.accent,
+                            color: p.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -479,8 +479,11 @@ class _Intro extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: ShapeDecoration(
-                  color: p.accentSoft,
-                  shape: LizRadius.shape(16),
+                  color: p.surface,
+                  shape: LizRadius.shape(
+                    16,
+                    side: BorderSide(color: p.hairline),
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: const LizMark(size: 42),
@@ -543,7 +546,7 @@ class _Intro extends StatelessWidget {
                                   ),
                                 ),
                                 Icon(
-                                  Icons.north_east,
+                                  Icons.arrow_forward,
                                   size: 16,
                                   color: p.textTertiary,
                                 ),

@@ -91,14 +91,17 @@ class _EditableAvatarState extends ConsumerState<EditableAvatar> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: scheme.primary,
+                color: scheme.surfaceContainerHigh,
                 shape: BoxShape.circle,
-                border: Border.all(color: scheme.surface, width: 2),
+                border: Border.all(
+                  color: scheme.surfaceContainerLowest,
+                  width: 2,
+                ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.photo_camera,
                 size: 13,
-                color: Colors.white,
+                color: scheme.onSurface,
               ),
             ),
           ),

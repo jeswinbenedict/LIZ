@@ -26,13 +26,16 @@ String newsSourceLabel(String? source) {
 }
 
 /// One article in the news list (docs/DESIGN.md §8, News): an editorial row
-/// — source and time as an eyebrow, the headline, two lines of summary, and
-/// the image beside it on wide screens or above it on phones. The AI "quick
-/// take" folds away so the list can be scanned; it used to be a tinted box
-/// inside every card, which tripled the height of the feed.
+/// — source and time above the headline, two lines of summary, and the image
+/// beside it on wide screens or above it on phones. The AI "quick take" folds
+/// away so the list can be scanned. The [lead] story is set larger.
 class NewsCard extends StatelessWidget {
-  const NewsCard({super.key, required this.item});
+  const NewsCard({super.key, required this.item, this.lead = false});
   final NewsItem item;
+
+  /// The first story of the feed: a larger headline and a third line of
+  /// summary, so the page opens on something rather than a uniform list.
+  final bool lead;
 
   Future<void> _open() async {
     final uri = Uri.tryParse(item.url);
@@ -61,8 +64,8 @@ class NewsCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LizText.footnote.copyWith(
-                      color: LizColors.legibleOn(p.accent, p.canvas),
-                      fontWeight: FontWeight.w700,
+                      color: p.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -75,13 +78,15 @@ class NewsCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               item.title,
-              style: LizText.title3.copyWith(color: p.textPrimary),
+              style: (lead ? LizText.title1 : LizText.title3).copyWith(
+                color: p.textPrimary,
+              ),
             ),
             if (item.snippet.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              SizedBox(height: lead ? 10 : 6),
               Text(
                 item.snippet,
-                maxLines: 2,
+                maxLines: lead ? 3 : 2,
                 overflow: TextOverflow.ellipsis,
                 style: LizText.callout.copyWith(color: p.textSecondary),
               ),
@@ -207,6 +212,7 @@ class _QuickTakeState extends State<_QuickTake> {
           expanded: _open,
           child: TextButton.icon(
             style: TextButton.styleFrom(
+              foregroundColor: p.textSecondary,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               minimumSize: const Size(48, 40),
             ),
@@ -231,8 +237,17 @@ class _QuickTakeState extends State<_QuickTake> {
           alignment: Alignment.topLeft,
           child: !_open
               ? const SizedBox(width: double.infinity)
-              : Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              : Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
+                  decoration: ShapeDecoration(
+                    color: p.surface,
+                    shape: LizRadius.shape(
+                      LizRadius.sm,
+                      side: BorderSide(color: p.hairline),
+                    ),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -250,7 +265,7 @@ class _QuickTakeState extends State<_QuickTake> {
                                   right: 10,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: p.accent,
+                                  color: p.textSecondary,
                                   shape: BoxShape.circle,
                                 ),
                               ),

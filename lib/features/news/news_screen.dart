@@ -73,7 +73,7 @@ class NewsScreen extends ConsumerWidget {
                           (_) => controller.loadMore(),
                         );
                       }
-                      return NewsCard(item: state.items[i]);
+                      return NewsCard(item: state.items[i], lead: i == 0);
                     },
                   ),
                 ),
