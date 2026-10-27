@@ -45,47 +45,76 @@ class AlertsScreen extends ConsumerWidget {
     } else if (state.error != null && state.items.isEmpty) {
       body = ErrorView(onRetry: controller.refresh);
     } else if (state.items.isEmpty) {
-      body = const EmptyView(
+      body = EmptyView(
         icon: Icons.notifications_none,
         title: 'Nothing yet',
         message:
             'Save a tool from its page. When its pricing changes or '
             'it breaks into the top ten, it shows up here.',
+        action: OutlinedButton(
+          onPressed: () => context.push('/profile/settings'),
+          child: const Text('Choose alerts'),
+        ),
       );
     } else {
-      body = DecoratedBox(
-        decoration: ShapeDecoration(
-          color: p.surface,
-          shape: LizRadius.shape(
-            LizRadius.md,
-            side: BorderSide(color: p.hairline),
-          ),
-        ),
-        child: ClipRSuperellipse(
-          borderRadius: BorderRadius.circular(LizRadius.md),
-          child: Column(
-            children: [
-              for (var i = 0; i < state.items.length; i++) ...[
-                if (i > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 68),
-                    child: Divider(height: 1, color: p.hairline),
-                  ),
-                _AlertTile(
-                  alert: state.items[i],
-                  onTap: () {
-                    final alert = state.items[i];
-                    controller.markRead(alert);
-                    final route = alert.route;
-                    if (route != null && route.isNotEmpty) {
-                      context.push(route);
-                    }
-                  },
+      // Newest first, under Today / This week / Earlier, so a long list
+      // reads as a timeline rather than one undifferentiated box.
+      final groups = <String, List<AppNotification>>{};
+      for (final alert in state.items) {
+        groups.putIfAbsent(_period(alert.createdAt), () => []).add(alert);
+      }
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final MapEntry(key: period, value: alerts)
+              in groups.entries) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+              child: Semantics(
+                container: true,
+                header: true,
+                child: Text(
+                  period,
+                  style: LizText.label.copyWith(color: p.textSecondary),
                 ),
-              ],
-            ],
-          ),
-        ),
+              ),
+            ),
+            DecoratedBox(
+              decoration: ShapeDecoration(
+                color: p.surface,
+                shape: LizRadius.shape(
+                  LizRadius.md,
+                  side: BorderSide(color: p.hairline),
+                ),
+              ),
+              child: ClipRSuperellipse(
+                borderRadius: BorderRadius.circular(LizRadius.md),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < alerts.length; i++) ...[
+                      if (i > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 68),
+                          child: Divider(height: 1, color: p.hairline),
+                        ),
+                      _AlertTile(
+                        alert: alerts[i],
+                        onTap: () {
+                          final alert = alerts[i];
+                          controller.markRead(alert);
+                          final route = alert.route;
+                          if (route != null && route.isNotEmpty) {
+                            context.push(route);
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
       );
     }
 
@@ -101,19 +130,32 @@ class AlertsScreen extends ConsumerWidget {
             children: [
               PageHeader(
                 title: 'Alerts',
-                subtitle: signedIn
-                    ? 'Price changes and rises, for the tools you saved.'
-                    : null,
+                subtitle: !signedIn
+                    ? null
+                    : state.unread > 0
+                    ? '${state.unread} unread · price changes and rises, '
+                          'for the tools you saved.'
+                    : 'Price changes and rises, for the tools you saved.',
                 trailing: signedIn && state.unread > 0
-                    ? TextButton(
-                        onPressed: controller.markAllRead,
-                        child: const Text('Mark all read'),
-                      )
+                    ? context.isPhone
+                          ? TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: p.textPrimary,
+                              ),
+                              onPressed: controller.markAllRead,
+                              child: const Text('Mark all read'),
+                            )
+                          : OutlinedButton.icon(
+                              onPressed: controller.markAllRead,
+                              icon: const Icon(Icons.done_all, size: 18),
+                              label: const Text('Mark all read'),
+                            )
                     : null,
+                bottom: 16,
               ),
               if (signedIn)
                 Padding(
-                  padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
+                  padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 4),
                   child: const _PushPrompt(),
                 ),
               Padding(
@@ -126,6 +168,15 @@ class AlertsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Which heading an alert sits under: today, the last seven days, or before.
+String _period(DateTime at, {DateTime? now}) {
+  final today = DateUtils.dateOnly(now ?? DateTime.now());
+  final day = DateUtils.dateOnly(at.toLocal());
+  if (!day.isBefore(today)) return 'Today';
+  if (today.difference(day).inDays < 7) return 'This week';
+  return 'Earlier';
 }
 
 void _promptSignIn(BuildContext context) {
@@ -183,13 +234,16 @@ class _AlertTile extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: ShapeDecoration(
-                    color: unread ? p.accentSoft : p.surfaceMuted,
-                    shape: LizRadius.shape(10),
+                    color: p.surfaceMuted,
+                    shape: LizRadius.shape(
+                      LizRadius.sm,
+                      side: BorderSide(color: p.hairline),
+                    ),
                   ),
                   child: Icon(
                     icon,
-                    size: 19,
-                    color: unread ? p.accent : p.textSecondary,
+                    size: 18,
+                    color: unread ? p.textPrimary : p.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -214,6 +268,7 @@ class _AlertTile extends StatelessWidget {
                             timeAgo(alert.createdAt),
                             style: LizText.footnote.copyWith(
                               color: p.textSecondary,
+                              fontFeatures: LizText.tabular,
                             ),
                           ),
                         ],
@@ -309,8 +364,11 @@ class _PushPromptState extends State<_PushPrompt> {
     final p = context.liz;
     return DecoratedBox(
       decoration: ShapeDecoration(
-        color: p.surfaceMuted,
-        shape: LizRadius.shape(LizRadius.md),
+        color: p.surface,
+        shape: LizRadius.shape(
+          LizRadius.md,
+          side: BorderSide(color: p.hairline),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
@@ -319,7 +377,7 @@ class _PushPromptState extends State<_PushPrompt> {
             Icon(
               Icons.notifications_active_outlined,
               size: 20,
-              color: p.textPrimary,
+              color: p.textSecondary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -332,7 +390,7 @@ class _PushPromptState extends State<_PushPrompt> {
               ),
             ),
             if (!_declined)
-              TextButton(
+              OutlinedButton(
                 onPressed: _busy ? null : _turnOn,
                 child: const Text('Turn on'),
               ),

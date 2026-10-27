@@ -23,20 +23,48 @@ class SettingsScreen extends ConsumerWidget {
     final prefs = ref.watch(preferencesProvider);
     final p = context.liz;
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);
+    final phone = context.isPhone;
 
     return Scaffold(
+      // The page's heading is the title below the bar.
       appBar: const LizTopBar(
         title: 'Settings',
         section: ('Profile', '/profile'),
         fallback: '/profile',
+        titleIsHeading: false,
       ),
       body: MaxWidth(
-        maxWidth: 640 + gutter * 2,
+        maxWidth: 920 + gutter * 2,
         child: ListView(
-          padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 40),
+          padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 40),
           children: [
-            LizGroup(
+            Padding(
+              padding: EdgeInsets.only(top: phone ? 8 : 36, bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    container: true,
+                    header: true,
+                    headingLevel: 1,
+                    child: Text(
+                      'Settings',
+                      style: (phone ? LizText.title1 : LizText.largeTitle)
+                          .copyWith(color: p.textPrimary),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'What Liz shows you, what it tells you about, and your '
+                    'account.',
+                    style: LizText.body.copyWith(color: p.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            _Section(
               title: 'Discover',
+              description: 'Liz puts tools in these categories first.',
               children: [
                 LizGroupRow(
                   icon: Icons.interests_outlined,
@@ -48,14 +76,17 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            if (signedIn) ...[
-              const SizedBox(height: 28),
-              LizGroup(
+            if (signedIn)
+              _Section(
                 title: 'Alerts for saved tools',
+                description:
+                    'What Liz tells you about the tools you saved. Alerts '
+                    'appear under the bell.',
                 children: [
                   _SwitchRow(
                     icon: Icons.sell_outlined,
                     title: 'Price changes',
+                    subtitle: 'A plan is added, removed or repriced.',
                     value: prefs.pricingAlerts,
                     onChanged: (v) => ref
                         .read(preferencesProvider.notifier)
@@ -64,6 +95,7 @@ class SettingsScreen extends ConsumerWidget {
                   _SwitchRow(
                     icon: Icons.trending_up,
                     title: 'Rising into the top ten',
+                    subtitle: 'It breaks into this week\u2019s top movers.',
                     value: prefs.risingAlerts,
                     onChanged: (v) => ref
                         .read(preferencesProvider.notifier)
@@ -71,10 +103,11 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: 28),
-            LizGroup(
+            _Section(
               title: 'About',
+              description:
+                  'The small print, and where Liz\u2019s data comes '
+                  'from.',
               children: [
                 LizGroupRow(
                   icon: Icons.privacy_tip_outlined,
@@ -93,10 +126,10 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            if (signedIn) ...[
-              const SizedBox(height: 28),
-              LizGroup(
+            if (signedIn)
+              _Section(
                 title: 'Account',
+                description: 'Your data is yours: take a copy, or remove it.',
                 footer:
                     'Deleting your account removes your profile, saves, '
                     'follows, reviews and posts. It cannot be undone.',
@@ -104,6 +137,7 @@ class SettingsScreen extends ConsumerWidget {
                   LizGroupRow(
                     icon: Icons.download_outlined,
                     title: 'Download my data',
+                    subtitle: 'Everything you added, as a JSON file.',
                     showChevron: false,
                     onTap: () => _export(context, ref),
                   ),
@@ -125,7 +159,6 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            ],
             const SizedBox(height: 32),
             Center(
               child: Text(
@@ -209,18 +242,90 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
+/// One block of settings. Wide: the name and what it is for in a column on
+/// the left, the rows on the right — the way Linear and Vercel lay out
+/// settings. Narrow: the name and sentence above the rows.
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.title,
+    required this.description,
+    required this.children,
+    this.footer,
+  });
+
+  final String title;
+  final String description;
+  final List<Widget> children;
+  final String? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final label = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          container: true,
+          header: true,
+          child: Text(
+            title,
+            style: LizText.headline.copyWith(color: p.textPrimary),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: LizText.footnote.copyWith(color: p.textSecondary),
+        ),
+      ],
+    );
+    final group = LizGroup(footer: footer, children: children);
+    return Padding(
+      padding: EdgeInsets.only(top: wide ? 32 : 28),
+      child: wide
+          ? Column(
+              children: [
+                Divider(height: 1, color: p.hairline),
+                const SizedBox(height: 32),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 260, child: label),
+                    const SizedBox(width: 40),
+                    Expanded(child: group),
+                  ],
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                  child: label,
+                ),
+                group,
+              ],
+            ),
+    );
+  }
+}
+
 /// A grouped-list row with a switch, at the same height and spacing as
 /// LizGroupRow.
 class _SwitchRow extends StatelessWidget {
   const _SwitchRow({
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.value,
     required this.onChanged,
   });
 
   final IconData icon;
   final String title;
+  final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -233,11 +338,32 @@ class _SwitchRow extends StatelessWidget {
       type: MaterialType.transparency,
       child: MergeSemantics(
         child: SwitchListTile(
-          secondary: Icon(icon, color: p.textSecondary),
+          // The same icon tile and insets as LizGroupRow, so the hairlines
+          // between rows line up.
+          contentPadding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
+          horizontalTitleGap: 14,
+          secondary: Container(
+            width: 30,
+            height: 30,
+            decoration: ShapeDecoration(
+              color: p.surfaceHover,
+              shape: LizRadius.shape(
+                LizRadius.sm,
+                side: BorderSide(color: p.hairlineStrong),
+              ),
+            ),
+            child: Icon(icon, size: 17, color: p.textPrimary),
+          ),
           title: Text(
             title,
             style: LizText.body.copyWith(color: p.textPrimary),
           ),
+          subtitle: subtitle == null
+              ? null
+              : Text(
+                  subtitle!,
+                  style: LizText.footnote.copyWith(color: p.textSecondary),
+                ),
           value: value,
           onChanged: onChanged,
         ),

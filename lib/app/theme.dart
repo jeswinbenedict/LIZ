@@ -756,12 +756,13 @@ class LizTheme {
         circularTrackColor: Colors.transparent,
       ),
       switchTheme: SwitchThemeData(
+        // On is the ink colour with a dark thumb: a switch is a state, not
+        // an action, so it does not spend the red.
         thumbColor: WidgetStateProperty.resolveWith(
-          (s) =>
-              s.contains(WidgetState.selected) ? Colors.white : p.textSecondary,
+          (s) => s.contains(WidgetState.selected) ? p.canvas : p.textSecondary,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? p.accentFill : p.surface,
+          (s) => s.contains(WidgetState.selected) ? p.textPrimary : p.surface,
         ),
         trackOutlineColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected)

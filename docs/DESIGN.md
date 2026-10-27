@@ -265,8 +265,19 @@ coloured. Group titles are sentence-case labels.
   saved, reviews, posts — set as type). Wide: what you wrote on the left,
   *Your account* on the right; narrow: one column, the account first. Empty
   sections keep their frame, with one way forward.
-- **Search, Saved, Compare, Alerts, Settings** take the theme without
-  layouts of their own; their structure is as before.
+- **Saved.** The count in the subtitle; *Select* beside the title. While
+  choosing, a bar along the bottom says how many are picked and shows
+  *Compare* from two. Nothing saved: a framed panel saying what saving is
+  for (save, hear about it, compare) and *Find a tool*.
+- **Alerts.** The unread count in the subtitle and *Mark all read* beside
+  it; alerts under *Today*, *This week* and *Earlier*. Unread is a bolder
+  title and a red dot; the icon tiles stay neutral. The browser-notification
+  offer is a framed row with a quiet *Turn on*.
+- **Settings.** A page title, then sections. Wide: each section's name and
+  what it is for in a 260px column on the left, its rows on the right,
+  sections divided by hairlines. Narrow: name and sentence above the rows.
+  Switches are white when on — a state, not an action, so not red.
+- **Search, Compare** take the theme without layouts of their own.
 
 ---
 
@@ -298,6 +309,7 @@ by light alone, and decorative lines are excluded from semantics.
 | Sign-in panel with neon seams and a drawn trend | The claim and a preview of the product | Show the product, not decoration |
 | Pages over the app had a back arrow only when opened by tapping | `LizTopBar`: back always works; "Liz / Discover / …" on wide windows | Every screen names the product and the way back |
 | 4–20 radii | 6 / 8 / 12 / 16 / 20 | Fewer, more deliberate corners |
+| Red switches, red *Mark all read* and *Turn on* | White switches; neutral outlined secondary actions | Red stays on the one primary action and on rising data |
 
 ### 1 October 2026 — Signal
 
