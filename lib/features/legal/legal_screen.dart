@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../shared/widgets/top_bar.dart';
@@ -16,58 +18,131 @@ const legalContact = String.fromEnvironment('LEGAL_CONTACT');
 /// Every statement in [LegalDocument.privacy] describes something the schema
 /// or an Edge Function actually does — what is stored, for how long, and what
 /// happens to it when an account is deleted. Change one, change the other.
-class LegalScreen extends StatelessWidget {
+///
+/// Laid out as a document (docs/DESIGN.md §8): the title and date, the short
+/// version in a panel, then the sections between hairlines. A wide window
+/// adds a contents rail that stays in view and marks where the reader is.
+class LegalScreen extends StatefulWidget {
   const LegalScreen({super.key, required this.document});
   final LegalDocument document;
+
+  /// From this width the contents rail sits beside the text.
+  static const railWidth = 1000.0;
+
+  @override
+  State<LegalScreen> createState() => _LegalScreenState();
+}
+
+class _LegalScreenState extends State<LegalScreen> {
+  /// Space above the text, inside the scroll view.
+  static const _top = 40.0;
+
+  final _scroll = ScrollController();
+  final _row = GlobalKey();
+  final _rail = GlobalKey();
+  late List<GlobalKey> _sections = _keys();
+  int _active = 0;
+
+  /// One per section, and one for Questions.
+  List<GlobalKey> _keys() => [
+    for (var i = 0; i <= widget.document.sections.length; i++) GlobalKey(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_track);
+  }
+
+  @override
+  void didUpdateWidget(LegalScreen old) {
+    super.didUpdateWidget(old);
+    if (old.document != widget.document) _sections = _keys();
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// The section whose heading was last scrolled past the top third.
+  void _track() {
+    if (!_scroll.hasClients) return;
+    final viewport = context.findRenderObject() as RenderBox?;
+    if (viewport == null) return;
+    var active = 0;
+    if (_scroll.position.extentAfter < 4) {
+      active = _sections.length - 1;
+    } else {
+      for (var i = 0; i < _sections.length; i++) {
+        final box =
+            _sections[i].currentContext?.findRenderObject() as RenderBox?;
+        if (box == null || !box.attached) continue;
+        final top = box.localToGlobal(Offset.zero, ancestor: viewport).dy;
+        if (top <= 180) active = i;
+      }
+    }
+    if (active != _active) setState(() => _active = active);
+  }
+
+  void _jumpTo(int i) {
+    final target = _sections[i].currentContext;
+    if (target == null) return;
+    Scrollable.ensureVisible(
+      target,
+      duration: LizMotion.of(context, LizMotion.emphasized),
+      curve: LizMotion.emphasizedCurve,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = context.liz;
-    final heading = LizText.title3.copyWith(color: p.textPrimary);
+    final document = widget.document;
+    final width = MediaQuery.sizeOf(context).width;
+    final gutter = LizSpacing.gutter(width);
+    final wide = width >= LegalScreen.railWidth;
+    final phone = context.isPhone;
     final paragraph = LizText.body.copyWith(
       color: p.textPrimary,
-      height: 24 / 15,
+      height: 26 / 15,
     );
 
-    return Scaffold(
-      appBar: LizTopBar(title: document.title),
-      body: MaxWidth(
-        maxWidth: 760,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 56),
-          children: [
-            Text(
-              'Last updated ${document.updated}',
-              style: LizText.footnote.copyWith(color: p.textSecondary),
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          container: true,
+          header: true,
+          headingLevel: 1,
+          child: Text(
+            document.title,
+            style: (phone ? LizText.title1 : LizText.largeTitle).copyWith(
+              color: p.textPrimary,
             ),
-            const SizedBox(height: 12),
-            Text(
-              document.summary,
-              style: LizText.title3.copyWith(
-                color: p.textSecondary,
-                fontWeight: FontWeight.w400,
-                height: 27 / 18,
-              ),
-            ),
-            for (final section in document.sections) ...[
-              const SizedBox(height: 28),
-              Semantics(
-                container: true,
-                header: true,
-                child: Text(section.heading, style: heading),
-              ),
-              for (final line in section.body) ...[
-                const SizedBox(height: 10),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Last updated ${document.updated}',
+          style: LizText.subhead.copyWith(color: p.textSecondary),
+        ),
+        const SizedBox(height: 24),
+        _Summary(text: document.summary),
+        for (var i = 0; i < document.sections.length; i++)
+          _Section(
+            key: _sections[i],
+            heading: document.sections[i].heading,
+            children: [
+              for (final line in document.sections[i].body)
                 Text(line, style: paragraph),
-              ],
             ],
-            const SizedBox(height: 28),
-            Semantics(
-              container: true,
-              header: true,
-              child: Text('Questions', style: heading),
-            ),
-            const SizedBox(height: 8),
+          ),
+        _Section(
+          key: _sections.last,
+          heading: 'Questions',
+          children: [
             Text(
               legalContact.isEmpty
                   ? 'To remove everything tied to you, use Settings > Delete '
@@ -78,6 +153,313 @@ class LegalScreen extends StatelessWidget {
               style: paragraph,
             ),
           ],
+        ),
+        const SizedBox(height: 40),
+        _OtherDocument(document: document.other),
+      ],
+    );
+
+    return Scaffold(
+      appBar: LizTopBar(title: document.title, titleIsHeading: false),
+      body: Scrollbar(
+        controller: _scroll,
+        child: SingleChildScrollView(
+          controller: _scroll,
+          padding: EdgeInsets.fromLTRB(gutter, phone ? 12 : _top, gutter, 64),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: wide ? 1040 : 720),
+              child: wide
+                  ? Row(
+                      key: _row,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 232,
+                          child: _StickyRail(
+                            scroll: _scroll,
+                            row: _row,
+                            rail: _rail,
+                            top: _top,
+                            child: _Contents(
+                              key: _rail,
+                              titles: [
+                                for (final s in document.sections) s.heading,
+                                'Questions',
+                              ],
+                              active: _active,
+                              onTap: _jumpTo,
+                              other: document.other,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 64),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 720),
+                              child: text,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : text,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Keeps the contents rail in view while the text scrolls past it, and stops
+/// it at the foot of the text. It stays inside the scroll view, so the wheel
+/// still scrolls with the pointer over it.
+class _StickyRail extends StatelessWidget {
+  const _StickyRail({
+    required this.scroll,
+    required this.row,
+    required this.rail,
+    required this.top,
+    required this.child,
+  });
+  final ScrollController scroll;
+  final GlobalKey row;
+  final GlobalKey rail;
+
+  /// Where the row starts in the scrolled content.
+  final double top;
+  final Widget child;
+
+  /// How far below the top of the view the rail rides.
+  static const _ride = 24.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: scroll,
+      child: child,
+      builder: (context, child) {
+        final rowBox = row.currentContext?.findRenderObject() as RenderBox?;
+        final railBox = rail.currentContext?.findRenderObject() as RenderBox?;
+        var dy = 0.0;
+        if (scroll.hasClients &&
+            rowBox != null &&
+            railBox != null &&
+            rowBox.hasSize &&
+            railBox.hasSize) {
+          final room = rowBox.size.height - railBox.size.height;
+          dy = (scroll.offset - top + _ride).clamp(0.0, room < 0 ? 0.0 : room);
+        }
+        return Transform.translate(offset: Offset(0, dy), child: child);
+      },
+    );
+  }
+}
+
+/// "On this page": the sections with the current one marked, and the other
+/// document under them.
+class _Contents extends StatelessWidget {
+  const _Contents({
+    super.key,
+    required this.titles,
+    required this.active,
+    required this.onTap,
+    required this.other,
+  });
+  final List<String> titles;
+  final int active;
+  final ValueChanged<int> onTap;
+  final LegalDocument other;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    final label = LizText.subhead.copyWith(color: p.textSecondary);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 14, bottom: 10),
+          child: Text('On this page', style: label),
+        ),
+        for (var i = 0; i < titles.length; i++)
+          _ContentsLink(
+            title: titles[i],
+            selected: i == active,
+            onTap: () => onTap(i),
+          ),
+        const SizedBox(height: 28),
+        Padding(
+          padding: const EdgeInsets.only(left: 14, bottom: 10),
+          child: Text('Also read', style: label),
+        ),
+        _ContentsLink(
+          title: other.title,
+          selected: false,
+          onTap: () => context.pushReplacement(other.path),
+        ),
+      ],
+    );
+  }
+}
+
+/// One line of the contents: a rule down its left that turns to ink for the
+/// section being read.
+class _ContentsLink extends StatelessWidget {
+  const _ContentsLink({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Semantics(
+      selected: selected,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 40),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                width: 2,
+                color: selected ? p.textPrimary : p.hairline,
+              ),
+            ),
+          ),
+          child: Text(
+            title,
+            style: LizText.callout.copyWith(
+              color: selected ? p.textPrimary : p.textSecondary,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The short version, in a panel above the full text.
+class _Summary extends StatelessWidget {
+  const _Summary({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: LizRadius.shape(
+          LizRadius.lg,
+          side: BorderSide(color: p.hairline),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'In short',
+              style: LizText.subhead.copyWith(color: p.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              text,
+              style: LizText.title3.copyWith(
+                color: p.textPrimary,
+                fontWeight: FontWeight.w400,
+                height: 27 / 17,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A section: a hairline, its heading, its paragraphs.
+class _Section extends StatelessWidget {
+  const _Section({super.key, required this.heading, required this.children});
+  final String heading;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Padding(
+      padding: const EdgeInsets.only(top: 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Divider(height: 1, color: p.hairline),
+          const SizedBox(height: 28),
+          Semantics(
+            container: true,
+            header: true,
+            child: Text(
+              heading,
+              style: LizText.title2.copyWith(color: p.textPrimary),
+            ),
+          ),
+          for (final child in children) ...[const SizedBox(height: 12), child],
+        ],
+      ),
+    );
+  }
+}
+
+/// The other document, at the foot: read it next without a trip back. It
+/// replaces this one, so Back still returns to where the reader came from.
+class _OtherDocument extends StatelessWidget {
+  const _OtherDocument({required this.document});
+  final LegalDocument document;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.liz;
+    return Material(
+      color: p.surface,
+      shape: LizRadius.shape(LizRadius.md, side: BorderSide(color: p.hairline)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.pushReplacement(document.path),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Also read',
+                      style: LizText.footnote.copyWith(color: p.textSecondary),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      document.title,
+                      style: LizText.headline.copyWith(color: p.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward, size: 20, color: p.textSecondary),
+            ],
+          ),
         ),
       ),
     );
@@ -93,18 +475,26 @@ class LegalSection {
 class LegalDocument {
   const LegalDocument({
     required this.title,
+    required this.path,
     required this.updated,
     required this.summary,
     required this.sections,
   });
 
   final String title;
+
+  /// Where the document lives in the app.
+  final String path;
   final String updated;
   final String summary;
   final List<LegalSection> sections;
 
+  /// The other document, offered at the foot of this one.
+  LegalDocument get other => identical(this, privacy) ? terms : privacy;
+
   static const privacy = LegalDocument(
     title: 'Privacy policy',
+    path: '/privacy',
     updated: '5 October 2026',
     summary:
         'Liz keeps what it needs to run your account, to keep the service '
@@ -202,6 +592,7 @@ class LegalDocument {
 
   static const terms = LegalDocument(
     title: 'Terms of service',
+    path: '/terms',
     updated: '27 September 2026',
     summary:
         'Liz is a free directory of AI tools. Use it, share what you think of '

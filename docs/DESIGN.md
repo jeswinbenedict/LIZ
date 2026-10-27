@@ -277,9 +277,22 @@ coloured. Group titles are sentence-case labels.
   the end; *For you*; *New this week*, its cards the width of the grid's
   columns; then *All tools* — the sort and price filter on its title's line
   (wide), the category pills under it, and the card grid.
-- **Sign in.** Wide: a brand panel (the claim, one sentence, and a preview of
-  *Rising this week* drawn as the product draws it) beside the form. Narrow:
-  the wordmark and the form. A first visit opens on *Create account*.
+- **Sign in, and the other account pages.** *Forgot password* and *Choose a
+  new password* share the sign-in page's frame (`auth_frame.dart`:
+  `AuthFrame`, `AuthHeading`, `AuthBackLink`, `AuthMessage`,
+  `AuthSubmitButton`). Wide: a brand panel (the claim, one sentence, and a
+  preview of *Rising this week* with its figures in ink) beside the form, the
+  two halves ending on one footer line. Narrow: the wordmark and the form.
+  Every form opens on a title and one line, has one full-width primary
+  button, and shows a problem as a quiet panel with the colour in its icon.
+  The step away from signing in has *← Back to sign in* above its title. A
+  first visit opens on *Create account*, whose Terms and Privacy links are
+  underlined in the sentence.
+- **Privacy policy and Terms.** A document: the title as the page's heading
+  with the date under it, *In short* in a framed panel, then sections between
+  hairlines. Wide: an *On this page* rail that stays in view as the text
+  scrolls, the current section marked by an ink rule. Both end on *Also
+  read* — the other document, opened in place.
 - **Tool page.** Logo, name, tagline; *Visit website* (primary) with *Save*
   and *Compare*. Wide: a 340px rail with *At a glance* — a framed list of
   label and value rows (rating, price, category, platforms, first seen, and

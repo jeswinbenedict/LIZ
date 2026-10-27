@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import 'auth_frame.dart';
 import 'password_validation.dart';
-import '../../shared/widgets/page_header.dart';
 
 /// Asks for the address to send a reset link to.
 ///
@@ -68,41 +67,37 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/signin'),
-        ),
-        title: const PageHeading('Reset your password'),
-      ),
-      body: MaxWidth(
-        maxWidth: 440,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(LizSpacing.lg),
-          child: _sent ? _Sent(email: _email.text.trim()) : _form(scheme),
-        ),
+    return AuthFrame(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Once sent, the way back is the button under the message.
+          if (!_sent) ...[const AuthBackLink(), const SizedBox(height: 12)],
+          if (_sent) _Sent(email: _email.text.trim()) else _form(context),
+        ],
       ),
     );
   }
 
-  Widget _form(ColorScheme scheme) {
+  Widget _form(BuildContext context) {
+    final p = context.liz;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Enter the address you signed up with and we will send you a link '
-          'to choose a new password.',
-          style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
+        const AuthHeading(
+          title: 'Reset your password',
+          subtitle:
+              'Enter the address you signed up with and we will send you a '
+              'link to choose a new password.',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: LizSpacing.lg),
         TextField(
           controller: _email,
           autofocus: true,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.done,
+          autocorrect: false,
+          autofillHints: const [AutofillHints.email],
           onSubmitted: (_) => _busy ? null : _send(),
           decoration: const InputDecoration(
             labelText: 'Email',
@@ -111,18 +106,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text(_error!, style: TextStyle(color: scheme.error)),
+          AuthMessage(
+            text: _error!,
+            color: p.danger,
+            icon: Icons.error_outline,
+          ),
         ],
-        const SizedBox(height: 20),
-        FilledButton(
-          onPressed: _busy ? null : _send,
-          child: _busy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Send reset link'),
+        const SizedBox(height: LizSpacing.md),
+        AuthSubmitButton(
+          label: 'Send reset link',
+          busy: _busy,
+          onPressed: _send,
         ),
       ],
     );
@@ -140,53 +134,33 @@ class _Sent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
+    final p = context.liz;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: LizColors.positive.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(LizRadius.md),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.mark_email_read_outlined,
-                color: LizColors.positive,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Check your inbox',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'If $email has an account, a reset link is on its way. '
-                      'It expires in an hour.',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        const AuthHeading(
+          title: 'Check your inbox',
+          subtitle: 'The link to choose a new password is on its way.',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: LizSpacing.lg),
+        AuthMessage(
+          text:
+              'If $email has an account, a reset link is on its way. '
+              'It expires in an hour.',
+          color: p.positive,
+          icon: Icons.mark_email_read_outlined,
+        ),
+        const SizedBox(height: 16),
         Text(
           'Nothing arrived? Check spam, and make sure you typed the address '
           'you signed up with.',
-          style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+          style: LizText.footnote.copyWith(color: p.textSecondary),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: LizSpacing.lg),
         OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+          ),
           onPressed: () => context.go('/signin'),
           child: const Text('Back to sign in'),
         ),

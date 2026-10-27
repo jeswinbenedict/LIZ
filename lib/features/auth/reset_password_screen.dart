@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/auth/firebase_auth_repository.dart';
 import '../../core/errors.dart';
 import '../../core/providers.dart';
+import 'auth_frame.dart';
 import 'password_validation.dart';
-import '../../shared/widgets/page_header.dart';
 
 /// Where a reset link lands: choose the new password.
 ///
@@ -74,42 +73,40 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final signedIn = ref.watch(isSignedInProvider);
     final viaLink = (widget.resetCode ?? passwordResetCodeIn(Uri.base)) != null;
 
-    return Scaffold(
-      appBar: AppBar(title: const PageHeading('Choose a new password')),
-      body: MaxWidth(
-        maxWidth: 440,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(LizSpacing.lg),
-          child: _done
-              ? _Done(scheme: scheme, signedIn: signedIn)
-              : !signedIn && !viaLink
-              ? _Expired(scheme: scheme)
-              : _form(scheme),
-        ),
-      ),
+    return AuthFrame(
+      child: _done
+          ? _Done(signedIn: signedIn)
+          : !signedIn && !viaLink
+          ? const _Expired()
+          : _form(context),
     );
   }
 
-  Widget _form(ColorScheme scheme) {
+  Widget _form(BuildContext context) {
+    final p = context.liz;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Pick something you will remember. Length beats punctuation — a '
-          'short phrase is stronger than a word with symbols in it.',
-          style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
+        const AuthHeading(
+          title: 'Choose a new password',
+          subtitle:
+              'Pick something you will remember. Length beats punctuation — '
+              'a short phrase is stronger than a word with symbols in it.',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: LizSpacing.lg),
         TextField(
           controller: _password,
           autofocus: true,
           obscureText: !_reveal,
+          autocorrect: false,
+          enableSuggestions: false,
+          autofillHints: const [AutofillHints.newPassword],
           decoration: InputDecoration(
             labelText: 'New password',
+            helperText: 'At least $minPasswordLength characters.',
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
               tooltip: _reveal ? 'Hide password' : 'Show password',
@@ -117,6 +114,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 _reveal
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
+                size: 20,
               ),
               onPressed: () => setState(() => _reveal = !_reveal),
             ),
@@ -126,6 +124,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         TextField(
           controller: _confirm,
           obscureText: !_reveal,
+          autocorrect: false,
+          enableSuggestions: false,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _busy ? null : _submit(),
           decoration: const InputDecoration(
@@ -135,18 +135,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text(_error!, style: TextStyle(color: scheme.error)),
+          AuthMessage(
+            text: _error!,
+            color: p.danger,
+            icon: Icons.error_outline,
+          ),
         ],
-        const SizedBox(height: 20),
-        FilledButton(
-          onPressed: _busy ? null : _submit,
-          child: _busy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Set password'),
+        const SizedBox(height: LizSpacing.md),
+        AuthSubmitButton(
+          label: 'Set password',
+          busy: _busy,
+          onPressed: _submit,
         ),
       ],
     );
@@ -154,8 +153,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 }
 
 class _Done extends StatelessWidget {
-  const _Done({required this.scheme, required this.signedIn});
-  final ColorScheme scheme;
+  const _Done({required this.signedIn});
   final bool signedIn;
 
   @override
@@ -163,31 +161,16 @@ class _Done extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: LizColors.positive.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(LizRadius.md),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.check_circle_outline, color: LizColors.positive),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  signedIn
-                      ? 'Password changed. You are signed in.'
-                      : 'Password changed. Sign in with the new one.',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
+        AuthHeading(
+          title: 'Password changed',
+          subtitle: signedIn
+              ? 'You are signed in with the new one.'
+              : 'Sign in with the new one.',
         ),
-        const SizedBox(height: 20),
-        FilledButton(
-          onPressed: () => context.go('/'),
-          child: const Text('Go to Liz'),
+        const SizedBox(height: LizSpacing.lg),
+        AuthSubmitButton(
+          label: signedIn ? 'Go to Liz' : 'Sign in',
+          onPressed: () => context.go(signedIn ? '/' : '/signin'),
         ),
       ],
     );
@@ -198,49 +181,31 @@ class _Done extends StatelessWidget {
 /// other than where it was requested. Saying that is more useful than a form
 /// that only fails once it is filled in.
 class _Expired extends StatelessWidget {
-  const _Expired({required this.scheme});
-  final ColorScheme scheme;
+  const _Expired();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: ShapeDecoration(
-            color: context.liz.caution.withValues(alpha: 0.10),
-            shape: LizRadius.shape(LizRadius.md),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.link_off, color: context.liz.caution),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'This link has expired',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Reset links last an hour and work once. Ask for a new '
-                      'one and it will arrive in a moment.',
-                      style: TextStyle(color: context.liz.textPrimary),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        const AuthHeading(
+          title: 'This link has expired',
+          subtitle:
+              'Reset links last an hour and work once. Ask for a new one and '
+              'it will arrive in a moment.',
         ),
-        const SizedBox(height: 20),
-        FilledButton(
+        const SizedBox(height: LizSpacing.lg),
+        AuthSubmitButton(
+          label: 'Send a new link',
           onPressed: () => context.go('/forgot-password'),
-          child: const Text('Send a new link'),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+          ),
+          onPressed: () => context.go('/signin'),
+          child: const Text('Back to sign in'),
         ),
       ],
     );

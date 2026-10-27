@@ -13,6 +13,7 @@ import '../../core/providers.dart';
 import '../../shared/widgets/google_logo.dart';
 import '../../shared/widgets/page_header.dart';
 import 'auth_controller.dart';
+import 'auth_frame.dart';
 import 'password_validation.dart';
 
 /// The sign-in form, used by the full [SignInScreen] and by the sheet that
@@ -49,10 +50,17 @@ class SignInView extends ConsumerStatefulWidget {
 }
 
 class _SignInViewState extends ConsumerState<SignInView> {
-  /// A link inside a sentence: tight padding, still a 48-wide target.
-  static final _inlineLink = TextButton.styleFrom(
-    padding: const EdgeInsets.symmetric(horizontal: 6),
+  /// A link inside a sentence: underlined, tight padding, still a 48-wide
+  /// target.
+  static ButtonStyle _inlineLink(LizPalette p) => TextButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 4),
     minimumSize: const Size(48, 40),
+    foregroundColor: p.textPrimary,
+    textStyle: LizText.footnote.copyWith(
+      fontWeight: FontWeight.w600,
+      decoration: TextDecoration.underline,
+      decorationColor: p.textSecondary,
+    ),
   );
 
   final _email = TextEditingController();
@@ -217,24 +225,15 @@ class _SignInViewState extends ConsumerState<SignInView> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Semantics(
-              container: true,
-              header: true,
-              headingLevel: 1,
-              child: Text(
-                _isSignUp ? 'Create your account' : 'Welcome back',
-                style: LizText.title1.copyWith(color: p.textPrimary),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              widget.prompt ??
+            AuthHeading(
+              title: _isSignUp ? 'Create your account' : 'Welcome back',
+              subtitle:
+                  widget.prompt ??
                   (_isSignUp
                       ? 'Free, and it takes a minute. Then browse every AI '
                             'tool Liz tracks, ask for one in plain words, and '
                             'get alerts when they move.'
                       : 'Sign in to your saved tools and alerts.'),
-              style: LizText.callout.copyWith(color: p.textSecondary),
             ),
             const SizedBox(height: LizSpacing.lg),
             LizSegmented<bool>(
@@ -248,7 +247,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
             // Only the providers this project offers. A switched-off one
             // dead-ends on an error.
             if (providers.google && inAppBrowser != null) ...[
-              _Message(
+              AuthMessage(
                 text:
                     'You opened Liz inside $inAppBrowser, where Google blocks '
                     'its sign-in. Open this page in Chrome or Safari (menu ⋯ '
@@ -365,7 +364,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
 
             if (_error != null) ...[
               const SizedBox(height: 8),
-              _Message(
+              AuthMessage(
                 text: _error!,
                 color: p.danger,
                 icon: Icons.error_outline,
@@ -373,7 +372,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
             ],
             if (_info != null) ...[
               const SizedBox(height: 8),
-              _Message(
+              AuthMessage(
                 text: _info!,
                 color: p.positive,
                 icon: Icons.check_circle_outline,
@@ -381,21 +380,10 @@ class _SignInViewState extends ConsumerState<SignInView> {
             ],
 
             const SizedBox(height: LizSpacing.md),
-            FilledButton(
-              style: const ButtonStyle(
-                minimumSize: WidgetStatePropertyAll(Size.fromHeight(50)),
-              ),
-              onPressed: busy ? null : _submit,
-              child: busy
-                  ? Semantics(
-                      label: 'Working',
-                      child: const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : Text(_isSignUp ? 'Create account' : 'Sign in'),
+            AuthSubmitButton(
+              label: _isSignUp ? 'Create account' : 'Sign in',
+              busy: busy,
+              onPressed: _submit,
             ),
             const SizedBox(height: 8),
             // Say what signing up agrees to before it happens, and let it be
@@ -414,13 +402,13 @@ class _SignInViewState extends ConsumerState<SignInView> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       TextButton(
-                        style: _inlineLink,
+                        style: _inlineLink(p),
                         onPressed: () => _openPage('/terms', keepSheet: true),
                         child: const Text('Terms'),
                       ),
                       Text('and', style: small),
                       TextButton(
-                        style: _inlineLink,
+                        style: _inlineLink(p),
                         onPressed: () => _openPage('/privacy', keepSheet: true),
                         child: const Text('Privacy policy'),
                       ),
@@ -446,6 +434,8 @@ class _SignInViewState extends ConsumerState<SignInView> {
 
             if (!isLive) ...[
               const SizedBox(height: 12),
+              Divider(height: 1, color: p.hairline),
+              const SizedBox(height: 20),
               OutlinedButton.icon(
                 onPressed: busy ? null : () => _guard(auth.signInAsDemo),
                 icon: const Icon(Icons.play_arrow),
@@ -459,48 +449,6 @@ class _SignInViewState extends ConsumerState<SignInView> {
                 style: small,
               ),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A form message — an error or a confirmation — as a tinted panel with an
-/// icon, announced to screen readers when it appears.
-class _Message extends StatelessWidget {
-  const _Message({required this.text, required this.color, required this.icon});
-  final String text;
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.liz;
-    final fill = Color.alphaBlend(color.withValues(alpha: 0.10), p.surface);
-    final ink = LizColors.legibleOn(color, fill);
-    // Its own node, so the message is announced on its own rather than read
-    // as the tail of the field hint above it.
-    return Semantics(
-      container: true,
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: ShapeDecoration(
-          color: fill,
-          shape: LizRadius.shape(
-            LizRadius.sm,
-            side: BorderSide(color: color.withValues(alpha: 0.4)),
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 18, color: ink),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(text, style: LizText.callout.copyWith(color: ink)),
-            ),
           ],
         ),
       ),

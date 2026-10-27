@@ -86,7 +86,7 @@ void main() {
     await tester.ensureVisible(find.text('Terms'));
     await tester.tap(find.text('Terms'));
     await tester.pumpAndSettle();
-    expect(find.text('Terms of service'), findsOneWidget);
+    expect(find.text('The catalog'), findsOneWidget);
 
     r.pop();
     await tester.pumpAndSettle();
@@ -123,4 +123,38 @@ void main() {
       handle.dispose();
     });
   }
+
+  testWidgets('a wide window gets contents that jump to a section', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final r = await _pumpRouter(tester);
+    r.push('/privacy');
+    await tester.pumpAndSettle();
+
+    expect(find.text('On this page'), findsOneWidget);
+    final scroll = tester
+        .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
+        .controller!;
+    expect(scroll.offset, 0);
+
+    // The rail comes first in the tree, the heading second.
+    await tester.tap(find.text('Questions').first);
+    await tester.pumpAndSettle();
+    expect(scroll.offset, greaterThan(0));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('each document offers the other at its foot', (tester) async {
+    final r = await _pumpRouter(tester);
+    r.push('/terms');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Privacy policy').last, 300);
+    await tester.tap(find.text('Privacy policy').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Every visit'), findsOneWidget);
+  });
 }
