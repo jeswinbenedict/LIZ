@@ -1,7 +1,7 @@
 // The fallback provider: tried only when the first fails to answer, never
 // for an answer that is merely short, and both failures reported together.
 import { assertEquals, assertRejects } from 'jsr:@std/assert@1';
-import { completeWith, type Provider, providersFrom } from '../_shared/ai.ts';
+import { AiCredentialsError, completeWith, type Provider, providersFrom } from '../_shared/ai.ts';
 
 const primary: Provider = { name: 'primary', baseUrl: 'https://a.test/v1', model: 'm1', apiKey: 'k1' };
 const fallback: Provider = { name: 'fallback', baseUrl: 'https://b.test/v1', model: 'm2', apiKey: 'k2' };
@@ -88,4 +88,31 @@ Deno.test('when both fail, both reasons are reported', async () => {
 
 Deno.test('no provider at all says what to set', async () => {
   await assertRejects(() => completeWith([], { user: 'hi' }), Error, 'AI_API_KEY');
+});
+
+Deno.test('a key every provider refuses is a credentials error', async () => {
+  const f = fakeFetch({
+    'a.test': () => new Response('{"error":{"code":"expired_api_key"}}', { status: 401 }),
+    'b.test': () => new Response('forbidden', { status: 403 }),
+  });
+  const err = await assertRejects(() => completeWith([primary, fallback], { user: 'hi' }, f.fn, noWait));
+  assertEquals(err instanceof AiCredentialsError, true);
+  assertEquals((err as Error).message.includes('expired_api_key'), true);
+});
+
+Deno.test('a refused key with a fallback that is merely down is not a credentials error', async () => {
+  const f = fakeFetch({
+    'a.test': () => new Response('expired', { status: 401 }),
+    'b.test': () => new Response('down', { status: 503 }),
+  });
+  const err = await assertRejects(() => completeWith([primary, fallback], { user: 'hi' }, f.fn, noWait));
+  assertEquals(err instanceof AiCredentialsError, false);
+});
+
+Deno.test('a refused primary key is covered by a working fallback', async () => {
+  const f = fakeFetch({
+    'a.test': () => new Response('expired', { status: 401 }),
+    'b.test': () => reply('from b'),
+  });
+  assertEquals(await completeWith([primary, fallback], { user: 'hi' }, f.fn, noWait), 'from b');
 });

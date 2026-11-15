@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       return json({ data: { summarized: 0, remaining: 0 }, error: null });
     }
 
-    const { summarized, failures } = await summarizeBatch(
+    const { summarized, failures, credentials } = await summarizeBatch(
       pending.map((n) => ({ id: n.id, name: n.title, description: n.snippet })),
       {
         summarize: (input) => summarize({ ...input, kind: 'news' }),
@@ -67,6 +67,14 @@ Deno.serve(async (req) => {
     const { count } = await supabase
       .from('news_needing_summary')
       .select('id', { count: 'exact', head: true });
+
+    // Same as summarize-tools: a refused key is reported, not a bad row.
+    if (credentials) {
+      return json({
+        data: { summarized, remaining: count ?? 0 },
+        error: `ai_credentials: ${credentials}`,
+      }, 503);
+    }
 
     return json({
       data: {

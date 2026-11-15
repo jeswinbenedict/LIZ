@@ -88,6 +88,12 @@ class PushService {
 
       FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
 
+      // firebase_messaging 17 deprecates getToken and onTokenRefresh for
+      // register() and onRegistered, but those yield a Firebase Installation
+      // ID, not the FCM registration token send-notification addresses
+      // (`message.token`). Switching means changing both ends together; until
+      // then these still work and stay.
+      // ignore: deprecated_member_use
       _token = await messaging.getToken(
         vapidKey: kIsWeb && _vapidKey.isNotEmpty ? _vapidKey : null,
       );
@@ -96,6 +102,7 @@ class PushService {
 
       if (_listening) return;
       _listening = true;
+      // ignore: deprecated_member_use
       messaging.onTokenRefresh.listen((t) {
         _token = t;
         onToken(t, _platform);

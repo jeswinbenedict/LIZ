@@ -95,6 +95,15 @@ supabase functions deploy <name>
 `supabase/config.toml` decides which functions check the caller's JWT; keep it
 in step with each function's own auth.
 
+`main` is protected by the ruleset "main: CI must pass before merging"
+(Settings → Rules): a pull request merges only when CI's `flutter`, `scrapers`,
+`edge-functions`, `migrations` and `browser` jobs have passed (a job skipped
+because its files did not change counts as passed). That includes
+Dependabot's: on 13 November 2026 a Firebase update whose CI had failed (two
+deprecations, which `flutter analyze` treats as errors) was merged, and `main`
+stayed red until it was fixed. Repository admins can still push directly and
+can override the rule on a pull request, but only by ticking "bypass rules".
+
 The web deploy ends with a smoke test (home page, a tool page's title, the
 sitemap, robots.txt). A failed smoke test fails the run but does not roll
 back: redeploy the previous commit from the Actions tab.
@@ -162,8 +171,8 @@ To make someone an admin, set `profiles.role`; their next request sees it.
 | `SUPABASE_DB_URL` | GitHub Actions | `backup-db.yml` |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SITE_URL` | GitHub Actions | `deploy-web.yml` |
 | `FCM_VAPID_KEY` | GitHub Actions | web build (browser notifications) |
-| `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` | Supabase function secrets | summaries (Groq by default) |
-| `AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_MODEL` | Supabase function secrets, optional | used when the first provider fails |
+| `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` | Supabase function secrets | summaries (Groq by default). The key can expire: when the provider refuses it, `scrape-tools` fails once with "AI key refused"; create a new key and `supabase secrets set AI_API_KEY=…` |
+| `AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_MODEL` | Supabase function secrets, optional but recommended | used when the first provider fails, including a refused key; a second provider (OpenRouter or Gemini, both free) keeps summaries running through the next expiry |
 | `FIREBASE_SERVICE_ACCOUNT` | Supabase function secrets | `send-notification`, `firebase-session`, `delete-account` (Admin SDK key of `liz-f5f93`) |
 | `ASK_EVAL_KEY` | Supabase function secrets | lets the Ask Liz evaluation skip the rate limit |
 | ntfy topic | `app_config.alert_ntfy_topic` | health pushes |

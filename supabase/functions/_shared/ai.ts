@@ -34,6 +34,18 @@
 //     AI_FALLBACK_API_KEY  = sk-or-...
 // A reply that is merely unhelpful is not retried elsewhere: only a provider
 // that fails to answer.
+//
+// Keys expire. In November 2026 the Groq key began answering 401
+// "expired_api_key" and every summary failed; the scrape run retried the same
+// three tools twelve times a day before failing. A key every provider refuses
+// now raises AiCredentialsError, which callers treat as "stop and say so".
+
+/// Every configured provider refused its key (401 or 403). Nothing later in a
+/// batch can succeed until the key is renewed, so callers stop at once.
+export class AiCredentialsError extends Error {}
+
+/// One provider refusing its key, as opposed to being down or rate limited.
+class KeyRefused extends Error {}
 
 export interface Provider {
   name: string;
@@ -138,7 +150,8 @@ async function askOne(
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`AI API error ${res.status} (${p.name}): ${body.slice(0, 300)}`);
+    const message = `AI API error ${res.status} (${p.name}): ${body.slice(0, 300)}`;
+    throw res.status === 401 || res.status === 403 ? new KeyRefused(message) : new Error(message);
   }
 
   const data = await res.json();
@@ -165,15 +178,18 @@ export async function completeWith(
     throw new Error('AI_API_KEY is not configured (set a free Groq/OpenRouter/Gemini key).');
   }
   const errors: string[] = [];
+  let refused = 0;
   for (const p of providers) {
     try {
       return await askOne(p, options, fetchFn, wait);
     } catch (e) {
+      if (e instanceof KeyRefused) refused++;
       errors.push(e instanceof Error ? e.message : String(e));
       if (providers.length > 1) console.warn(`AI provider ${p.name} failed: ${errors.at(-1)}`);
     }
   }
-  throw new Error(errors.join(' | '));
+  const message = errors.join(' | ');
+  throw refused === providers.length ? new AiCredentialsError(message) : new Error(message);
 }
 
 const PROVIDERS = providersFrom((k) => Deno.env.get(k));

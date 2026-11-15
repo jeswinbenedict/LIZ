@@ -77,8 +77,11 @@ jobs:
               -d '{"limit":5}') || true
             echo "$body"
             remaining=$(printf '%s' "$body" | sed -n 's/.*"remaining":\([0-9]*\).*/\1/p')
-            [ "$remaining" = "0" ] && break
-            [ -z "$remaining" ] && sleep 5
+            # `if`, not `[ … ] && …`: a false test as the loop's last command
+            # became the step's exit status, failing a run that only ran out
+            # of rounds before the backlog did.
+            if [ "$remaining" = "0" ]; then break; fi
+            if [ -z "$remaining" ]; then sleep 5; fi
           done
 
       # A tool with no bullets shows an empty "AI summary" on its detail page.
@@ -100,9 +103,15 @@ jobs:
               -H "Content-Type: application/json" \
               -d '{"limit":6}') || true
             echo "$body"
+            # The AI provider refused its key (expired or revoked). No later
+            # round can succeed, so fail once and say what to renew.
+            if printf '%s' "$body" | grep -q '"error":"ai_credentials'; then
+              echo "::error title=AI key refused::The AI provider rejected AI_API_KEY (expired or revoked), so no summaries can be written. Create a new free key (console.groq.com → API Keys), then run: supabase secrets set AI_API_KEY=<new key>. Setting the AI_FALLBACK_* secrets keeps summaries running through the next expiry (docs/OPERATIONS.md)."
+              exit 1
+            fi
             remaining=$(printf '%s' "$body" | sed -n 's/.*"remaining":\([0-9]*\).*/\1/p')
-            [ "$remaining" = "0" ] && break
-            [ -z "$remaining" ] && sleep 5
+            if [ "$remaining" = "0" ]; then break; fi
+            if [ -z "$remaining" ]; then sleep 5; fi
           done
 
       # GitHub stars and Hacker News points, read every day: Rising is growth

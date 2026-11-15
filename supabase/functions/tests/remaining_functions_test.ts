@@ -1,4 +1,5 @@
 import { assert, assertEquals } from 'jsr:@std/assert@1';
+import { AiCredentialsError } from '../_shared/ai.ts';
 import { clampLimit, embedBatch, summarizeBatch } from '../_shared/batch.ts';
 import { deleteCaller } from '../delete-account/logic.ts';
 import { fcmMessage, isDeadToken, targetIds } from '../send-notification/logic.ts';
@@ -191,6 +192,39 @@ Deno.test('only an empty summary counts against the row', async () => {
   // The rate-limited row is not its own fault; only the empty one is noted.
   assertEquals(noted, ['empty']);
   assertEquals(result.failures.length, 2);
+});
+
+Deno.test('a refused key ends the batch and is reported, not held against rows', async () => {
+  const asked: string[] = [];
+  const noted: string[] = [];
+  const result = await summarizeBatch(
+    [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }],
+    {
+      summarize: ({ title }) => {
+        asked.push(title);
+        return Promise.reject(new AiCredentialsError('AI API error 401 (primary): expired_api_key'));
+      },
+      save: () => Promise.resolve(null),
+      noteAttempt: (id) => {
+        noted.push(id);
+        return Promise.resolve();
+      },
+    },
+  );
+  // One call, not one per row: every row would fail the same way.
+  assertEquals(asked, ['A']);
+  assertEquals(noted, []);
+  assertEquals(result.summarized, 0);
+  assert(result.credentials?.includes('expired_api_key'));
+});
+
+Deno.test('an ordinary failure leaves credentials unset', async () => {
+  const result = await summarizeBatch([{ id: 'a', name: 'A' }], {
+    summarize: () => Promise.reject(new Error('503 down')),
+    save: () => Promise.resolve(null),
+    noteAttempt: () => Promise.resolve(),
+  });
+  assertEquals(result.credentials, null);
 });
 
 Deno.test('a failed save is a failure, not a summary', async () => {

@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     }
 
     // Which failures count against a row is decided in _shared/batch.ts.
-    const { summarized, failures } = await summarizeBatch(pending, {
+    const { summarized, failures, credentials } = await summarizeBatch(pending, {
       summarize,
       save: async (id, bullets) => {
         const { error } = await supabase
@@ -68,6 +68,15 @@ Deno.serve(async (req) => {
     const { count } = await supabase
       .from('tools_needing_summary')
       .select('id', { count: 'exact', head: true });
+
+    // A refused key is not a bad row: report it as such, so the scrape run
+    // can stop and say which secret to renew (scrape-tools.yml).
+    if (credentials) {
+      return json({
+        data: { summarized, remaining: count ?? 0 },
+        error: `ai_credentials: ${credentials}`,
+      }, 503);
+    }
 
     return json({
       data: {

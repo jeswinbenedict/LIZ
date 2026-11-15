@@ -2,6 +2,8 @@
 // the model and the database passed in, so the rules about what counts as a
 // failure can be tested without either.
 
+import { AiCredentialsError } from './ai.ts';
+
 /** The batch size a caller asked for, within [1, max]. */
 export function clampLimit(body: unknown, fallback: number, max: number): number {
   const asked = Number((body as { limit?: unknown } | null)?.limit);
@@ -31,9 +33,13 @@ export interface SummaryDeps {
  * usable will usually yield nothing again, and after three such attempts it
  * leaves the backlog. A thrown error is a rate limit or a network failure,
  * which is not the row's fault, so it is not counted.
+ *
+ * A refused key ends the batch: every remaining row would fail the same way.
+ * `credentials` then carries the providers' answer for the caller to report.
  */
 export async function summarizeBatch(tools: SummaryTool[], deps: SummaryDeps) {
   let summarized = 0;
+  let credentials: string | null = null;
   const failures: string[] = [];
   for (const tool of tools) {
     try {
@@ -51,9 +57,13 @@ export async function summarizeBatch(tools: SummaryTool[], deps: SummaryDeps) {
       else summarized++;
     } catch (err) {
       failures.push(`${tool.name}: ${String(err)}`);
+      if (err instanceof AiCredentialsError) {
+        credentials = err.message;
+        break;
+      }
     }
   }
-  return { summarized, failures };
+  return { summarized, failures, credentials };
 }
 
 export interface EmbedDeps<T> {
