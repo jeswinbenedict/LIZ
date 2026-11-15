@@ -75,26 +75,33 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # An exact version, never `latest`: CLI v3 (November 2026) made `db push`
+      # target the local database unless given `--remote` and made every
+      # hosted change wait for a confirmation, and the first deploy with
+      # migrations after it failed. Upgrade on purpose, here and in ci.yml,
+      # after reading the release notes.
       - uses: supabase/setup-cli@v3
         if: steps.secrets.outputs.ready == 'true'
         with:
-          version: latest
+          version: 3.1.0
 
+      # `--remote` is the linked project; `--yes` is the confirmation an
+      # unattended run cannot give at a prompt.
       - name: Migrations
         if: steps.secrets.outputs.ready == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --password "$SUPABASE_DB_PASSWORD"
+          supabase link --project-ref "$PROJECT_REF"
+          supabase db push --remote --password "$SUPABASE_DB_PASSWORD" --yes
 
       - name: Edge Functions
         if: steps.secrets.outputs.ready == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase functions deploy --project-ref "$PROJECT_REF"
+          supabase functions deploy --project-ref "$PROJECT_REF" --yes
 
       - name: Remember what was deployed
         if: steps.secrets.outputs.ready == 'true'

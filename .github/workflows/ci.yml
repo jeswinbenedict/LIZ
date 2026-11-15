@@ -100,9 +100,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # Pinned, as in deploy-supabase.yml: the same CLI that deploys.
       - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 3.1.0
       # Starts Postgres alone (not the whole stack), applies supabase/migrations
       # and then seed.sql. Fails on the first statement that errors.
       - run: supabase db start
