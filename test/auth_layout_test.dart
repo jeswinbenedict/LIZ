@@ -74,7 +74,10 @@ Future<void> _expectFits(
       ),
     ),
   );
-  await tester.pumpAndSettle(const Duration(seconds: 1));
+  // A fixed second, not "settled": the sign-in page's characters breathe
+  // and blink for as long as it is open.
+  await tester.pump();
+  await tester.pump(const Duration(seconds: 1));
   final error = tester.takeException();
 
   await tester.pumpWidget(const SizedBox.shrink());

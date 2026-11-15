@@ -104,7 +104,9 @@ void main() {
       ),
     );
     router.go('/saved');
-    await tester.pumpAndSettle();
+    // The sign-in page never settles (its characters breathe and blink).
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(
       router.routerDelegate.currentConfiguration.uri.toString(),
       '/signin?from=%2Fsaved',
@@ -159,7 +161,10 @@ void main() {
         ),
       );
       router.go('/news');
-      await tester.pumpAndSettle();
+      // The sign-in page's characters breathe and blink for as long as it
+      // is open, so it never settles: time is moved on instead.
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
       // A browser nobody has signed in on opens on "Create account".
       expect(find.text('Create your account'), findsOneWidget);
@@ -169,6 +174,9 @@ void main() {
       await tester.enterText(fields.at(2), 'a long enough phrase');
       await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
       await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      // Off the sign-in page, so settling works again.
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       expect(router.routerDelegate.currentConfiguration.uri.path, '/welcome');

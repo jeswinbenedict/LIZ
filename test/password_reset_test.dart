@@ -179,6 +179,8 @@ void main() {
     });
   });
 
+  // Steps on the sign-in page move time on by a second rather than settle:
+  // its characters breathe and blink for as long as it is open.
   group('reaching it from sign-in', () {
     GoRouter router() => GoRouter(
       initialLocation: '/signin',
@@ -209,14 +211,18 @@ void main() {
           child: MaterialApp.router(theme: LizTheme.app(), routerConfig: r),
         ),
       );
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
+      // The narrow sign-in page scrolls; the link may be below the fold.
+      await tester.ensureVisible(find.text('Forgot your password?'));
       await tester.tap(find.text('Forgot your password?'));
       await tester.pumpAndSettle();
       expect(find.text('Reset your password'), findsOneWidget);
 
       r.pop();
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       expect(find.text('Welcome back'), findsOneWidget);
       expect(find.text('Discover home'), findsNothing);
     });
@@ -228,9 +234,12 @@ void main() {
           child: MaterialApp.router(theme: LizTheme.app(), routerConfig: r),
         ),
       );
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
       await tester.enterText(find.byType(TextField).first, 'me@example.com');
+      // The narrow sign-in page scrolls; the link may be below the fold.
+      await tester.ensureVisible(find.text('Forgot your password?'));
       await tester.tap(find.text('Forgot your password?'));
       await tester.pumpAndSettle();
 
@@ -275,6 +284,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(SignInView), findsOneWidget);
 
+        // The narrow sign-in page scrolls; the link may be below the fold.
+        await tester.ensureVisible(find.text('Forgot your password?'));
         await tester.tap(find.text('Forgot your password?'));
         await tester.pumpAndSettle();
 

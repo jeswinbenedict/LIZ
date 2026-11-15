@@ -301,6 +301,24 @@ undone (*Delete account*).
   The step away from signing in has *← Back to sign in* above its title. A
   first visit opens on *Create account*, whose Terms and Privacy links are
   underlined in the sentence.
+- **Sign in itself: the characters** (15 November 2026,
+  `hero/hero_sign_in_layout.dart`, `hero/character_stage.dart`). Seven
+  illustrated friends round a laptop take the brand panel's place: wide, the
+  wordmark, the claim and its sentence above them, the form on a dark glass
+  panel beside; narrow, a band of them above the form, sized so a short
+  window still shows it. They are alive: eyes follow the pointer (each
+  character at its own pace, eased like a real gaze, both eyes on one
+  target), they blink, breathe, lean in to a box being filled, close their
+  eyes while a password is typed and look away while it is shown. The
+  picture is flat, so only eyes and lids move: each iris is painted out of
+  it and drawn back, from the artist's own colours, inside a mask of the
+  eye's opening; a closed eye is the artist's closed-eyes painting, swept
+  down over the open one. Reduced motion stops the breathing, blinking and
+  lean and moves the eyes without easing. The one exception to the single
+  red: the picture is full colour, and its light is a faint blue opposite
+  the red. The cap and mug carry the Liz mark. Every asset comes from
+  `tool/brand/make_hero.py`, which explains each step; change the picture
+  there, never by hand.
 - **Welcome.** Where a new account opens (`/welcome`, after *Create
   account*; then on to the page it was going to). The wordmark and *Skip* in
   a bar; a thin progress line in two segments, ink up to the current step;

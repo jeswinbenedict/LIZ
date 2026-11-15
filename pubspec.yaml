@@ -107,6 +107,13 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # The sign-in characters and the mask of their eyes (tool/brand/make_hero.py).
+  assets:
+    - assets/hero/characters.webp
+    - assets/hero/eye_openings.png
+    - assets/hero/eyes_closed.webp
+    - assets/hero/irises.png
+
   # Fonts are bundled rather than fetched from fonts.gstatic.com at runtime:
   # fetching cost 1.6 MB per load, sent every visitor's IP to Google, and laid
   # the UI out with fallback metrics first (clipped chip labels). Both are

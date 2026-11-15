@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../app/auth_gate.dart'
     show safeReturnPath, welcomePath, welcomePending;
 import 'auth_frame.dart';
-import 'sign_in_view.dart';
+import 'hero/hero_sign_in_layout.dart';
 
-/// The sign-in page (`/signin`), in the Signal look (docs/DESIGN.md): the
-/// form in the account pages' frame — a brand panel beside it on a wide
-/// window, the wordmark above it on a narrow one.
+/// The sign-in page (`/signin`): the form beside the seven characters, who
+/// follow the pointer and close their eyes while a password is typed
+/// (hero/hero_sign_in_layout.dart, docs/DESIGN.md §8).
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key, this.returnTo});
 
@@ -39,12 +39,6 @@ class SignInScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AuthFrame(
-      scrolls: true,
-      child: SignInView(
-        onSignedIn: () => _done(context),
-        padding: AuthFrame.formPadding(context),
-      ),
-    );
+    return HeroSignInLayout(onSignedIn: () => _done(context));
   }
 }
