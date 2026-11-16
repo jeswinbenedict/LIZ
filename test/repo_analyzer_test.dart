@@ -221,7 +221,7 @@ void main() {
     await tester.tap(find.text('Analyse repository'));
     await tester.pumpAndSettle();
     expect(
-      find.textContaining('Paste a GitHub repository address'),
+      find.textContaining('Paste a GitHub repository:'),
       findsOneWidget,
     );
     expect(s.started, isEmpty);
@@ -250,6 +250,35 @@ void main() {
       findsWidgets,
       reason: 'the report opens',
     );
+  });
+
+  test('all three of the Clone box forms are accepted', () {
+    for (final s in [
+      'https://github.com/jeswinbenedict/LuzHire.git',
+      'git@github.com:jeswinbenedict/LuzHire.git',
+      'gh repo clone jeswinbenedict/LuzHire',
+      'git clone --depth 1 https://github.com/a/b.git dir',
+      'ssh://git@github.com/a/b.git',
+      'a/b',
+    ]) {
+      expect(looksLikeRepo(s), isTrue, reason: s);
+    }
+    for (final s in ['gh repo clone', 'https://gitlab.com/a/b', 'not a repo']) {
+      expect(looksLikeRepo(s), isFalse, reason: s);
+    }
+  });
+
+  testWidgets('the GitHub CLI command starts the same analysis', (
+    tester,
+  ) async {
+    final s = await _pump(tester, const RepoAnalyzerScreen());
+    await tester.enterText(
+      find.widgetWithText(TextField, 'GitHub repository'),
+      'gh repo clone jeswinbenedict/LuzHire',
+    );
+    await tester.tap(find.text('Analyse repository'));
+    await tester.pumpAndSettle();
+    expect(s.started.single.$1, 'gh repo clone jeswinbenedict/LuzHire');
   });
 
   testWidgets('a GitHub refusal is shown on the form', (tester) async {

@@ -22,6 +22,18 @@ export function parseRepoUrl(input: string): RepoRef | null {
   let s = (input ?? '').trim();
   if (!s || s.length > 500) return null;
 
+  // The clone commands GitHub's "Code" button offers, pasted whole:
+  //   gh repo clone owner/name [directory] [-- git flags]
+  //   git clone [flags] <url> [directory]
+  const gh = /^gh\s+repo\s+clone\s+(\S+)/i.exec(s);
+  if (gh) s = gh[1];
+  const words = s.split(/\s+/);
+  if (words[0]?.toLowerCase() === 'git' && words[1]?.toLowerCase() === 'clone') {
+    s = words.slice(2).find((w) => /github\.com/i.test(w)) ?? '';
+  }
+  // `gh` also accepts a full URL, and ssh:// is the long form of git@.
+  s = s.replace(/^ssh:\/\/git@github\.com[:/]/i, 'git@github.com:');
+
   // git@github.com:owner/name.git
   const ssh = /^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?\/?$/i.exec(s);
   if (ssh) return checked(ssh[1], ssh[2]);

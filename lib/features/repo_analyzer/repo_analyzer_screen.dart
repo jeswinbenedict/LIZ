@@ -18,7 +18,21 @@ import 'repo_service.dart';
 /// Whether text is a GitHub repository address the server will accept
 /// (the same shapes as supabase/functions/_shared/repo/url.ts).
 bool looksLikeRepo(String s) {
-  final t = s.trim();
+  var t = s.trim();
+  // The Clone box's commands, pasted whole: `gh repo clone owner/name …`
+  // and `git clone … <url> …`. The server reads them the same way.
+  final words = t.split(RegExp(r'\s+'));
+  if (words.length >= 4 &&
+      words[0] == 'gh' &&
+      words[1] == 'repo' &&
+      words[2] == 'clone') {
+    t = words[3];
+  } else if (words.length >= 3 && words[0] == 'git' && words[1] == 'clone') {
+    t = words
+        .skip(2)
+        .firstWhere((w) => w.contains('github.com'), orElse: () => '');
+  }
+  t = t.replaceFirst(RegExp(r'^ssh://git@github\.com[:/]'), 'git@github.com:');
   return RegExp(
         r'^(https?://)?(www\.)?github\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+(\.git)?(/.*)?$',
       ).hasMatch(t) ||
@@ -124,7 +138,7 @@ class _RepoAnalyzerScreenState extends ConsumerState<RepoAnalyzerScreen> {
     if (!looksLikeRepo(url)) {
       setState(
         () => _error =
-            'Paste a GitHub repository address, like https://github.com/owner/name.',
+            'Paste a GitHub repository: an HTTPS or SSH address, or a gh repo clone command.',
       );
       return;
     }
@@ -274,7 +288,10 @@ class _RepoAnalyzerScreenState extends ConsumerState<RepoAnalyzerScreen> {
                 },
                 decoration: const InputDecoration(
                   labelText: 'GitHub repository',
-                  hintText: 'https://github.com/owner/name',
+                  hintText:
+                      'URL, git@github.com:owner/name.git or gh repo clone owner/name',
+                  helperText:
+                      'HTTPS, SSH or GitHub CLI: paste whichever you copied.',
                   prefixIcon: Icon(Icons.link),
                 ),
               ),

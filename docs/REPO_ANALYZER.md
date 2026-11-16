@@ -6,6 +6,23 @@ stack, the architecture, the data, the API, build and deployment — in a
 grounded in the repository's own files. In the app: **Repos** in the
 navigation (`/repos`, a report at `/repos/:id`).
 
+## What can be pasted
+
+Whatever GitHub's **Code → Clone** box gives, all leading to the same
+analysis:
+
+| Tab | Example |
+|---|---|
+| HTTPS | `https://github.com/owner/name.git` (or the page address, with or without `/tree/<branch>`) |
+| SSH | `git@github.com:owner/name.git`, or `ssh://git@github.com/owner/name.git` |
+| GitHub CLI | `gh repo clone owner/name` (a directory or `-- flags` after it are ignored) |
+
+Also `owner/name` on its own and a whole `git clone … <url> …` command. The
+form is recognised by `parseRepoUrl` (`_shared/repo/url.ts`); the app checks
+the same shapes before sending. Every form names the same repository, so
+none is "cloned" differently: Liz reads the repository through GitHub's API
+in every case, which needs no SSH key and never runs anything.
+
 ## How it works
 
 ```

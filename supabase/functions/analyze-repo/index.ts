@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     return json({ data: null, error: 'Send JSON' }, 400);
   }
   const where = parseRepoUrl(String(body.url ?? ''));
-  if (!where) return json({ data: null, error: 'That is not a GitHub repository address. Paste one like https://github.com/owner/name.', code: 'bad_url' }, 400);
+  if (!where) return json({ data: null, error: 'That is not a GitHub repository. Paste its HTTPS address, its SSH address (git@github.com:owner/name.git) or its GitHub CLI command (gh repo clone owner/name).', code: 'bad_url' }, 400);
   const token = cleanToken(body.token);
   if (token === undefined) return json({ data: null, error: 'That does not look like a GitHub token.', code: 'bad_token' }, 400);
   const askedRef = body.ref == null || body.ref === '' ? where.ref ?? null : cleanRef(body.ref);

@@ -19,6 +19,20 @@ Deno.test('every shape of a GitHub address names the repository', () => {
   for (const s of ['https://github.com/vercel/next.js', 'github.com/vercel/next.js', 'vercel/next.js', 'https://github.com/vercel/next.js.git', 'git@github.com:vercel/next.js.git', 'https://www.github.com/vercel/next.js/']) {
     assertEquals(parseRepoUrl(s), { owner: 'vercel', repo: 'next.js' }, s);
   }
+  // The three tabs of GitHub's Clone box, and the commands around them.
+  for (const s of [
+    'https://github.com/jeswinbenedict/LuzHire.git',
+    'git@github.com:jeswinbenedict/LuzHire.git',
+    'gh repo clone jeswinbenedict/LuzHire',
+    'gh repo clone jeswinbenedict/LuzHire my-dir -- --depth 1',
+    'gh repo clone https://github.com/jeswinbenedict/LuzHire',
+    'git clone https://github.com/jeswinbenedict/LuzHire.git',
+    'git clone --depth 1 git@github.com:jeswinbenedict/LuzHire.git dir',
+    'ssh://git@github.com/jeswinbenedict/LuzHire.git',
+  ]) {
+    assertEquals(parseRepoUrl(s), { owner: 'jeswinbenedict', repo: 'LuzHire' }, s);
+  }
+  assertEquals(parseRepoUrl('git clone https://gitlab.com/a/b.git'), null);
   assertEquals(parseRepoUrl('https://github.com/a/b/tree/feature/x'), { owner: 'a', repo: 'b', ref: 'feature' });
   for (const bad of ['', 'https://gitlab.com/a/b', 'https://github.com/a', 'not a url', 'https://github.com/-bad/x', 'https://evil.com/github.com/a/b']) {
     assertEquals(parseRepoUrl(bad), null, bad);
