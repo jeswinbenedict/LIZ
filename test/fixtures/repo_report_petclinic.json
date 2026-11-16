@@ -1,0 +1,3408 @@
+{
+ "report": {
+  "version": 1,
+  "repo": {
+   "fullName": "spring-projects/spring-petclinic",
+   "description": "A sample Spring-based application",
+   "defaultBranch": "main",
+   "private": false,
+   "stars": 9661,
+   "forks": 31177,
+   "openIssues": 18,
+   "license": "Apache-2.0",
+   "homepage": null,
+   "topics": [],
+   "sizeKb": 11003,
+   "pushedAt": "2026-09-29T15:37:54Z",
+   "createdAt": "2013-01-09T09:05:18Z",
+   "archived": false
+  },
+  "ref": "main",
+  "commit": {
+   "sha": "500158f732419217507c7656904b8e6aa1bcc0d6",
+   "date": "2026-09-29T15:37:54Z",
+   "message": "added redirection to the page when the user types a page that is out of bounds"
+  },
+  "languages": {
+   "CSS": 278931,
+   "Java": 141217,
+   "HTML": 19176,
+   "SCSS": 7939,
+   "Dockerfile": 643
+  },
+  "tree": [
+   {
+    "p": ".devcontainer/Dockerfile",
+    "s": 643,
+    "r": 1
+   },
+   {
+    "p": ".devcontainer/devcontainer.json",
+    "s": 623,
+    "r": 1
+   },
+   {
+    "p": ".editorconfig",
+    "s": 344,
+    "r": 0
+   },
+   {
+    "p": ".gitattributes",
+    "s": 145,
+    "r": 0
+   },
+   {
+    "p": ".github/dco.yml",
+    "s": 25,
+    "r": 1
+   },
+   {
+    "p": ".github/workflows/deploy-and-test-cluster.yml",
+    "s": 673,
+    "r": 1
+   },
+   {
+    "p": ".github/workflows/gradle-build.yml",
+    "s": 838,
+    "r": 1
+   },
+   {
+    "p": ".github/workflows/maven-build.yml",
+    "s": 771,
+    "r": 1
+   },
+   {
+    "p": ".gitignore",
+    "s": 598,
+    "r": 0
+   },
+   {
+    "p": ".gitpod.yml",
+    "s": 287,
+    "r": 1
+   },
+   {
+    "p": ".mvn/wrapper/maven-wrapper.properties",
+    "s": 168,
+    "r": 1
+   },
+   {
+    "p": "LICENSE.txt",
+    "s": 11360,
+    "r": 1
+   },
+   {
+    "p": "README.md",
+    "s": 10547,
+    "r": 1
+   },
+   {
+    "p": "build.gradle",
+    "s": 3382,
+    "r": 1
+   },
+   {
+    "p": "docker-compose.yml",
+    "s": 488,
+    "r": 1
+   },
+   {
+    "p": "gradle/wrapper/gradle-wrapper.jar",
+    "s": 48462,
+    "r": 0
+   },
+   {
+    "p": "gradle/wrapper/gradle-wrapper.properties",
+    "s": 281,
+    "r": 1
+   },
+   {
+    "p": "gradlew",
+    "s": 8654,
+    "r": 0
+   },
+   {
+    "p": "gradlew.bat",
+    "s": 2764,
+    "r": 0
+   },
+   {
+    "p": "k8s/db.yml",
+    "s": 1458,
+    "r": 1
+   },
+   {
+    "p": "k8s/petclinic.yml",
+    "s": 1358,
+    "r": 1
+   },
+   {
+    "p": "mvnw",
+    "s": 11791,
+    "r": 0
+   },
+   {
+    "p": "mvnw.cmd",
+    "s": 8293,
+    "r": 0
+   },
+   {
+    "p": "pom.xml",
+    "s": 15955,
+    "r": 1
+   },
+   {
+    "p": "settings.gradle",
+    "s": 38,
+    "r": 1
+   },
+   {
+    "p": "src/checkstyle/nohttp-checkstyle-suppressions.xml",
+    "s": 470,
+    "r": 1
+   },
+   {
+    "p": "src/checkstyle/nohttp-checkstyle.xml",
+    "s": 412,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java",
+    "s": 1144,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/PetClinicRuntimeHints.java",
+    "s": 1715,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+    "s": 1344,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+    "s": 1367,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+    "s": 1431,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/model/package-info.java",
+    "s": 755,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+    "s": 4828,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "s": 6600,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java",
+    "s": 2298,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+    "s": 2186,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+    "s": 6584,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/PetType.java",
+    "s": 951,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+    "s": 1987,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeRepository.java",
+    "s": 1208,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java",
+    "s": 1988,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+    "s": 1760,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+    "s": 3789,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/owner/package-info.java",
+    "s": 675,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/package-info.java",
+    "s": 669,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java",
+    "s": 2014,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/system/CrashController.java",
+    "s": 1204,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java",
+    "s": 1947,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/system/WelcomeController.java",
+    "s": 898,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/system/package-info.java",
+    "s": 676,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/vet/Specialty.java",
+    "s": 998,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+    "s": 2190,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+    "s": 2774,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java",
+    "s": 1994,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/vet/Vets.java",
+    "s": 1215,
+    "r": 1
+   },
+   {
+    "p": "src/main/java/org/springframework/samples/petclinic/vet/package-info.java",
+    "s": 673,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/application-mysql.properties",
+    "s": 299,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/application-postgres.properties",
+    "s": 319,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/application.properties",
+    "s": 981,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/banner.txt",
+    "s": 709,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/h2/data.sql",
+    "s": 3118,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/h2/schema.sql",
+    "s": 2146,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/mysql/data.sql",
+    "s": 3200,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/mysql/petclinic_db_setup_mysql.txt",
+    "s": 1690,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/mysql/schema.sql",
+    "s": 1573,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/mysql/user.sql",
+    "s": 277,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/postgres/data.sql",
+    "s": 6422,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/postgres/petclinic_db_setup_postgres.txt",
+    "s": 857,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/db/postgres/schema.sql",
+    "s": 1699,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages.properties",
+    "s": 1232,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_de.properties",
+    "s": 1447,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_en.properties",
+    "s": 110,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_es.properties",
+    "s": 1431,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_fa.properties",
+    "s": 1687,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_hi.properties",
+    "s": 4164,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_ja.properties",
+    "s": 1602,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_ko.properties",
+    "s": 1493,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_pt.properties",
+    "s": 1474,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_ru.properties",
+    "s": 2032,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/messages/messages_tr.properties",
+    "s": 1318,
+    "r": 1
+   },
+   {
+    "p": "src/main/resources/static/resources/css/petclinic.css",
+    "s": 278931,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/montserrat-webfont.eot",
+    "s": 20979,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/montserrat-webfont.svg",
+    "s": 84634,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/montserrat-webfont.ttf",
+    "s": 42692,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/montserrat-webfont.woff",
+    "s": 24240,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/varela_round-webfont.eot",
+    "s": 28963,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/varela_round-webfont.svg",
+    "s": 370273,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/varela_round-webfont.ttf",
+    "s": 63044,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/fonts/varela_round-webfont.woff",
+    "s": 32712,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/images/favicon.png",
+    "s": 528,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/images/pets.png",
+    "s": 67721,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/images/spring-logo-dataflow-mobile.png",
+    "s": 3705,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/images/spring-logo-dataflow.png",
+    "s": 6888,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/static/resources/images/spring-logo.svg",
+    "s": 7935,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/error.html",
+    "s": 776,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/fragments/inputField.html",
+    "s": 1091,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/fragments/layout.html",
+    "s": 3211,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/fragments/selectField.html",
+    "s": 980,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/owners/createOrUpdateOwnerForm.html",
+    "s": 1073,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/owners/findOwners.html",
+    "s": 1150,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/owners/ownerDetails.html",
+    "s": 2887,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/owners/ownersList.html",
+    "s": 2423,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/pets/createOrUpdatePetForm.html",
+    "s": 1230,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/pets/createOrUpdateVisitForm.html",
+    "s": 1788,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/vets/vetList.html",
+    "s": 2192,
+    "r": 0
+   },
+   {
+    "p": "src/main/resources/templates/welcome.html",
+    "s": 375,
+    "r": 0
+   },
+   {
+    "p": "src/main/scss/header.scss",
+    "s": 1386,
+    "r": 0
+   },
+   {
+    "p": "src/main/scss/petclinic.scss",
+    "s": 4403,
+    "r": 0
+   },
+   {
+    "p": "src/main/scss/responsive.scss",
+    "s": 678,
+    "r": 0
+   },
+   {
+    "p": "src/main/scss/typography.scss",
+    "s": 1472,
+    "r": 0
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/MySqlIntegrationTests.java",
+    "s": 2645,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java",
+    "s": 1529,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java",
+    "s": 4629,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java",
+    "s": 2478,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java",
+    "s": 5148,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/model/ValidatorTests.java",
+    "s": 2731,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+    "s": 11978,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/owner/OwnerTests.java",
+    "s": 1331,
+    "r": 1
+   },
+   {
+    "p": "src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java",
+    "s": 10342,
+    "r": 1
+   }
+  ],
+  "treeTruncated": false,
+  "techs": [
+   {
+    "name": "Sass",
+    "category": "Styling",
+    "confidence": "confirmed",
+    "evidence": [
+     "src/main/scss/header.scss",
+     "src/main/scss/petclinic.scss",
+     "src/main/scss/responsive.scss",
+     "src/main/scss/typography.scss"
+    ],
+    "purpose": "CSS with variables and nesting"
+   },
+   {
+    "name": "Spring Boot",
+    "category": "Backend",
+    "confidence": "confirmed",
+    "evidence": [
+     "build.gradle",
+     "pom.xml",
+     "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java:28",
+     "src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java:95"
+    ],
+    "purpose": "Java/Kotlin application framework"
+   },
+   {
+    "name": "PostgreSQL",
+    "category": "Database",
+    "confidence": "confirmed",
+    "evidence": [
+     "build.gradle",
+     "pom.xml",
+     "docker-compose.yml:14",
+     "k8s/db.yml:6",
+     "k8s/petclinic.yml:36"
+    ],
+    "purpose": "Relational database"
+   },
+   {
+    "name": "Hibernate / JPA",
+    "category": "ORM",
+    "confidence": "confirmed",
+    "evidence": [
+     "build.gradle"
+    ],
+    "purpose": "Java persistence"
+   },
+   {
+    "name": "JUnit",
+    "category": "Testing",
+    "confidence": "confirmed",
+    "evidence": [
+     "build.gradle",
+     "pom.xml"
+    ],
+    "purpose": "Java test framework"
+   },
+   {
+    "name": "Gradle",
+    "category": "Build",
+    "confidence": "confirmed",
+    "evidence": [
+     "build.gradle"
+    ],
+    "purpose": "JVM and Android build tool"
+   },
+   {
+    "name": "Maven",
+    "category": "Build",
+    "confidence": "confirmed",
+    "evidence": [
+     "pom.xml"
+    ],
+    "purpose": "Java build tool"
+   },
+   {
+    "name": "Docker",
+    "category": "DevOps",
+    "confidence": "confirmed",
+    "evidence": [
+     ".devcontainer/Dockerfile"
+    ],
+    "purpose": "Packages the app into containers"
+   },
+   {
+    "name": "Docker Compose",
+    "category": "DevOps",
+    "confidence": "confirmed",
+    "evidence": [
+     "docker-compose.yml"
+    ],
+    "purpose": "Runs several containers together"
+   },
+   {
+    "name": "Kubernetes",
+    "category": "DevOps",
+    "confidence": "confirmed",
+    "evidence": [
+     "k8s/db.yml",
+     "k8s/petclinic.yml",
+     "k8s/db.yml:18",
+     "k8s/petclinic.yml:3"
+    ],
+    "purpose": "Container orchestration"
+   },
+   {
+    "name": "GitHub Actions",
+    "category": "CI/CD",
+    "confidence": "confirmed",
+    "evidence": [
+     ".github/workflows/deploy-and-test-cluster.yml",
+     ".github/workflows/gradle-build.yml",
+     ".github/workflows/maven-build.yml"
+    ],
+    "purpose": "Runs checks and deploys on push"
+   }
+  ],
+  "dependencies": [
+   {
+    "name": "org.springframework.boot:spring-boot-starter-cache",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-data-jpa",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-thymeleaf",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-webmvc",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-validation",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "javax.cache:cache-api",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "jakarta.xml.bind:jakarta.xml.bind-api",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-actuator",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.webjars:webjars-locator-lite",
+    "version": "${webjarsLocatorLiteVersion}",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.webjars.npm:bootstrap",
+    "version": "${webjarsBootstrapVersion}",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.webjars.npm:font-awesome",
+    "version": "${webjarsFontawesomeVersion}",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "com.github.ben-manes.caffeine:caffeine",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "com.h2database:h2",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "com.mysql:mysql-connector-j",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.postgresql:postgresql",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-data-jpa-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-restclient-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-webmvc-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-testcontainers",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-docker-compose",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.testcontainers:testcontainers-junit-jupiter",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.testcontainers:testcontainers-mysql",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "gradle",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "java",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "checkstyle",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "io.spring.dependency-management",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.graalvm.buildtools.native",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.cyclonedx.bom",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "io.spring.javaformat",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "io.spring.nohttp",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "gradle-plugin",
+    "manifest": "build.gradle"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-actuator",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "com.github.ben-manes.caffeine:caffeine",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "com.mysql:mysql-connector-j",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.postgresql:postgresql",
+    "version": "*",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.webjars:webjars-locator-lite",
+    "version": "${webjars-locator.version}",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.webjars.npm:bootstrap",
+    "version": "${webjars-bootstrap.version}",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.webjars.npm:font-awesome",
+    "version": "${webjars-font-awesome.version}",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-devtools",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-restclient",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-restclient-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-thymeleaf-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-validation-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-webmvc-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-actuator-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-testcontainers",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-docker-compose",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.springframework.boot:spring-boot-starter-cache-test",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.testcontainers:testcontainers-junit-jupiter",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "org.testcontainers:testcontainers-mysql",
+    "version": "*",
+    "dev": true,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "com.puppycrawl.tools:checkstyle",
+    "version": "${checkstyle.version}",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   },
+   {
+    "name": "io.spring.nohttp:nohttp-checkstyle",
+    "version": "${nohttp-checkstyle.version}",
+    "dev": false,
+    "ecosystem": "maven",
+    "manifest": "pom.xml"
+   }
+  ],
+  "scripts": {},
+  "endpoints": [
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+    "line": 45,
+    "method": "GET",
+    "route": "/vets.html",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+    "line": 72,
+    "method": "GET",
+    "route": "{ ",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+    "line": 100,
+    "method": "GET",
+    "route": "/owners/{ownerId}/pets/new",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+    "line": 107,
+    "method": "POST",
+    "route": "/owners/{ownerId}/pets/new",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+    "line": 139,
+    "method": "GET",
+    "route": "/owners/{ownerId}/pets/{petId}/edit",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+    "line": 144,
+    "method": "POST",
+    "route": "/owners/{ownerId}/pets/{petId}/edit",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "line": 72,
+    "method": "GET",
+    "route": "/owners/new",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "line": 77,
+    "method": "POST",
+    "route": "/owners/new",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "line": 89,
+    "method": "GET",
+    "route": "/owners/find",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "line": 94,
+    "method": "GET",
+    "route": "/owners",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "line": 148,
+    "method": "GET",
+    "route": "/owners/{ownerId}/edit",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "line": 153,
+    "method": "POST",
+    "route": "/owners/{ownerId}/edit",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "line": 178,
+    "method": "GET",
+    "route": "/owners/{ownerId}",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+    "line": 90,
+    "method": "GET",
+    "route": "/owners/{ownerId}/pets/{petId}/visits/new",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+    "line": 97,
+    "method": "POST",
+    "route": "/owners/{ownerId}/pets/{petId}/visits/new",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/system/CrashController.java",
+    "line": 31,
+    "method": "GET",
+    "route": "/oups",
+    "framework": "Spring"
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/system/WelcomeController.java",
+    "line": 25,
+    "method": "GET",
+    "route": "/",
+    "framework": "Spring"
+   }
+  ],
+  "entities": [
+   {
+    "path": "src/main/resources/db/h2/schema.sql",
+    "line": 10,
+    "name": "vets",
+    "columns": [
+     {
+      "name": "id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "first_name",
+      "type": "VARCHAR(30)"
+     },
+     {
+      "name": "last_name",
+      "type": "VARCHAR(30)"
+     }
+    ],
+    "source": "SQL"
+   },
+   {
+    "path": "src/main/resources/db/h2/schema.sql",
+    "line": 17,
+    "name": "specialties",
+    "columns": [
+     {
+      "name": "id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "name",
+      "type": "VARCHAR(80)"
+     }
+    ],
+    "source": "SQL"
+   },
+   {
+    "path": "src/main/resources/db/h2/schema.sql",
+    "line": 23,
+    "name": "vet_specialties",
+    "columns": [
+     {
+      "name": "vet_id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "specialty_id",
+      "type": "INTEGER"
+     }
+    ],
+    "source": "SQL"
+   },
+   {
+    "path": "src/main/resources/db/h2/schema.sql",
+    "line": 30,
+    "name": "types",
+    "columns": [
+     {
+      "name": "id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "name",
+      "type": "VARCHAR(80)"
+     }
+    ],
+    "source": "SQL"
+   },
+   {
+    "path": "src/main/resources/db/h2/schema.sql",
+    "line": 36,
+    "name": "owners",
+    "columns": [
+     {
+      "name": "id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "first_name",
+      "type": "VARCHAR(30)"
+     },
+     {
+      "name": "last_name",
+      "type": "VARCHAR_IGNORECASE(30)"
+     },
+     {
+      "name": "address",
+      "type": "VARCHAR(255)"
+     },
+     {
+      "name": "city",
+      "type": "VARCHAR(80)"
+     },
+     {
+      "name": "telephone",
+      "type": "VARCHAR(20)"
+     }
+    ],
+    "source": "SQL"
+   },
+   {
+    "path": "src/main/resources/db/h2/schema.sql",
+    "line": 46,
+    "name": "pets",
+    "columns": [
+     {
+      "name": "id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "name",
+      "type": "VARCHAR_IGNORECASE(30)"
+     },
+     {
+      "name": "birth_date",
+      "type": "DATE"
+     },
+     {
+      "name": "type_id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "owner_id",
+      "type": "INTEGER"
+     }
+    ],
+    "source": "SQL"
+   },
+   {
+    "path": "src/main/resources/db/h2/schema.sql",
+    "line": 58,
+    "name": "visits",
+    "columns": [
+     {
+      "name": "id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "pet_id",
+      "type": "INTEGER"
+     },
+     {
+      "name": "visit_date",
+      "type": "DATE"
+     },
+     {
+      "name": "description",
+      "type": "VARCHAR(255)"
+     }
+    ],
+    "source": "SQL"
+   }
+  ],
+  "relations": [
+   {
+    "from": "vet_specialties",
+    "to": "vets",
+    "label": "vet_id"
+   },
+   {
+    "from": "vet_specialties",
+    "to": "specialties",
+    "label": "specialty_id"
+   },
+   {
+    "from": "pets",
+    "to": "owners",
+    "label": "owner_id"
+   },
+   {
+    "from": "pets",
+    "to": "types",
+    "label": "type_id"
+   },
+   {
+    "from": "visits",
+    "to": "pets",
+    "label": "pet_id"
+   }
+  ],
+  "env": [],
+  "workflows": [
+   {
+    "path": ".github/workflows/maven-build.yml",
+    "line": 1,
+    "name": "Java CI with Maven",
+    "triggers": [
+     "push",
+     "pull_request"
+    ],
+    "jobs": [
+     {
+      "name": "build",
+      "steps": [
+       "uses actions/checkout@v4",
+       "Set up JDK ${{matrix.java}}",
+       "Build with Maven Wrapper"
+      ]
+     }
+    ]
+   },
+   {
+    "path": ".github/workflows/gradle-build.yml",
+    "line": 1,
+    "name": "Java CI with Gradle",
+    "triggers": [
+     "push",
+     "pull_request"
+    ],
+    "jobs": [
+     {
+      "name": "build",
+      "steps": [
+       "uses actions/checkout@v4",
+       "Set up JDK ${{matrix.java}}",
+       "Setup Gradle",
+       "Build with Gradle"
+      ]
+     }
+    ]
+   },
+   {
+    "path": ".github/workflows/deploy-and-test-cluster.yml",
+    "line": 1,
+    "name": "Deploy and Test Cluster",
+    "triggers": [
+     "push",
+     "pull_request"
+    ],
+    "jobs": [
+     {
+      "name": "deploy-and-test-cluster",
+      "steps": [
+       "Check out the repository",
+       "Create k8s Kind Cluster",
+       "Deploy application",
+       "Wait for Pods to be ready"
+      ]
+     }
+    ]
+   }
+  ],
+  "containers": [
+   {
+    "path": ".devcontainer/Dockerfile",
+    "line": 1,
+    "kind": "Dockerfile",
+    "name": ".devcontainer",
+    "details": [
+     "FROM mcr.microsoft.com/vscode/devcontainers/java:0-${VARIANT}"
+    ]
+   },
+   {
+    "path": "docker-compose.yml",
+    "line": 2,
+    "kind": "Compose service",
+    "name": "mysql",
+    "details": [
+     "image mysql:9.7",
+     "port 3306:3306"
+    ]
+   },
+   {
+    "path": "docker-compose.yml",
+    "line": 14,
+    "kind": "Compose service",
+    "name": "postgres",
+    "details": [
+     "image postgres:18.4",
+     "port 5432:5432"
+    ]
+   }
+  ],
+  "deploy": [
+   {
+    "platform": "Kubernetes",
+    "path": ".github/workflows/deploy-and-test-cluster.yml",
+    "line": 25,
+    "detail": "Deployed by this workflow"
+   }
+  ],
+  "entryPoints": [
+   {
+    "path": "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java",
+    "line": 1
+   },
+   {
+    "path": "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java",
+    "line": 1
+   },
+   {
+    "path": "src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java",
+    "line": 1
+   },
+   {
+    "path": "src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java",
+    "line": 1
+   },
+   {
+    "path": "src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java",
+    "line": 1
+   }
+  ],
+  "modules": [
+   {
+    "id": "src/main",
+    "path": "src/main",
+    "role": "Project code",
+    "files": 84,
+    "languages": [
+     "Java",
+     "HTML",
+     "SQL",
+     "SCSS"
+    ],
+    "keyFiles": [
+     "src/main/resources/application-mysql.properties",
+     "src/main/resources/application-postgres.properties",
+     "src/main/resources/application.properties",
+     "src/main/resources/banner.txt",
+     "src/main/scss/header.scss",
+     "src/main/scss/petclinic.scss"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": "src/test",
+    "path": "src/test",
+    "role": "Tests",
+    "files": 21,
+    "languages": [
+     "Java"
+    ],
+    "keyFiles": [
+     "src/test/jmeter/petclinic_test_plan.jmx",
+     "src/test/java/org/springframework/samples/petclinic/MySqlIntegrationTests.java",
+     "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java",
+     "src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java",
+     "src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java",
+     "src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": "(root)",
+    "path": "(root)",
+    "role": "Top-level configuration and documentation",
+    "files": 14,
+    "languages": [],
+    "keyFiles": [
+     ".editorconfig",
+     ".gitattributes",
+     ".gitignore",
+     ".gitpod.yml",
+     "LICENSE.txt",
+     "README.md"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": ".github",
+    "path": ".github",
+    "role": "CI/CD workflows and repository settings",
+    "files": 4,
+    "languages": [],
+    "keyFiles": [
+     ".github/dco.yml",
+     ".github/workflows/deploy-and-test-cluster.yml",
+     ".github/workflows/gradle-build.yml",
+     ".github/workflows/maven-build.yml"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": ".devcontainer",
+    "path": ".devcontainer",
+    "role": "Project code",
+    "files": 2,
+    "languages": [],
+    "keyFiles": [
+     ".devcontainer/Dockerfile",
+     ".devcontainer/devcontainer.json"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": "gradle",
+    "path": "gradle",
+    "role": "Project code",
+    "files": 2,
+    "languages": [],
+    "keyFiles": [
+     "gradle/wrapper/gradle-wrapper.jar",
+     "gradle/wrapper/gradle-wrapper.properties"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": "k8s",
+    "path": "k8s",
+    "role": "Infrastructure and deployment",
+    "files": 2,
+    "languages": [],
+    "keyFiles": [
+     "k8s/db.yml",
+     "k8s/petclinic.yml"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": "src/checkstyle",
+    "path": "src/checkstyle",
+    "role": "Project code",
+    "files": 2,
+    "languages": [],
+    "keyFiles": [
+     "src/checkstyle/nohttp-checkstyle-suppressions.xml",
+     "src/checkstyle/nohttp-checkstyle.xml"
+    ],
+    "imports": [],
+    "importedBy": []
+   },
+   {
+    "id": ".mvn",
+    "path": ".mvn",
+    "role": "Project code",
+    "files": 1,
+    "languages": [],
+    "keyFiles": [
+     ".mvn/wrapper/maven-wrapper.properties"
+    ],
+    "imports": [],
+    "importedBy": []
+   }
+  ],
+  "graphs": [
+   {
+    "id": "system",
+    "title": "System architecture",
+    "layout": "flow",
+    "nodes": [
+     {
+      "id": "user",
+      "label": "User",
+      "kind": "person"
+     },
+     {
+      "id": "backend",
+      "label": "Backend / API\nSpring Boot",
+      "kind": "service",
+      "detail": "17 endpoints found",
+      "refs": [
+       "build.gradle",
+       "pom.xml",
+       "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java:28",
+       "src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java:95",
+       "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:45",
+       "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:72"
+      ]
+     },
+     {
+      "id": "db_PostgreSQL",
+      "label": "PostgreSQL",
+      "kind": "data",
+      "detail": "Relational database",
+      "refs": [
+       "build.gradle",
+       "pom.xml",
+       "docker-compose.yml:14",
+       "k8s/db.yml:6",
+       "k8s/petclinic.yml:36"
+      ]
+     },
+     {
+      "id": "ci",
+      "label": "CI/CD\nGitHub Actions",
+      "kind": "infra",
+      "refs": [
+       ".github/workflows/maven-build.yml",
+       ".github/workflows/gradle-build.yml",
+       ".github/workflows/deploy-and-test-cluster.yml"
+      ]
+     },
+     {
+      "id": "host_Kubernetes",
+      "label": "Kubernetes",
+      "kind": "infra",
+      "refs": [
+       ".github/workflows/deploy-and-test-cluster.yml:25"
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "from": "user",
+      "to": "backend",
+      "label": "requests"
+     },
+     {
+      "from": "backend",
+      "to": "db_PostgreSQL",
+      "label": "reads / writes"
+     },
+     {
+      "from": "ci",
+      "to": "host_Kubernetes",
+      "label": "deploys"
+     }
+    ],
+    "note": "Each box is a technology or part found in the repository; links are drawn where the code shows one part using another.",
+    "mermaid": "flowchart LR\n  user((\"User\"))\n  backend[\"Backend / API\nSpring Boot\"]\n  db_PostgreSQL[(\"PostgreSQL\")]\n  ci[\"CI/CD\nGitHub Actions\"]\n  host_Kubernetes[\"Kubernetes\"]\n  user -->|\"requests\"| backend\n  backend -->|\"reads / writes\"| db_PostgreSQL\n  ci -->|\"deploys\"| host_Kubernetes"
+   },
+   {
+    "id": "modules",
+    "title": "Modules and their dependencies",
+    "layout": "network",
+    "nodes": [
+     {
+      "id": "src/main",
+      "label": "src/main",
+      "kind": "module",
+      "detail": "Project code · 84 files",
+      "refs": [
+       "src/main/resources/application-mysql.properties",
+       "src/main/resources/application-postgres.properties",
+       "src/main/resources/application.properties",
+       "src/main/resources/banner.txt"
+      ]
+     },
+     {
+      "id": "src/test",
+      "label": "src/test",
+      "kind": "module",
+      "detail": "Tests · 21 files",
+      "refs": [
+       "src/test/jmeter/petclinic_test_plan.jmx",
+       "src/test/java/org/springframework/samples/petclinic/MySqlIntegrationTests.java",
+       "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java",
+       "src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java"
+      ]
+     },
+     {
+      "id": "(root)",
+      "label": "(root)",
+      "kind": "module",
+      "detail": "Top-level configuration and documentation · 14 files",
+      "refs": [
+       ".editorconfig",
+       ".gitattributes",
+       ".gitignore",
+       ".gitpod.yml"
+      ]
+     },
+     {
+      "id": ".github",
+      "label": ".github",
+      "kind": "module",
+      "detail": "CI/CD workflows and repository settings · 4 files",
+      "refs": [
+       ".github/dco.yml",
+       ".github/workflows/deploy-and-test-cluster.yml",
+       ".github/workflows/gradle-build.yml",
+       ".github/workflows/maven-build.yml"
+      ]
+     },
+     {
+      "id": ".devcontainer",
+      "label": ".devcontainer",
+      "kind": "module",
+      "detail": "Project code · 2 files",
+      "refs": [
+       ".devcontainer/Dockerfile",
+       ".devcontainer/devcontainer.json"
+      ]
+     },
+     {
+      "id": "gradle",
+      "label": "gradle",
+      "kind": "module",
+      "detail": "Project code · 2 files",
+      "refs": [
+       "gradle/wrapper/gradle-wrapper.jar",
+       "gradle/wrapper/gradle-wrapper.properties"
+      ]
+     },
+     {
+      "id": "k8s",
+      "label": "k8s",
+      "kind": "module",
+      "detail": "Infrastructure and deployment · 2 files",
+      "refs": [
+       "k8s/db.yml",
+       "k8s/petclinic.yml"
+      ]
+     },
+     {
+      "id": "src/checkstyle",
+      "label": "src/checkstyle",
+      "kind": "module",
+      "detail": "Project code · 2 files",
+      "refs": [
+       "src/checkstyle/nohttp-checkstyle-suppressions.xml",
+       "src/checkstyle/nohttp-checkstyle.xml"
+      ]
+     },
+     {
+      "id": ".mvn",
+      "label": ".mvn",
+      "kind": "module",
+      "detail": "Project code · 1 files",
+      "refs": [
+       ".mvn/wrapper/maven-wrapper.properties"
+      ]
+     }
+    ],
+    "edges": [],
+    "note": "No imports between modules could be resolved; modules are shown on their own.",
+    "mermaid": "flowchart TB\n  src_main[\"src/main\"]\n  src_test[\"src/test\"]\n  root[\" root \"]\n  github[\".github\"]\n  devcontainer[\".devcontainer\"]\n  gradle[\"gradle\"]\n  k8s[\"k8s\"]\n  src_checkstyle[\"src/checkstyle\"]\n  mvn[\".mvn\"]"
+   },
+   {
+    "id": "database",
+    "title": "Database tables and relationships",
+    "layout": "network",
+    "nodes": [
+     {
+      "id": "vets",
+      "label": "vets",
+      "kind": "entity",
+      "detail": "id: INTEGER\nfirst_name: VARCHAR(30)\nlast_name: VARCHAR(30)",
+      "refs": [
+       "src/main/resources/db/h2/schema.sql:10"
+      ]
+     },
+     {
+      "id": "specialties",
+      "label": "specialties",
+      "kind": "entity",
+      "detail": "id: INTEGER\nname: VARCHAR(80)",
+      "refs": [
+       "src/main/resources/db/h2/schema.sql:17"
+      ]
+     },
+     {
+      "id": "vet_specialties",
+      "label": "vet_specialties",
+      "kind": "entity",
+      "detail": "vet_id: INTEGER\nspecialty_id: INTEGER",
+      "refs": [
+       "src/main/resources/db/h2/schema.sql:23"
+      ]
+     },
+     {
+      "id": "types",
+      "label": "types",
+      "kind": "entity",
+      "detail": "id: INTEGER\nname: VARCHAR(80)",
+      "refs": [
+       "src/main/resources/db/h2/schema.sql:30"
+      ]
+     },
+     {
+      "id": "owners",
+      "label": "owners",
+      "kind": "entity",
+      "detail": "id: INTEGER\nfirst_name: VARCHAR(30)\nlast_name: VARCHAR_IGNORECASE(30)\naddress: VARCHAR(255)\ncity: VARCHAR(80)\ntelephone: VARCHAR(20)",
+      "refs": [
+       "src/main/resources/db/h2/schema.sql:36"
+      ]
+     },
+     {
+      "id": "pets",
+      "label": "pets",
+      "kind": "entity",
+      "detail": "id: INTEGER\nname: VARCHAR_IGNORECASE(30)\nbirth_date: DATE\ntype_id: INTEGER\nowner_id: INTEGER",
+      "refs": [
+       "src/main/resources/db/h2/schema.sql:46"
+      ]
+     },
+     {
+      "id": "visits",
+      "label": "visits",
+      "kind": "entity",
+      "detail": "id: INTEGER\npet_id: INTEGER\nvisit_date: DATE\ndescription: VARCHAR(255)",
+      "refs": [
+       "src/main/resources/db/h2/schema.sql:58"
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "from": "vet_specialties",
+      "to": "vets",
+      "label": "vet_id"
+     },
+     {
+      "from": "vet_specialties",
+      "to": "specialties",
+      "label": "specialty_id"
+     },
+     {
+      "from": "pets",
+      "to": "owners",
+      "label": "owner_id"
+     },
+     {
+      "from": "pets",
+      "to": "types",
+      "label": "type_id"
+     },
+     {
+      "from": "visits",
+      "to": "pets",
+      "label": "pet_id"
+     }
+    ],
+    "note": "7 tables or models read from SQL. Arrows are foreign keys or relation fields.",
+    "mermaid": "flowchart TB\n  vets[(\"vets\")]\n  specialties[(\"specialties\")]\n  vet_specialties[(\"vet_specialties\")]\n  types[(\"types\")]\n  owners[(\"owners\")]\n  pets[(\"pets\")]\n  visits[(\"visits\")]\n  vet_specialties -->|\"vet_id\"| vets\n  vet_specialties -->|\"specialty_id\"| specialties\n  pets -->|\"owner_id\"| owners\n  pets -->|\"type_id\"| types\n  visits -->|\"pet_id\"| pets"
+   },
+   {
+    "id": "api",
+    "title": "API endpoints",
+    "layout": "flow",
+    "nodes": [
+     {
+      "id": "client",
+      "label": "Client",
+      "kind": "client"
+     },
+     {
+      "id": "route_vets_html",
+      "label": "/vets.html",
+      "kind": "route",
+      "detail": "GET /vets.html",
+      "refs": [
+       "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:45"
+      ]
+     },
+     {
+      "id": "route_n",
+      "label": "/{ ",
+      "kind": "route",
+      "detail": "GET { ",
+      "refs": [
+       "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:72"
+      ]
+     },
+     {
+      "id": "route_owners",
+      "label": "/owners",
+      "kind": "route",
+      "detail": "GET /owners/{ownerId}/pets/new\nPOST /owners/{ownerId}/pets/new\nGET /owners/{ownerId}/pets/{petId}/edit\nPOST /owners/{ownerId}/pets/{petId}/edit\nGET /owners/new\nPOST /owners/new",
+      "refs": [
+       "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:100",
+       "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:107",
+       "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:139",
+       "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:144"
+      ]
+     },
+     {
+      "id": "route_oups",
+      "label": "/oups",
+      "kind": "route",
+      "detail": "GET /oups",
+      "refs": [
+       "src/main/java/org/springframework/samples/petclinic/system/CrashController.java:31"
+      ]
+     },
+     {
+      "id": "route_n",
+      "label": "/",
+      "kind": "route",
+      "detail": "GET /",
+      "refs": [
+       "src/main/java/org/springframework/samples/petclinic/system/WelcomeController.java:25"
+      ]
+     },
+     {
+      "id": "store",
+      "label": "PostgreSQL",
+      "kind": "data",
+      "refs": [
+       "build.gradle",
+       "pom.xml",
+       "docker-compose.yml:14",
+       "k8s/db.yml:6",
+       "k8s/petclinic.yml:36"
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "from": "client",
+      "to": "route_vets_html",
+      "label": "GET"
+     },
+     {
+      "from": "client",
+      "to": "route_n",
+      "label": "GET"
+     },
+     {
+      "from": "client",
+      "to": "route_owners",
+      "label": "GET/POST"
+     },
+     {
+      "from": "client",
+      "to": "route_oups",
+      "label": "GET"
+     },
+     {
+      "from": "client",
+      "to": "route_n",
+      "label": "GET"
+     },
+     {
+      "from": "route_vets_html",
+      "to": "store"
+     },
+     {
+      "from": "route_n",
+      "to": "store"
+     },
+     {
+      "from": "route_owners",
+      "to": "store"
+     },
+     {
+      "from": "route_oups",
+      "to": "store"
+     },
+     {
+      "from": "route_n",
+      "to": "store"
+     }
+    ],
+    "note": "17 route declarations, grouped by their first path segment. Links to PostgreSQL show the data store the backend uses, not that every route touches it.",
+    "mermaid": "flowchart LR\n  client[\"Client\"]\n  route_vets_html[\"/vets.html\"]\n  route_n[\"/  \"]\n  route_owners[\"/owners\"]\n  route_oups[\"/oups\"]\n  route_n[\"/\"]\n  store[(\"PostgreSQL\")]\n  client -->|\"GET\"| route_vets_html\n  client -->|\"GET\"| route_n\n  client -->|\"GET/POST\"| route_owners\n  client -->|\"GET\"| route_oups\n  client -->|\"GET\"| route_n\n  route_vets_html --> store\n  route_n --> store\n  route_owners --> store\n  route_oups --> store\n  route_n --> store"
+   }
+  ],
+  "quality": {
+   "sourceFiles": 50,
+   "testFiles": 20,
+   "todoCount": 0,
+   "largestFiles": [
+    {
+     "path": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+     "lines": 319
+    },
+    {
+     "path": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+     "lines": 316
+    },
+    {
+     "path": "src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java",
+     "lines": 275
+    },
+    {
+     "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+     "lines": 208
+    },
+    {
+     "path": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+     "lines": 189
+    }
+   ],
+   "linters": [
+    "EditorConfig"
+   ],
+   "typeChecked": true,
+   "ciRunsTests": false,
+   "hasLicense": true,
+   "hasReadme": true,
+   "hasContributing": false,
+   "hasSecurityPolicy": false,
+   "dependencyUpdates": false,
+   "lockfiles": []
+  },
+  "secrets": [],
+  "stats": {
+   "files": 132,
+   "read": 94,
+   "reused": 0,
+   "skipped": [],
+   "apiCalls": 98,
+   "authenticated": true,
+   "ms": 4271
+  }
+ },
+ "sections": [
+  {
+   "id": "overview",
+   "title": "Repository overview",
+   "summary": "spring-projects/spring-petclinic at main (500158f, 2026-09-29): 132 files, 94 files read for this report.",
+   "items": [
+    {
+     "label": "Visibility",
+     "value": "Public"
+    },
+    {
+     "label": "Default branch",
+     "value": "main"
+    },
+    {
+     "label": "Latest commit",
+     "value": "added redirection to the page when the user types a page that is out of bounds"
+    },
+    {
+     "label": "Stars · forks · open issues",
+     "value": "9661 · 31177 · 18"
+    },
+    {
+     "label": "License",
+     "value": "Apache-2.0"
+    }
+   ]
+  },
+  {
+   "id": "description",
+   "title": "Project description",
+   "summary": "A sample Spring-based application",
+   "items": [
+    {
+     "label": "From the README",
+     "value": "See the presentation here: Spring Petclinic Sample Application (legacy slides)",
+     "refs": [
+      "README.md"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "stack",
+   "title": "Technology stack",
+   "summary": "11 technologies confirmed by dependencies or configuration, 0 inferred from code.",
+   "items": [
+    {
+     "label": "Sass · Styling",
+     "value": "CSS with variables and nesting",
+     "refs": [
+      "src/main/scss/header.scss",
+      "src/main/scss/petclinic.scss",
+      "src/main/scss/responsive.scss",
+      "src/main/scss/typography.scss"
+     ]
+    },
+    {
+     "label": "Spring Boot · Backend",
+     "value": "Java/Kotlin application framework",
+     "refs": [
+      "build.gradle",
+      "pom.xml",
+      "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java:28",
+      "src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java:95"
+     ]
+    },
+    {
+     "label": "PostgreSQL · Database",
+     "value": "Relational database",
+     "refs": [
+      "build.gradle",
+      "pom.xml",
+      "docker-compose.yml:14",
+      "k8s/db.yml:6",
+      "k8s/petclinic.yml:36"
+     ]
+    },
+    {
+     "label": "Hibernate / JPA · ORM",
+     "value": "Java persistence",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "JUnit · Testing",
+     "value": "Java test framework",
+     "refs": [
+      "build.gradle",
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "Gradle · Build",
+     "value": "JVM and Android build tool",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "Maven · Build",
+     "value": "Java build tool",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "Docker · DevOps",
+     "value": "Packages the app into containers",
+     "refs": [
+      ".devcontainer/Dockerfile"
+     ]
+    },
+    {
+     "label": "Docker Compose · DevOps",
+     "value": "Runs several containers together",
+     "refs": [
+      "docker-compose.yml"
+     ]
+    },
+    {
+     "label": "Kubernetes · DevOps",
+     "value": "Container orchestration",
+     "refs": [
+      "k8s/db.yml",
+      "k8s/petclinic.yml",
+      "k8s/db.yml:18",
+      "k8s/petclinic.yml:3"
+     ]
+    },
+    {
+     "label": "GitHub Actions · CI/CD",
+     "value": "Runs checks and deploys on push",
+     "refs": [
+      ".github/workflows/deploy-and-test-cluster.yml",
+      ".github/workflows/gradle-build.yml",
+      ".github/workflows/maven-build.yml"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "languages",
+   "title": "Programming languages",
+   "summary": "Mostly CSS (62% of the code, by GitHub's count).",
+   "items": [
+    {
+     "label": "CSS",
+     "value": "62.3%"
+    },
+    {
+     "label": "Java",
+     "value": "31.5%"
+    },
+    {
+     "label": "HTML",
+     "value": "4.3%"
+    },
+    {
+     "label": "SCSS",
+     "value": "1.8%"
+    },
+    {
+     "label": "Dockerfile",
+     "value": "0.1%"
+    }
+   ]
+  },
+  {
+   "id": "structure",
+   "title": "Repository structure",
+   "summary": "6 top-level folders and 14 top-level files. Entry points: src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java, src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java, src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java, src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java and 1 more.",
+   "items": [
+    {
+     "label": "src/main",
+     "value": "Project code · 84 files · Java, HTML, SQL, SCSS",
+     "refs": [
+      "src/main/resources/application-mysql.properties",
+      "src/main/resources/application-postgres.properties",
+      "src/main/resources/application.properties"
+     ]
+    },
+    {
+     "label": "src/test",
+     "value": "Tests · 21 files · Java",
+     "refs": [
+      "src/test/jmeter/petclinic_test_plan.jmx",
+      "src/test/java/org/springframework/samples/petclinic/MySqlIntegrationTests.java",
+      "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java"
+     ]
+    },
+    {
+     "label": "(root)",
+     "value": "Top-level configuration and documentation · 14 files",
+     "refs": [
+      ".editorconfig",
+      ".gitattributes",
+      ".gitignore"
+     ]
+    },
+    {
+     "label": ".github",
+     "value": "CI/CD workflows and repository settings · 4 files",
+     "refs": [
+      ".github/dco.yml",
+      ".github/workflows/deploy-and-test-cluster.yml",
+      ".github/workflows/gradle-build.yml"
+     ]
+    },
+    {
+     "label": ".devcontainer",
+     "value": "Project code · 2 files",
+     "refs": [
+      ".devcontainer/Dockerfile",
+      ".devcontainer/devcontainer.json"
+     ]
+    },
+    {
+     "label": "gradle",
+     "value": "Project code · 2 files",
+     "refs": [
+      "gradle/wrapper/gradle-wrapper.jar",
+      "gradle/wrapper/gradle-wrapper.properties"
+     ]
+    },
+    {
+     "label": "k8s",
+     "value": "Infrastructure and deployment · 2 files",
+     "refs": [
+      "k8s/db.yml",
+      "k8s/petclinic.yml"
+     ]
+    },
+    {
+     "label": "src/checkstyle",
+     "value": "Project code · 2 files",
+     "refs": [
+      "src/checkstyle/nohttp-checkstyle-suppressions.xml",
+      "src/checkstyle/nohttp-checkstyle.xml"
+     ]
+    },
+    {
+     "label": ".mvn",
+     "value": "Project code · 1 file",
+     "refs": [
+      ".mvn/wrapper/maven-wrapper.properties"
+     ]
+    },
+    {
+     "label": "Entry point: src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java:1"
+     ]
+    },
+    {
+     "label": "Entry point: src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java:1"
+     ]
+    },
+    {
+     "label": "Entry point: src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java:1"
+     ]
+    },
+    {
+     "label": "Entry point: src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java:1"
+     ]
+    },
+    {
+     "label": "Entry point: src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java:1"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "architecture",
+   "title": "System architecture",
+   "summary": "No front end, a back end on Spring Boot, data in PostgreSQL, Hibernate / JPA, deployed to Kubernetes.",
+   "items": [
+    {
+     "label": "User → Backend / API",
+     "value": "requests"
+    },
+    {
+     "label": "Backend / API → PostgreSQL",
+     "value": "reads / writes"
+    },
+    {
+     "label": "CI/CD → Kubernetes",
+     "value": "deploys"
+    }
+   ],
+   "graphs": [
+    "system"
+   ]
+  },
+  {
+   "id": "frontend",
+   "title": "Frontend architecture",
+   "summary": "No front-end framework was found.",
+   "items": [
+    {
+     "label": "Sass",
+     "value": "CSS with variables and nesting",
+     "refs": [
+      "src/main/scss/header.scss",
+      "src/main/scss/petclinic.scss",
+      "src/main/scss/responsive.scss",
+      "src/main/scss/typography.scss"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "backend",
+   "title": "Backend architecture",
+   "summary": "Spring Boot serving 17 routes.",
+   "items": [
+    {
+     "label": "Spring Boot",
+     "value": "Java/Kotlin application framework",
+     "refs": [
+      "build.gradle",
+      "pom.xml",
+      "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java:28",
+      "src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java:95"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "database",
+   "title": "Database architecture",
+   "summary": "7 tables or models and 5 relationships, read from SQL, on PostgreSQL, Hibernate / JPA.",
+   "items": [
+    {
+     "label": "PostgreSQL",
+     "value": "Relational database",
+     "refs": [
+      "build.gradle",
+      "pom.xml",
+      "docker-compose.yml:14",
+      "k8s/db.yml:6",
+      "k8s/petclinic.yml:36"
+     ]
+    },
+    {
+     "label": "Hibernate / JPA",
+     "value": "Java persistence",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "vets (SQL)",
+     "value": "id, first_name, last_name",
+     "refs": [
+      "src/main/resources/db/h2/schema.sql:10"
+     ]
+    },
+    {
+     "label": "specialties (SQL)",
+     "value": "id, name",
+     "refs": [
+      "src/main/resources/db/h2/schema.sql:17"
+     ]
+    },
+    {
+     "label": "vet_specialties (SQL)",
+     "value": "vet_id, specialty_id",
+     "refs": [
+      "src/main/resources/db/h2/schema.sql:23"
+     ]
+    },
+    {
+     "label": "types (SQL)",
+     "value": "id, name",
+     "refs": [
+      "src/main/resources/db/h2/schema.sql:30"
+     ]
+    },
+    {
+     "label": "owners (SQL)",
+     "value": "id, first_name, last_name, address, city, telephone",
+     "refs": [
+      "src/main/resources/db/h2/schema.sql:36"
+     ]
+    },
+    {
+     "label": "pets (SQL)",
+     "value": "id, name, birth_date, type_id, owner_id",
+     "refs": [
+      "src/main/resources/db/h2/schema.sql:46"
+     ]
+    },
+    {
+     "label": "visits (SQL)",
+     "value": "id, pet_id, visit_date, description",
+     "refs": [
+      "src/main/resources/db/h2/schema.sql:58"
+     ]
+    }
+   ],
+   "graphs": [
+    "database"
+   ]
+  },
+  {
+   "id": "api",
+   "title": "API documentation",
+   "summary": "17 routes declared in code, by Spring.",
+   "items": [
+    {
+     "label": "GET /vets.html",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:45"
+     ]
+    },
+    {
+     "label": "GET { ",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:72"
+     ]
+    },
+    {
+     "label": "GET /owners/{ownerId}/pets/new",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:100"
+     ]
+    },
+    {
+     "label": "POST /owners/{ownerId}/pets/new",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:107"
+     ]
+    },
+    {
+     "label": "GET /owners/{ownerId}/pets/{petId}/edit",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:139"
+     ]
+    },
+    {
+     "label": "POST /owners/{ownerId}/pets/{petId}/edit",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:144"
+     ]
+    },
+    {
+     "label": "GET /owners/new",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:72"
+     ]
+    },
+    {
+     "label": "POST /owners/new",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:77"
+     ]
+    },
+    {
+     "label": "GET /owners/find",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:89"
+     ]
+    },
+    {
+     "label": "GET /owners",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:94"
+     ]
+    },
+    {
+     "label": "GET /owners/{ownerId}/edit",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:148"
+     ]
+    },
+    {
+     "label": "POST /owners/{ownerId}/edit",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:153"
+     ]
+    },
+    {
+     "label": "GET /owners/{ownerId}",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:178"
+     ]
+    },
+    {
+     "label": "GET /owners/{ownerId}/pets/{petId}/visits/new",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:90"
+     ]
+    },
+    {
+     "label": "POST /owners/{ownerId}/pets/{petId}/visits/new",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:97"
+     ]
+    },
+    {
+     "label": "GET /oups",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/system/CrashController.java:31"
+     ]
+    },
+    {
+     "label": "GET /",
+     "value": "Spring",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/system/WelcomeController.java:25"
+     ]
+    }
+   ],
+   "graphs": [
+    "api"
+   ]
+  },
+  {
+   "id": "auth",
+   "title": "Authentication and authorization",
+   "summary": "No authentication library or provider was found.",
+   "items": [],
+   "graphs": []
+  },
+  {
+   "id": "modules",
+   "title": "Important modules and components",
+   "summary": "9 modules, the largest first. Key files are the ones most imported by the rest.",
+   "items": [
+    {
+     "label": "src/main",
+     "value": "Project code. 84 files.",
+     "refs": [
+      "src/main/resources/application-mysql.properties",
+      "src/main/resources/application-postgres.properties",
+      "src/main/resources/application.properties",
+      "src/main/resources/banner.txt"
+     ]
+    },
+    {
+     "label": "src/test",
+     "value": "Tests. 21 files.",
+     "refs": [
+      "src/test/jmeter/petclinic_test_plan.jmx",
+      "src/test/java/org/springframework/samples/petclinic/MySqlIntegrationTests.java",
+      "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java",
+      "src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java"
+     ]
+    },
+    {
+     "label": "(root)",
+     "value": "Top-level configuration and documentation. 14 files.",
+     "refs": [
+      ".editorconfig",
+      ".gitattributes",
+      ".gitignore",
+      ".gitpod.yml"
+     ]
+    },
+    {
+     "label": ".github",
+     "value": "CI/CD workflows and repository settings. 4 files.",
+     "refs": [
+      ".github/dco.yml",
+      ".github/workflows/deploy-and-test-cluster.yml",
+      ".github/workflows/gradle-build.yml",
+      ".github/workflows/maven-build.yml"
+     ]
+    },
+    {
+     "label": ".devcontainer",
+     "value": "Project code. 2 files.",
+     "refs": [
+      ".devcontainer/Dockerfile",
+      ".devcontainer/devcontainer.json"
+     ]
+    },
+    {
+     "label": "gradle",
+     "value": "Project code. 2 files.",
+     "refs": [
+      "gradle/wrapper/gradle-wrapper.jar",
+      "gradle/wrapper/gradle-wrapper.properties"
+     ]
+    },
+    {
+     "label": "k8s",
+     "value": "Infrastructure and deployment. 2 files.",
+     "refs": [
+      "k8s/db.yml",
+      "k8s/petclinic.yml"
+     ]
+    },
+    {
+     "label": "src/checkstyle",
+     "value": "Project code. 2 files.",
+     "refs": [
+      "src/checkstyle/nohttp-checkstyle-suppressions.xml",
+      "src/checkstyle/nohttp-checkstyle.xml"
+     ]
+    },
+    {
+     "label": ".mvn",
+     "value": "Project code. 1 file.",
+     "refs": [
+      ".mvn/wrapper/maven-wrapper.properties"
+     ]
+    }
+   ],
+   "graphs": [
+    "modules"
+   ]
+  },
+  {
+   "id": "dependencies",
+   "title": "Dependencies and libraries",
+   "summary": "32 runtime dependencies and 19 development dependencies across 2 manifests; no lock file, so installs may resolve different versions over time.",
+   "items": [
+    {
+     "label": "org.springframework.boot:spring-boot-starter-cache",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-data-jpa",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-thymeleaf",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-webmvc",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-validation",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "javax.cache:cache-api",
+     "value": "* · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "jakarta.xml.bind:jakarta.xml.bind-api",
+     "value": "* · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-actuator",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.webjars:webjars-locator-lite",
+     "value": "${webjarsLocatorLiteVersion} · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.webjars.npm:bootstrap",
+     "value": "${webjarsBootstrapVersion} · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.webjars.npm:font-awesome",
+     "value": "${webjarsFontawesomeVersion} · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "com.github.ben-manes.caffeine:caffeine",
+     "value": "* · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "com.h2database:h2",
+     "value": "* · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "com.mysql:mysql-connector-j",
+     "value": "* · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.postgresql:postgresql",
+     "value": "* · gradle · PostgreSQL: Relational database",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "java",
+     "value": "* · gradle-plugin",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "checkstyle",
+     "value": "* · gradle-plugin",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot",
+     "value": "* · gradle-plugin · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "io.spring.dependency-management",
+     "value": "* · gradle-plugin",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.graalvm.buildtools.native",
+     "value": "* · gradle-plugin",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.cyclonedx.bom",
+     "value": "* · gradle-plugin",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "io.spring.javaformat",
+     "value": "* · gradle-plugin",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "io.spring.nohttp",
+     "value": "* · gradle-plugin",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-actuator",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "com.github.ben-manes.caffeine:caffeine",
+     "value": "* · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "com.mysql:mysql-connector-j",
+     "value": "* · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.postgresql:postgresql",
+     "value": "* · maven · PostgreSQL: Relational database",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.webjars:webjars-locator-lite",
+     "value": "${webjars-locator.version} · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.webjars.npm:bootstrap",
+     "value": "${webjars-bootstrap.version} · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.webjars.npm:font-awesome",
+     "value": "${webjars-font-awesome.version} · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "com.puppycrawl.tools:checkstyle",
+     "value": "${checkstyle.version} · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "io.spring.nohttp:nohttp-checkstyle",
+     "value": "${nohttp-checkstyle.version} · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-data-jpa-test (dev)",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-restclient-test (dev)",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-webmvc-test (dev)",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-testcontainers (dev)",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-docker-compose (dev)",
+     "value": "* · gradle · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.testcontainers:testcontainers-junit-jupiter (dev)",
+     "value": "* · gradle · JUnit: Java test framework",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.testcontainers:testcontainers-mysql (dev)",
+     "value": "* · gradle",
+     "refs": [
+      "build.gradle"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-devtools (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-restclient (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-restclient-test (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-thymeleaf-test (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-validation-test (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-webmvc-test (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-actuator-test (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-testcontainers (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-docker-compose (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.springframework.boot:spring-boot-starter-cache-test (dev)",
+     "value": "* · maven · Spring Boot: Java/Kotlin application framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.testcontainers:testcontainers-junit-jupiter (dev)",
+     "value": "* · maven · JUnit: Java test framework",
+     "refs": [
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "org.testcontainers:testcontainers-mysql (dev)",
+     "value": "* · maven",
+     "refs": [
+      "pom.xml"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "workflow",
+   "title": "Application workflow",
+   "summary": "How a run of the application proceeds, from what was found.",
+   "items": [
+    {
+     "label": "Starts at",
+     "value": "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java, src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java, src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java and 2 more",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java:1",
+      "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java:1",
+      "src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java:1"
+     ]
+    },
+    {
+     "label": "Requests",
+     "value": "go to 17 routes (vets.html, { , owners, oups, /).",
+     "refs": [
+      "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:45",
+      "src/main/java/org/springframework/samples/petclinic/vet/VetController.java:72",
+      "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:100"
+     ]
+    },
+    {
+     "label": "Data",
+     "value": "is kept in PostgreSQL, Hibernate / JPA."
+    }
+   ]
+  },
+  {
+   "id": "dataflow",
+   "title": "Data flow",
+   "summary": "Where data moves between the parts of the system.",
+   "items": [
+    {
+     "label": "User → Backend / API",
+     "value": "requests",
+     "refs": [
+      "build.gradle",
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "Backend / API → PostgreSQL",
+     "value": "reads / writes",
+     "refs": [
+      "build.gradle",
+      "pom.xml"
+     ]
+    },
+    {
+     "label": "CI/CD → Kubernetes",
+     "value": "deploys",
+     "refs": [
+      ".github/workflows/deploy-and-test-cluster.yml:25"
+     ]
+    }
+   ],
+   "graphs": [
+    "system"
+   ]
+  },
+  {
+   "id": "build",
+   "title": "Build and execution process",
+   "summary": "The commands and settings this project uses to install, build and run.",
+   "items": [
+    {
+     "label": "Dockerfile: .devcontainer",
+     "value": "FROM mcr.microsoft.com/vscode/devcontainers/java:0-${VARIANT}",
+     "refs": [
+      ".devcontainer/Dockerfile:1"
+     ]
+    },
+    {
+     "label": "Compose service: mysql",
+     "value": "image mysql:9.7 · port 3306:3306",
+     "refs": [
+      "docker-compose.yml:2"
+     ]
+    },
+    {
+     "label": "Compose service: postgres",
+     "value": "image postgres:18.4 · port 5432:5432",
+     "refs": [
+      "docker-compose.yml:14"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "deployment",
+   "title": "Deployment architecture",
+   "summary": "Deployed to Kubernetes, by 3 CI workflows.",
+   "items": [
+    {
+     "label": "Kubernetes",
+     "value": "Deployed by this workflow",
+     "refs": [
+      ".github/workflows/deploy-and-test-cluster.yml:25"
+     ]
+    },
+    {
+     "label": "Workflow: Java CI with Maven",
+     "value": "on push, pull_request; jobs build",
+     "refs": [
+      ".github/workflows/maven-build.yml"
+     ]
+    },
+    {
+     "label": "Workflow: Java CI with Gradle",
+     "value": "on push, pull_request; jobs build",
+     "refs": [
+      ".github/workflows/gradle-build.yml"
+     ]
+    },
+    {
+     "label": "Workflow: Deploy and Test Cluster",
+     "value": "on push, pull_request; jobs deploy-and-test-cluster",
+     "refs": [
+      ".github/workflows/deploy-and-test-cluster.yml"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "security",
+   "title": "Security analysis",
+   "summary": "No credentials were found in the files read.",
+   "items": [
+    {
+     "label": "Security policy",
+     "value": "No SECURITY.md: there is no stated way to report a vulnerability."
+    },
+    {
+     "label": "Dependency updates",
+     "value": "Not automated: outdated or vulnerable versions are only caught by hand."
+    },
+    {
+     "label": "Authentication",
+     "value": "No authentication library found. That is right for a public site or a library; for an app with accounts it is worth checking."
+    }
+   ]
+  },
+  {
+   "id": "quality",
+   "title": "Code quality analysis",
+   "summary": "20 test files for 50 source files; checked by EditorConfig.",
+   "items": [
+    {
+     "label": "Tests",
+     "value": "20 test files (40% of source files)"
+    },
+    {
+     "label": "Tests in CI",
+     "value": "No CI step runs tests"
+    },
+    {
+     "label": "Static typing",
+     "value": "Yes"
+    },
+    {
+     "label": "Linters and formatters",
+     "value": "EditorConfig"
+    },
+    {
+     "label": "TODO / FIXME notes",
+     "value": "0"
+    },
+    {
+     "label": "Documentation",
+     "value": "README, LICENSE"
+    },
+    {
+     "label": "Large file: src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+     "value": "319 lines",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java"
+     ]
+    },
+    {
+     "label": "Large file: src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+     "value": "316 lines",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java"
+     ]
+    },
+    {
+     "label": "Large file: src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java",
+     "value": "275 lines",
+     "refs": [
+      "src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "performance",
+   "title": "Scalability and performance observations",
+   "summary": "What in the stack helps or limits growth.",
+   "items": [
+    {
+     "label": "Containers",
+     "value": "Services run in containers, so they can be scaled out one by one."
+    }
+   ]
+  },
+  {
+   "id": "strengths",
+   "title": "Technical strengths",
+   "summary": "6 strengths the evidence supports.",
+   "items": [
+    {
+     "label": "Typed code",
+     "value": "Type checking catches mistakes before running."
+    },
+    {
+     "label": "Consistent style",
+     "value": "EditorConfig"
+    },
+    {
+     "label": "Automated deployment",
+     "value": "Deploys to Kubernetes from CI."
+    },
+    {
+     "label": "Organised into modules",
+     "value": "9 modules with distinct roles."
+    },
+    {
+     "label": "Documented and licensed",
+     "value": "README and Apache-2.0."
+    },
+    {
+     "label": "No secrets in the code read",
+     "value": "Credentials appear to be kept out of the repository."
+    }
+   ]
+  },
+  {
+   "id": "improvements",
+   "title": "Potential improvements",
+   "summary": "4 suggestions, most important first.",
+   "items": [
+    {
+     "label": "Run the tests in CI",
+     "value": "Tests exist but no workflow runs them on each change."
+    },
+    {
+     "label": "Automate dependency updates",
+     "value": "Add Dependabot or Renovate to hear of outdated and vulnerable versions."
+    },
+    {
+     "label": "Commit a lock file",
+     "value": "Without one, two installs of the same commit can get different versions."
+    },
+    {
+     "label": "Add SECURITY.md",
+     "value": "Say how to report a vulnerability privately."
+    }
+   ]
+  },
+  {
+   "id": "summary",
+   "title": "Complete technical summary",
+   "summary": "spring-projects/spring-petclinic is a CSS and Java project with a Spring Boot back end. Its data lives in PostgreSQL (7 tables). It exposes 17 routes. It is deployed to Kubernetes by CI. 20 test files; no secrets found.",
+   "items": []
+  }
+ ],
+ "files": {
+  "pom.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd\">\n  <modelVersion>4.0.0</modelVersion>\n\n  <parent>\n    <groupId>org.springframework.boot</groupId>\n    <artifactId>spring-boot-starter-parent</artifactId>\n    <version>4.1.0</version>\n  </parent>\n\n  <groupId>org.springframework.samples</groupId>\n  <artifactId>spring-petclinic</artifactId>\n  <version>4.0.0-SNAPSHOT</version>\n\n  <name>petclinic</name>\n\n  <properties>\n    <!-- Generic properties -->\n    <java.version>17</java.version>\n    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>\n    <!-- Important for reproducible builds. Update using e.g. ./mvnw versions:set -DnewVersion=... -->\n    <project.build.outputTimestamp>2024-11-28T14:37:52Z</project.build.outputTimestamp>\n\n    <!-- Web dependencies -->\n    <webjars-locator.version>1.1.3</webjars-locator.version>\n    <webjars-bootstrap.version>5.3.8</webjars-bootstrap.version>\n    <webjars-font-awesome.version>4.7.0</webjars-font-awesome.version>\n\n    <!-- Checkstyle needs to stay on v12 since v13 sets minimal jdk to 21 - https://checkstyle.org/releasenotes.html#Release_13.0.0 -->\n    <checkstyle.version>12.3.1</checkstyle.version>\n    <jacoco.version>0.8.15</jacoco.version>\n    <libsass.version>0.3.4</libsass.version>\n    <lifecycle-mapping>1.0.0</lifecycle-mapping>\n    <maven-checkstyle.version>3.6.0</maven-checkstyle.version>\n    <nohttp-checkstyle.version>0.0.11</nohttp-checkstyle.version>\n    <spring-format.version>0.0.47</spring-format.version>\n  </properties>\n\n  <dependencies>\n    <!-- Spring and Spring Boot dependencies -->\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-actuator</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-cache</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-data-jpa</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-thymeleaf</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-validation</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-webmvc</artifactId>\n    </dependency>\n\n    <dependency>\n      <groupId>javax.cache</groupId>\n      <artifactId>cache-api</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>jakarta.xml.bind</groupId>\n      <artifactId>jakarta.xml.bind-api</artifactId>\n    </dependency>\n\n    <dependency>\n      <groupId>com.h2database</groupId>\n      <artifactId>h2</artifactId>\n      <scope>runtime</scope>\n    </dependency>\n    <dependency>\n      <groupId>com.github.ben-manes.caffeine</groupId>\n      <artifactId>caffeine</artifactId>\n      <scope>runtime</scope>\n    </dependency>\n    <dependency>\n      <groupId>com.mysql</groupId>\n      <artifactId>mysql-connector-j</artifactId>\n      <scope>runtime</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.postgresql</groupId>\n      <artifactId>postgresql</artifactId>\n      <scope>runtime</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.webjars</groupId>\n      <artifactId>webjars-locator-lite</artifactId>\n      <version>${webjars-locator.version}</version>\n      <scope>runtime</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.webjars.npm</groupId>\n      <artifactId>bootstrap</artifactId>\n      <version>${webjars-bootstrap.version}</version>\n      <scope>runtime</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.webjars.npm</groupId>\n      <artifactId>font-awesome</artifactId>\n      <version>${webjars-font-awesome.version}</version>\n      <scope>runtime</scope>\n    </dependency>\n\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-devtools</artifactId>\n      <optional>true</optional>\n    </dependency>\n\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-data-jpa-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-restclient</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-restclient-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-thymeleaf-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-validation-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-webmvc-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-actuator-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-testcontainers</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-docker-compose</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-cache-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.testcontainers</groupId>\n      <artifactId>testcontainers-junit-jupiter</artifactId>\n      <scope>test</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.testcontainers</groupId>\n      <artifactId>testcontainers-mysql</artifactId>\n      <scope>test</scope>\n    </dependency>\n  </dependencies>\n\n  <build>\n    <plugins>\n      <plugin>\n        <groupId>org.apache.maven.plugins</groupId>\n        <artifactId>maven-enforcer-plugin</artifactId>\n        <executions>\n          <execution>\n            <id>enforce-java</id>\n            <goals>\n              <goal>enforce</goal>\n            </goals>\n            <configuration>\n              <rules>\n                <requireJavaVersion>\n                  <message>This build requires at least Java ${java.version}, update your JVM, and run the build again</message>\n                  <version>${java.version}</version>\n                </requireJavaVersion>\n              </rules>\n            </configuration>\n          </execution>\n        </executions>\n      </plugin>\n      <plugin>\n        <groupId>io.spring.javaformat</groupId>\n        <artifactId>spring-javaformat-maven-plugin</artifactId>\n        <version>${spring-format.version}</version>\n        <executions>\n          <execution>\n            <goals>\n              <goal>validate</goal>\n            </goals>\n            <phase>validate</phase>\n          </execution>\n        </executions>\n      </plugin>\n      <plugin>\n        <groupId>org.apache.maven.plugins</groupId>\n        <artifactId>maven-checkstyle-plugin</artifactId>\n        <version>${maven-checkstyle.version}</version>\n        <dependencies>\n          <dependency>\n            <groupId>com.puppycrawl.tools</groupId>\n            <artifactId>checkstyle</artifactId>\n            <version>${checkstyle.version}</version>\n          </dependency>\n          <dependency>\n            <groupId>io.spring.nohttp</groupId>\n            <artifactId>nohttp-checkstyle</artifactId>\n            <version>${nohttp-checkstyle.version}</version>\n          </dependency>\n        </dependencies>\n        <executions>\n          <execution>\n            <id>nohttp-checkstyle-validation</id>\n            <goals>\n              <goal>check</goal>\n            </goals>\n            <phase>validate</phase>\n            <configuration>\n              <configLocation>src/checkstyle/nohttp-checkstyle.xml</configLocation>\n              <sourceDirectories>${basedir}</sourceDirectories>\n              <includes>**/*</includes>\n              <excludes>**/.git/**/*,**/.idea/**/*,**/target/**/,**/.flattened-pom.xml,**/*.class</excludes>\n              <propertyExpansion>config_loc=${basedir}/src/checkstyle/</propertyExpansion>\n            </configuration>\n          </execution>\n        </executions>\n      </plugin>\n      <plugin>\n        <groupId>org.graalvm.buildtools</groupId>\n        <artifactId>native-maven-plugin</artifactId>\n      </plugin>\n      <plugin>\n        <groupId>org.springframework.boot</groupId>\n        <artifactId>spring-boot-maven-plugin</artifactId>\n        <executions>\n          <execution>\n            <!-- Spring Boot Actuator displays build-related information\n              if a META-INF/build-info.properties file is present -->\n            <goals>\n              <goal>build-info</goal>\n            </goals>\n            <configuration>\n              <additionalProperties>\n                <encoding.source>${project.build.sourceEncoding}</encoding.source>\n                <encoding.reporting>${project.reporting.outputEncoding}</encoding.reporting>\n                <java.source>${java.version}</java.source>\n                <java.target>${java.version}</java.target>\n              </additionalProperties>\n            </configuration>\n          </execution>\n        </executions>\n      </plugin>\n      <plugin>\n        <groupId>org.jacoco</groupId>\n        <artifactId>jacoco-maven-plugin</artifactId>\n        <version>${jacoco.version}</version>\n        <executions>\n          <execution>\n            <goals>\n              <goal>prepare-agent</goal>\n            </goals>\n          </execution>\n          <execution>\n            <id>report</id>\n            <goals>\n              <goal>report</goal>\n            </goals>\n            <phase>prepare-package</phase>\n          </execution>\n        </executions>\n      </plugin>\n\n      <!-- Spring Boot Actuator displays build-related information if a git.properties file is\n      present at the classpath -->\n      <plugin>\n        <groupId>io.github.git-commit-id</groupId>\n        <artifactId>git-commit-id-maven-plugin</artifactId>\n        <configuration>\n          <failOnNoGitDirectory>false</failOnNoGitDirectory>\n          <failOnUnableToExtractRepoInfo>false</failOnUnableToExtractRepoInfo>\n        </configuration>\n      </plugin>\n      <!-- Spring Boot Actuator displays sbom-related information if a CycloneDX SBOM file is\n      present at the classpath -->\n      <plugin>\n        <?m2e ignore?>\n        <groupId>org.cyclonedx</groupId>\n        <artifactId>cyclonedx-maven-plugin</artifactId>\n      </plugin>\n    </plugins>\n  </build>\n  <licenses>\n    <license>\n      <name>Apache License, Version 2.0</name>\n      <url>https://www.apache.org/licenses/LICENSE-2.0</url>\n    </license>\n  </licenses>\n\n  <profiles>\n    <profile>\n      <id>css</id>\n      <build>\n        <plugins>\n          <plugin>\n            <groupId>org.apache.maven.plugins</groupId>\n            <artifactId>maven-dependency-plugin</artifactId>\n            <executions>\n              <execution>\n                <id>unpack</id>\n                <goals>\n                  <goal>unpack</goal>\n                </goals>\n                <?m2e execute onConfiguration,onIncremental?>\n                <phase>generate-resources</phase>\n                <configuration>\n                  <artifactItems>\n                    <artifactItem>\n                      <groupId>org.webjars.npm</groupId>\n                      <artifactId>bootstrap</artifactId>\n                      <version>${webjars-bootstrap.version}</version>\n                    </artifactItem>\n                  </artifactItems>\n                  <outputDirectory>${project.build.directory}/webjars</outputDirectory>\n                </configuration>\n              </execution>\n            </executions>\n          </plugin>\n          <plugin>\n            <groupId>com.gitlab.haynes</groupId>\n            <artifactId>libsass-maven-plugin</artifactId>\n            <version>${libsass.version}</version>\n            <configuration>\n              <inputPath>${basedir}/src/main/scss/</inputPath>\n              <outputPath>${basedir}/src/main/resources/static/resources/css/</outputPath>\n              <includePath>${project.build.directory}/webjars/META-INF/resources/webjars/bootstrap/${webjars-bootstrap.version}/scss/</includePath>\n            </configuration>\n            <executions>\n              <execution>\n                <?m2e execute onConfiguration,onIncremental?>\n                <goals>\n                  <goal>compile</goal>\n                </goals>\n                <phase>generate-resources</phase>\n              </execution>\n            </executions>\n          </plugin>\n        </plugins>\n      </build>\n    </profile>\n    <profile>\n      <id>m2e</id>\n      <activation>\n        <property>\n          <name>m2e.version</name>\n        </property>\n      </activation>\n      <build>\n        <pluginManagement>\n          <plugins>\n            <!-- This plugin's configuration is used to store Eclipse m2e settings\n              only. It has no influence on the Maven build itself. -->\n            <plugin>\n              <groupId>org.eclipse.m2e</groupId>\n              <artifactId>lifecycle-mapping</artifactId>\n              <version>${lifecycle-mapping}</version>\n              <configuration>\n                <lifecycleMappingMetadata>\n                  <pluginExecutions>\n                    <pluginExecution>\n                      <pluginExecutionFilter>\n                        <groupId>org.apache.maven.plugins</groupId>\n                        <artifactId>maven-checkstyle-plugin</artifactId>\n                        <versionRange>[1,)</versionRange>\n                        <goals>\n                          <goal>check</goal>\n                        </goals>\n                      </pluginExecutionFilter>\n                      <action>\n                        <ignore></ignore>\n                      </action>\n                    </pluginExecution>\n                    <pluginExecution>\n                      <pluginExecutionFilter>\n                        <groupId>org.springframework.boot</groupId>\n                        <artifactId>spring-boot-maven-plugin</artifactId>\n                        <versionRange>[1,)</versionRange>\n                        <goals>\n                          <goal>build-info</goal>\n                        </goals>\n                      </pluginExecutionFilter>\n                      <action>\n                        <ignore></ignore>\n                      </action>\n                    </pluginExecution>\n                    <pluginExecution>\n                      <pluginExecutionFilter>\n                        <groupId>io.spring.javaformat</groupId>\n                        <artifactId>spring-javaformat-maven-plugin</artifactId>\n                        <versionRange>[0,)</versionRange>\n                        <goals>\n                          <goal>validate</goal>\n                        </goals>\n                      </pluginExecutionFilter>\n                      <action>\n                        <ignore></ignore>\n                      </action>\n                    </pluginExecution>\n                  </pluginExecutions>\n                </lifecycleMappingMetadata>\n              </configuration>\n            </plugin>\n          </plugins>\n        </pluginManagement>\n      </build>\n    </profile>\n  </profiles>\n</project>\n",
+  "README.md": "# Spring PetClinic Sample Application [![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml)[![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/gradle-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/gradle-build.yml)\n\n[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/spring-projects/spring-petclinic) [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=7517918)\n\n## Understanding the Spring Petclinic application with a few diagrams\n\nSee the presentation here:  \n[Spring Petclinic Sample Application (legacy slides)](https://speakerdeck.com/michaelisvy/spring-petclinic-sample-application?slide=20)\n\n> **Note:** These slides refer to a legacy, pre–Spring Boot version of Petclinic and may not reflect the current Spring Boot–based implementation.  \n> For up-to-date information, please refer to this repository and its documentation.\n\n\n## Run Petclinic locally\n\nSpring Petclinic is a [Spring Boot](https://spring.io/guides/gs/spring-boot) application built using [Maven](https://spring.io/guides/gs/maven/) or [Gradle](https://spring.io/guides/gs/gradle/).\nJava 17 or later is required for the build, and the application can run with Java 17 or newer.\n\nYou first need to clone the project locally:\n\n```bash\ngit clone https://github.com/spring-projects/spring-petclinic.git\ncd spring-petclinic\n```\nIf you are using Maven, you can start the application on the command-line as follows:\n\n```bash\n./mvnw spring-boot:run\n```\nWith Gradle, the command is as follows:\n\n```bash\n./gradlew bootRun\n```\n\nYou can then access the Petclinic at <http://localhost:8080/>.\n\n<img width=\"1042\" alt=\"petclinic-screenshot\" src=\"https://cloud.githubusercontent.com/assets/838318/19727082/2aee6d6c-9b8e-11e6-81fe-e889a5ddfded.png\">\n\nYou can, of course, run Petclinic in your favorite IDE.\nSee below for more details.\n\n## Building a Container\n\nThere is no `Dockerfile` in this project. You can build a container image (if you have a docker daemon) using the Spring Boot build plugin:\n\n```bash\n./mvnw spring-boot:build-image\n```\n\n## Running the Container Image\n\n```bash\ndocker images | grep petclinic\ndocker run -p 8080:8080 docker.io/library/spring-petclinic:latest\n```\n\n## In case you find a bug/suggested improvement for Spring Petclinic\n\nOur issue tracker is available [here](https://github.com/spring-projects/spring-petclinic/issues).\n\n## Database configuration\n\nIn its default configuration, Petclinic uses an in-memory database (H2) which\ngets populated at startup with data. The h2 console is exposed at `http://localhost:8080/h2-console`,\nand it is possible to inspect the content of the database using the `jdbc:h2:mem:<uuid>` URL. The UUID is printed at startup to the console.\n\nA similar setup is provided for MySQL and PostgreSQL if a persistent database configuration is needed. Note that whenever the database type changes, the app needs to run with a different profile: `spring.profiles.active=mysql` for MySQL or `spring.profiles.active=postgres` for PostgreSQL. See the [Spring Boot documentation](https://docs.spring.io/spring-boot/how-to/properties-and-configuration.html#howto.properties-and-configuration.set-active-spring-profiles) for more detail on how to set the active profile.\n\nYou can start MySQL or PostgreSQL locally with whatever installer works for your OS or use docker:\n\n```bash\ndocker run -e MYSQL_USER=petclinic -e MYSQL_PASSWORD=petclinic -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=petclinic -p 3306:3306 mysql:9.7\n```\n\nor\n\n```bash\ndocker run -e POSTGRES_USER=petclinic -e POSTGRES_PASSWORD=petclinic -e POSTGRES_DB=petclinic -p 5432:5432 postgres:18.4\n```\n\nFurther documentation is provided for [MySQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/mysql/petclinic_db_setup_mysql.txt)\nand [PostgreSQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/postgres/petclinic_db_setup_postgres.txt).\n\nInstead of vanilla `docker` you can also use the provided `docker-compose.yml` file to start the database containers. Each one has a service named after the Spring profile:\n\n```bash\ndocker compose up mysql\n```\n\nor\n\n```bash\ndocker compose up postgres\n```\n\n## Test Applications\n\nAt development time we recommend you use the test applications set up as `main()` methods in `PetClinicIntegrationTests` (using the default H2 database and also adding Spring Boot Devtools), `MySqlTestApplication` and `PostgresIntegrationTests`. These are set up so that you can run the apps in your IDE to get fast feedback and also run the same classes as integration tests against the respective database. The MySql integration tests use Testcontainers to start the database in a Docker container, and the Postgres tests use Docker Compose to do the same thing.\n\n## Compiling the CSS\n\nThere is a `petclinic.css` in `src/main/resources/static/resources/css`. It was generated from the `petclinic.scss` source, combined with the [Bootstrap](https://getbootstrap.com/) library. If you make changes to the `scss`, or upgrade Bootstrap, you will need to re-compile the CSS resources using the Maven profile \"css\", i.e. `./mvnw package -P css`. There is no build profile for Gradle to compile the CSS.\n\n## Working with Petclinic in your IDE\n\n### Prerequisites\n\nThe following items should be installed in your system:\n\n- Java 17 or newer (full JDK, not a JRE)\n- [Git command line tool](https://help.github.com/articles/set-up-git)\n- Your preferred IDE\n  - Eclipse with the m2e plugin. Note: when m2e is available, there is a m2 icon in `Help -> About` dialog. If m2e is\n  not there, follow the installation process [here](https://www.eclipse.org/m2e/)\n  - [Spring Tools Suite](https://spring.io/tools) (STS)\n  - [IntelliJ IDEA](https://www.jetbrains.com/idea/)\n  - [VS Code](https://code.visualstudio.com)\n\n### Steps\n\n1. On the command line run:\n\n    ```bash\n    git clone https://github.com/spring-projects/spring-petclinic.git\n    ```\n\n1. Inside Eclipse or STS:\n\n    Open the project via `File -> Import -> Maven -> Existing Maven project`, then select the root directory of the cloned repo.\n\n    Then either build on the command line `./mvnw generate-resources` or use the Eclipse launcher (right-click on project and `Run As -> Maven install`) to generate the CSS. Run the application's main method by right-clicking on it and choosing `Run As -> Java Application`.\n\n1. Inside IntelliJ IDEA:\n\n    In the main menu, choose `File -> Open` and select the Petclinic [pom.xml](pom.xml). Click on the `Open` button.\n\n    - CSS files are generated from the Maven build. You can build them on the command line `./mvnw generate-resources` or right-click on the `spring-petclinic` project then `Maven -> Generates sources and Update Folders`.\n\n    - A run configuration named `PetClinicApplication` should have been created for you if you're using a recent Ultimate version. Otherwise, run the application by right-clicking on the `PetClinicApplication` main class and choosing `Run 'PetClinicApplication'`.\n\n1. Navigate to the Petclinic\n\n    Visit [http://localhost:8080](http://localhost:8080) in your browser.\n\n## Looking for something in particular?\n\n|Spring Boot Configuration | Class or Java property files  |\n|--------------------------|---|\n|The Main Class | [PetClinicApplication](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java) |\n|Properties Files | [application.properties](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources) |\n|Caching | [CacheConfiguration](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java) |\n\n## Interesting Spring Petclinic branches and forks\n\nThe Spring Petclinic \"main\" branch in the [spring-projects](https://github.com/spring-projects/spring-petclinic)\nGitHub org is the \"canonical\" implementation based on Spring Boot and Thymeleaf. There are\n[quite a few forks](https://spring-petclinic.github.io/docs/forks.html) in the GitHub org\n[spring-petclinic](https://github.com/spring-petclinic). If you are interested in using a different technology stack to implement the Pet Clinic, please join the community there.\n\n## Interaction with other open-source projects\n\nOne of the best parts about working on the Spring Petclinic application is that we have the opportunity to work in direct contact with many Open Source projects. We found bugs/suggested improvements on various topics such as Spring, Spring Data, Bean Validation and even Eclipse! In many cases, they've been fixed/implemented in just a few days.\nHere is a list of them:\n\n| Name | Issue |\n|------|-------|\n| Spring JDBC: simplify usage of NamedParameterJdbcTemplate | [SPR-10256](https://github.com/spring-projects/spring-framework/issues/14889) and [SPR-10257](https://github.com/spring-projects/spring-framework/issues/14890) |\n| Bean Validation / Hibernate Validator: simplify Maven dependencies and backward compatibility |[HV-790](https://hibernate.atlassian.net/browse/HV-790) and [HV-792](https://hibernate.atlassian.net/browse/HV-792) |\n| Spring Data: provide more flexibility when working with JPQL queries | [DATAJPA-292](https://github.com/spring-projects/spring-data-jpa/issues/704) |\n\n## Contributing\n\nThe [issue tracker](https://github.com/spring-projects/spring-petclinic/issues) is the preferred channel for bug reports, feature requests and submitting pull requests.\n\nFor pull requests, editor preferences are available in the [editor config](.editorconfig) for easy use in common text editors. Read more and download plugins at <https://editorconfig.org>. All commits must include a __Signed-off-by__ trailer at the end of each commit message to indicate that the contributor agrees to the Developer Certificate of Origin.\nFor additional details, please refer to the blog post [Hello DCO, Goodbye CLA: Simplifying Contributions to Spring](https://spring.io/blog/2025/01/06/hello-dco-goodbye-cla-simplifying-contributions-to-spring).\n\n## License\n\nThe Spring PetClinic sample application is released under version 2.0 of the [Apache License](https://www.apache.org/licenses/LICENSE-2.0).\n",
+  "src/main/resources/db/h2/schema.sql": "DROP TABLE vet_specialties IF EXISTS;\nDROP TABLE vets IF EXISTS;\nDROP TABLE specialties IF EXISTS;\nDROP TABLE visits IF EXISTS;\nDROP TABLE pets IF EXISTS;\nDROP TABLE types IF EXISTS;\nDROP TABLE owners IF EXISTS;\n\n\nCREATE TABLE vets (\n  id         INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,\n  first_name VARCHAR(30),\n  last_name  VARCHAR(30)\n);\nCREATE INDEX vets_last_name ON vets (last_name);\n\nCREATE TABLE specialties (\n  id   INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,\n  name VARCHAR(80)\n);\nCREATE INDEX specialties_name ON specialties (name);\n\nCREATE TABLE vet_specialties (\n  vet_id       INTEGER NOT NULL,\n  specialty_id INTEGER NOT NULL\n);\nALTER TABLE vet_specialties ADD CONSTRAINT fk_vet_specialties_vets FOREIGN KEY (vet_id) REFERENCES vets (id);\nALTER TABLE vet_specialties ADD CONSTRAINT fk_vet_specialties_specialties FOREIGN KEY (specialty_id) REFERENCES specialties (id);\n\nCREATE TABLE types (\n  id   INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,\n  name VARCHAR(80)\n);\nCREATE INDEX types_name ON types (name);\n\nCREATE TABLE owners (\n  id         INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,\n  first_name VARCHAR(30),\n  last_name  VARCHAR_IGNORECASE(30),\n  address    VARCHAR(255),\n  city       VARCHAR(80),\n  telephone  VARCHAR(20)\n);\nCREATE INDEX owners_last_name ON owners (last_name);\n\nCREATE TABLE pets (\n  id         INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,\n  name       VARCHAR_IGNORECASE(30),\n  birth_date DATE,\n  type_id    INTEGER NOT NULL,\n  owner_id   INTEGER\n);\nALTER TABLE pets ADD CONSTRAINT fk_pets_owners FOREIGN KEY (owner_id) REFERENCES owners (id);\nALTER TABLE pets ADD CONSTRAINT fk_pets_types FOREIGN KEY (type_id) REFERENCES types (id);\nALTER TABLE pets ADD CONSTRAINT unique_owner_pet_name UNIQUE (owner_id, name);\nCREATE INDEX pets_name ON pets (name);\n\nCREATE TABLE visits (\n  id          INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,\n  pet_id      INTEGER,\n  visit_date  DATE,\n  description VARCHAR(255)\n);\nALTER TABLE visits ADD CONSTRAINT fk_visits_pets FOREIGN KEY (pet_id) REFERENCES pets (id);\nCREATE INDEX visits_pet_id ON visits (pet_id);\n",
+  "src/main/resources/db/mysql/schema.sql": "CREATE TABLE IF NOT EXISTS vets (\n  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  first_name VARCHAR(30),\n  last_name VARCHAR(30),\n  INDEX(last_name)\n) engine=InnoDB;\n\nCREATE TABLE IF NOT EXISTS specialties (\n  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  name VARCHAR(80),\n  INDEX(name)\n) engine=InnoDB;\n\nCREATE TABLE IF NOT EXISTS vet_specialties (\n  vet_id INT(4) UNSIGNED NOT NULL,\n  specialty_id INT(4) UNSIGNED NOT NULL,\n  FOREIGN KEY (vet_id) REFERENCES vets(id),\n  FOREIGN KEY (specialty_id) REFERENCES specialties(id),\n  UNIQUE (vet_id,specialty_id)\n) engine=InnoDB;\n\nCREATE TABLE IF NOT EXISTS types (\n  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  name VARCHAR(80),\n  INDEX(name)\n) engine=InnoDB;\n\nCREATE TABLE IF NOT EXISTS owners (\n  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  first_name VARCHAR(30),\n  last_name VARCHAR(30),\n  address VARCHAR(255),\n  city VARCHAR(80),\n  telephone VARCHAR(20),\n  INDEX(last_name)\n) engine=InnoDB;\n\nCREATE TABLE IF NOT EXISTS pets (\n  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  name VARCHAR(30),\n  birth_date DATE,\n  type_id INT(4) UNSIGNED NOT NULL,\n  owner_id INT(4) UNSIGNED,\n  INDEX(name),\n  FOREIGN KEY (owner_id) REFERENCES owners(id),\n  FOREIGN KEY (type_id) REFERENCES types(id),\n  UNIQUE (owner_id, name)\n) engine=InnoDB;\n\nCREATE TABLE IF NOT EXISTS visits (\n  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  pet_id INT(4) UNSIGNED,\n  visit_date DATE,\n  description VARCHAR(255),\n  FOREIGN KEY (pet_id) REFERENCES pets(id)\n) engine=InnoDB;\n"
+ }
+}

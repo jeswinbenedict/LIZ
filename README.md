@@ -13,6 +13,14 @@ Supabase, and summaries use open-source models on Groq's free tier.
 
 ---
 
+It also has a **Repository Analyzer**: paste a GitHub repository and Liz
+reads it and explains how it was built — stack, architecture diagrams, data,
+API, build and deployment, security and quality — and answers questions about
+it from its own files, citing path and line
+([docs/REPO_ANALYZER.md](docs/REPO_ANALYZER.md)).
+
+---
+
 ## Run it
 
 ### With bundled demo data — no setup

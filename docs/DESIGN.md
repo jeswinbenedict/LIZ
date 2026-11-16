@@ -319,6 +319,19 @@ undone (*Delete account*).
   the red. The cap and mug carry the Liz mark. Every asset comes from
   `tool/brand/make_hero.py`, which explains each step; change the picture
   there, never by hand.
+- **Repository Analyzer** (`/repos`, `/repos/:id`; docs/REPO_ANALYZER.md).
+  *Repos* in the navigation, after Ask Liz. The page: title and one line, a
+  form panel (address, branch, a switch for a private repository that
+  reveals the token field, one primary button), then *Your analyses* as cards
+  with a thin progress line while running. A report: the repository's name
+  as the page title, facts as small chips (branch, commit, files read,
+  stars, license), and its parts as a row of filter pills — Overview,
+  Architecture, Code, Stack, API, Data, Build & deploy, Security & quality,
+  Ask. Diagrams are drawn by the app (`graph_view.dart`): neutral boxes with
+  a kind icon, hairline arrows, the selected part and its links in red, the
+  rest dimmed; they pan and zoom, and their text does not scale (zoom does).
+  Every claim carries its evidence as mono `path:line` chips that open the
+  file at that line.
 - **Welcome.** Where a new account opens (`/welcome`, after *Create
   account*; then on to the page it was going to). The wordmark and *Skip* in
   a bar; a thin progress line in two segments, ink up to the current step;

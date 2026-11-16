@@ -150,6 +150,7 @@ def routes(found: dict[str, str]) -> list[tuple[str, str]]:
         ("discover", "/"),
         ("news", "/news"),
         ("ask", "/ask"),
+        ("repos", "/repos"),
         ("saved", "/saved"),
         ("profile", "/profile"),
         ("settings", "/profile/settings"),

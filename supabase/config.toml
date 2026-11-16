@@ -96,3 +96,11 @@ project_id = "liz-f5f93"
 # not a Supabase key; the function checks it itself.
 [functions.scraper-ingest]
 verify_jwt = false
+
+# The Repository Analyzer: signed-in people only, checked in the function
+# (a Firebase token is not a Supabase JWT; see _shared/repo/caller.ts).
+[functions.analyze-repo]
+verify_jwt = false
+
+[functions.ask-repo]
+verify_jwt = false

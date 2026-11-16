@@ -22,6 +22,8 @@ import '../features/news/news_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/profile/settings_screen.dart';
 import '../features/profile/user_profile_screen.dart';
+import '../features/repo_analyzer/repo_analyzer_screen.dart';
+import '../features/repo_analyzer/repo_report_screen.dart';
 import '../features/tool_detail/tool_detail_screen.dart';
 import '../features/track/saved_screen.dart';
 import 'auth_gate.dart';
@@ -31,6 +33,7 @@ final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _discoverKey = GlobalKey<NavigatorState>(debugLabel: 'discover');
 final _newsKey = GlobalKey<NavigatorState>(debugLabel: 'news');
 final _askKey = GlobalKey<NavigatorState>(debugLabel: 'ask');
+final _reposKey = GlobalKey<NavigatorState>(debugLabel: 'repos');
 final _savedKey = GlobalKey<NavigatorState>(debugLabel: 'saved');
 final _profileKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
 
@@ -107,6 +110,26 @@ GoRouter buildRouter(AuthGate gate) {
                 pageBuilder: (c, s) => NoTransitionPage(
                   child: AskLizScreen(initialQuery: s.uri.queryParameters['q']),
                 ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _reposKey,
+            routes: [
+              GoRoute(
+                path: '/repos',
+                pageBuilder: (c, s) =>
+                    const NoTransitionPage(child: RepoAnalyzerScreen()),
+                routes: [
+                  // A report is a page of its own over the shell, as a
+                  // tool's page is.
+                  GoRoute(
+                    path: ':id',
+                    parentNavigatorKey: _rootKey,
+                    builder: (c, s) =>
+                        RepoReportScreen(id: s.pathParameters['id']!),
+                  ),
+                ],
               ),
             ],
           ),

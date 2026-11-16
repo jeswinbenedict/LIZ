@@ -49,6 +49,11 @@ const kNavDestinations = <NavDestinationSpec>[
     brand: true,
   ),
   NavDestinationSpec(
+    label: 'Repos',
+    icon: Icons.account_tree_outlined,
+    selectedIcon: Icons.account_tree,
+  ),
+  NavDestinationSpec(
     label: 'Saved',
     icon: Icons.bookmark_border,
     selectedIcon: Icons.bookmark,
@@ -61,7 +66,7 @@ const kNavDestinations = <NavDestinationSpec>[
 ];
 
 // Branch indices, named, so the sidebar's grouping reads as intent.
-const _discover = 0, _news = 1, _ask = 2, _saved = 3, _profile = 4;
+const _discover = 0, _news = 1, _ask = 2, _repos = 3, _saved = 4, _profile = 5;
 
 /// Tab bar on phones, a rail on tablets, a sidebar on desktop — chosen by
 /// width, never by device (docs/DESIGN.md §7).
@@ -341,6 +346,7 @@ class _SidebarScaffold extends StatelessWidget {
                         item(_discover),
                         item(_ask),
                         item(_news),
+                        item(_repos),
                         const SizedBox(height: 20),
                         const _GroupLabel('Library'),
                         item(_saved),

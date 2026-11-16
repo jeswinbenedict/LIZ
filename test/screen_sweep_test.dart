@@ -20,6 +20,7 @@ import 'package:liz/features/news/news_screen.dart';
 import 'package:liz/features/profile/profile_screen.dart';
 import 'package:liz/features/profile/settings_screen.dart';
 import 'package:liz/features/profile/user_profile_screen.dart';
+import 'package:liz/features/repo_analyzer/repo_analyzer_screen.dart';
 import 'package:liz/features/tool_detail/alternatives_screen.dart';
 import 'package:liz/features/tool_detail/tool_detail_screen.dart';
 import 'package:liz/features/track/saved_screen.dart';
@@ -57,6 +58,9 @@ final _screens = <String, Widget>{
   'Sign in': const SignInScreen(),
   'Forgot password': const ForgotPasswordScreen(),
   'Reset password': const ResetPasswordScreen(),
+  // In demo mode, its notice that it needs the live backend
+  // (test/repo_analyzer_test.dart covers it live).
+  'Repository Analyzer': const RepoAnalyzerScreen(),
   'Community': const CommunityScreen(),
   'Post': const PostDetailScreen(postId: 'p-1'),
   'Admin': const AdminScreen(),
