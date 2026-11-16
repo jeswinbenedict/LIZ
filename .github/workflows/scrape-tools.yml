@@ -104,10 +104,20 @@ jobs:
               -d '{"limit":6}') || true
             echo "$body"
             # The AI provider refused its key (expired or revoked). No later
-            # round can succeed, so fail once and say what to renew.
+            # round can succeed, so stop the rounds and say what to renew.
+            # A warning, not a failure: the tools were scraped and published;
+            # only their summaries wait, and the pg_cron backfill writes them
+            # once the key works again. The health check (0024/0047) pushes an
+            # alert when summary coverage falls.
             if printf '%s' "$body" | grep -q '"error":"ai_credentials'; then
-              echo "::error title=AI key refused::The AI provider rejected AI_API_KEY (expired or revoked), so no summaries can be written. Create a new free key (console.groq.com → API Keys), then run: supabase secrets set AI_API_KEY=<new key>. Setting the AI_FALLBACK_* secrets keeps summaries running through the next expiry (docs/OPERATIONS.md)."
-              exit 1
+              echo "::warning title=AI key refused::The AI provider rejected AI_API_KEY (expired or revoked), so no summaries can be written. Create a new free key (console.groq.com → API Keys), then run: supabase secrets set AI_API_KEY=<new key>. Setting the AI_FALLBACK_* secrets keeps summaries running through the next expiry (docs/OPERATIONS.md)."
+              {
+                echo "### AI summaries paused"
+                echo "The AI provider refused \`AI_API_KEY\`. Tools were scraped and published; their summaries will be written automatically once the key works."
+                echo ""
+                echo "Fix: create a key at console.groq.com → API Keys, then \`supabase secrets set AI_API_KEY=<key>\` (only the key, no brackets or quotes)."
+              } >> "$GITHUB_STEP_SUMMARY"
+              break
             fi
             remaining=$(printf '%s' "$body" | sed -n 's/.*"remaining":\([0-9]*\).*/\1/p')
             if [ "$remaining" = "0" ]; then break; fi

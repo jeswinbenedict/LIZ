@@ -171,7 +171,7 @@ To make someone an admin, set `profiles.role`; their next request sees it.
 | `SUPABASE_DB_URL` | GitHub Actions | `backup-db.yml` |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SITE_URL` | GitHub Actions | `deploy-web.yml` |
 | `FCM_VAPID_KEY` | GitHub Actions | web build (browser notifications) |
-| `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` | Supabase function secrets | summaries (Groq by default). The key can expire: when the provider refuses it, `scrape-tools` fails once with "AI key refused"; create a new key and `supabase secrets set AI_API_KEY=…` |
+| `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` | Supabase function secrets | summaries (Groq by default). The key can expire: when the provider refuses it, `scrape-tools` shows an "AI key refused" warning and a note in the run summary (the scrape itself still succeeds; summaries resume on their own once the key works); create a new key and `supabase secrets set AI_API_KEY=…` |
 | `AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_MODEL` | Supabase function secrets, optional but recommended | used when the first provider fails, including a refused key; a second provider (OpenRouter or Gemini, both free) keeps summaries running through the next expiry |
 | (none new) | | The Repository Analyzer (`analyze-repo`, `ask-repo`) uses the existing `SUPABASE_*`, `FIREBASE_SERVICE_ACCOUNT` and `AI_*` secrets. GitHub needs no key: public repositories are read anonymously, private ones with a token the person pastes for that run (never stored). See docs/REPO_ANALYZER.md |
 | `FIREBASE_SERVICE_ACCOUNT` | Supabase function secrets | `send-notification`, `firebase-session`, `delete-account` (Admin SDK key of `liz-f5f93`) |
