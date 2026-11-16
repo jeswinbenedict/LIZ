@@ -220,10 +220,7 @@ void main() {
     );
     await tester.tap(find.text('Analyse repository'));
     await tester.pumpAndSettle();
-    expect(
-      find.textContaining('Paste a GitHub repository:'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Paste a GitHub repository:'), findsOneWidget);
     expect(s.started, isEmpty);
 
     await tester.enterText(
