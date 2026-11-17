@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/widgets/ambient.dart';
 import '../../app/responsive/breakpoints.dart';
 import '../../app/theme.dart';
 import '../../core/providers.dart';
@@ -183,8 +184,12 @@ class _AskLizScreenState extends ConsumerState<AskLizScreen> {
     _controller.clear();
   });
 
+  // An open page: it asks for the full ambient light (ambient.dart).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      AmbientLevel(full: _answered == null, child: _page(context));
+
+  Widget _page(BuildContext context) {
     final p = context.liz;
     final phone = context.isPhone;
     final gutter = LizSpacing.gutter(MediaQuery.sizeOf(context).width);

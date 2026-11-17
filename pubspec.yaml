@@ -114,6 +114,10 @@ flutter:
     - assets/hero/eyes_closed.webp
     - assets/hero/irises.png
 
+  # The ambient light behind every page (lib/shared/widgets/ambient.dart).
+  shaders:
+    - shaders/ambient.frag
+
   # Fonts are bundled rather than fetched from fonts.gstatic.com at runtime:
   # fetching cost 1.6 MB per load, sent every visitor's IP to Google, and laid
   # the UI out with fallback metrics first (clipped chip labels). Both are

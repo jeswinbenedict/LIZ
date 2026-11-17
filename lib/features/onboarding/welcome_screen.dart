@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/widgets/ambient.dart';
 import '../../app/auth_gate.dart' show safeReturnPath, welcomePending;
 import '../../app/responsive/adaptive_shell.dart' show LizWordmark;
 import '../../app/theme.dart';
@@ -54,8 +55,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     context.go(safeReturnPath(widget.returnTo)?.toString() ?? '/');
   }
 
+  // An open page: it asks for the full ambient light (ambient.dart).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      AmbientLevel(full: true, child: _page(context));
+
+  Widget _page(BuildContext context) {
     final p = context.liz;
     final width = MediaQuery.sizeOf(context).width;
     final gutter = width >= 600 ? 32.0 : 20.0;
