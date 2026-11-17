@@ -75,3 +75,19 @@ serviceAccountKey*.json
 # Supabase CLI local state (machine-specific; not app source)
 supabase/.temp/
 supabase/.branches/
+
+# Python and tool caches
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Database dumps and exports: never commit production data
+*.dump
+*.sql.gz
+*.backup
+*.bak
+
+# Per-developer Claude Code settings
+.claude/settings.local.json

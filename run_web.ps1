@@ -1,8 +1,13 @@
-# Run Liz against your live Supabase project (Chrome).
-# The anon key is a client-side key (it ships in the app bundle), so it's safe here.
-# NEVER put the service_role key or DB password in this file.
+# Run Liz in Chrome against the Supabase project configured in .env.
+#
+# Copy .env.example to .env and fill in your project's URL and anon key
+# (public, client-side values). Without .env the app runs on demo data.
+# NEVER put the service-role key or the database password in .env: it is
+# compiled into the web bundle.
 
-flutter run -d chrome `
-  --dart-define=SUPABASE_URL=https://yluabeijvbydxczfxclk.supabase.co `
-  --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWFiZWlqdmJ5ZHhjemZ4Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzODY4NTUsImV4cCI6MjEwMTk2Mjg1NX0.zvbMoLLaPxmXxCbtDsTQ8Io3UDy4lq-wA5TQ6g_l-sI `
-  --dart-define=FCM_VAPID_KEY=BOcR26wRf5bMA6KGFDyHMQmUP_NLoPyMCXzlClJh7uvU-h7HX36pprb12lcXNb0ACDHMhBg94TtTBh67Q_nK5ng
+if (Test-Path .env) {
+  flutter run -d chrome --dart-define-from-file=.env
+} else {
+  Write-Host 'No .env found: running on bundled demo data.'
+  flutter run -d chrome
+}

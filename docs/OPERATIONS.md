@@ -57,14 +57,18 @@ Each frame gains the Dart file and line it came from. The maps are kept for
 ## 3. Backups and restoring
 
 `backup-db.yml` takes a `pg_dump` of the `public`, `auth` and `storage`
-schemas every Sunday at 02:00 UTC and keeps it as an artifact for 90 days
-(about thirteen restore points). It does nothing until the secret
-`SUPABASE_DB_URL` is set (the Session pooler URI from the Supabase dashboard,
-with the database password filled in).
+schemas every Sunday at 02:00 UTC, encrypts it with AES-256 and keeps the
+encrypted file as an artifact for 90 days (about thirteen restore points). It
+does nothing until two secrets are set: `SUPABASE_DB_URL` (the Session pooler
+URI from the Supabase dashboard, with the database password filled in) and
+`BACKUP_PASSPHRASE` (a long random passphrase, also kept in a password
+manager). The dump holds every account, and the repository is public, so it
+is never uploaded unencrypted.
 
 To restore into an empty database:
 
 ```bash
+gpg --decrypt --output liz.dump liz.dump.gpg
 pg_restore --no-owner --no-privileges -d "<connection string>" liz.dump
 ```
 
@@ -168,7 +172,7 @@ To make someone an admin, set `profiles.role`; their next request sees it.
 | `INGEST_KEY` / `LIZ_INGEST_KEY` | Supabase function secret; `~/.liz/n8n.env` | the laptop scraper, through `scraper-ingest` only |
 | `SUPABASE_FUNCTIONS_URL` | GitHub Actions | `fetch-news.yml` |
 | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` | GitHub Actions | `deploy-supabase.yml`. The access token expires: renew it (Supabase → Account → Access Tokens) before about 3 January 2027, or backend deploys fail |
-| `SUPABASE_DB_URL` | GitHub Actions | `backup-db.yml` |
+| `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` | GitHub Actions | `backup-db.yml` (the passphrase encrypts each dump; keep a copy outside GitHub) |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SITE_URL` | GitHub Actions | `deploy-web.yml` |
 | `FCM_VAPID_KEY` | GitHub Actions | web build (browser notifications) |
 | `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` | Supabase function secrets | summaries (Groq by default). The key can expire: when the provider refuses it, `scrape-tools` shows an "AI key refused" warning and a note in the run summary (the scrape itself still succeeds; summaries resume on their own once the key works); create a new key and `supabase secrets set AI_API_KEY=…` |

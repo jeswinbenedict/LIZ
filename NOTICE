@@ -1,0 +1,17 @@
+Liz
+Copyright 2026 Jeswin Benedict
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes third-party software and assets that keep their own
+licences. They are not covered by this project's licence:
+
+- Space Grotesk (assets/fonts/SpaceGrotesk-Latin.ttf), SIL Open Font
+  License 1.1, full text in assets/fonts/SpaceGrotesk-OFL.txt.
+- JetBrains Mono (assets/fonts/JetBrainsMono-Latin.ttf), SIL Open Font
+  License 1.1, full text in assets/fonts/JetBrainsMono-OFL.txt.
+- Dart and Flutter packages listed in pubspec.lock, Python packages listed in
+  scrapers/requirements.txt, and modules imported by the Edge Functions in
+  supabase/functions, each under its own licence (THIRD_PARTY_LICENSES.md).
+- The "Continue with Google" logo is a trademark of Google LLC, shown under
+  Google's sign-in branding guidelines.

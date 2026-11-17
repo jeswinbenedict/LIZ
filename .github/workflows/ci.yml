@@ -8,7 +8,29 @@ on:
   pull_request:
     branches: [main]
 
+# Read-only token: CI checks code, it never writes to the repository.
+permissions:
+  contents: read
+
 jobs:
+  # Secrets and known-vulnerable dependencies, on every push and pull request
+  # (the repository is public: anything committed is published). Both tools
+  # are pinned release binaries and need no credentials.
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan for committed secrets (gitleaks)
+        run: |
+          curl -fsSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz \
+            | tar -xz gitleaks
+          ./gitleaks dir . --config .gitleaks.toml --redact --no-banner
+      - name: Check dependencies for known vulnerabilities (OSV-Scanner)
+        run: |
+          curl -fsSL -o osv-scanner https://github.com/google/osv-scanner/releases/download/v2.0.2/osv-scanner_linux_amd64
+          chmod +x osv-scanner
+          ./osv-scanner scan source --lockfile pubspec.lock --lockfile scrapers/requirements.txt
+
   # What a push touched, so the slow app jobs run only when the app changed:
   # a push that is only migrations, functions, scrapers or docs skips about
   # twelve minutes of Flutter and browser checks (the free plan has 2,000 a

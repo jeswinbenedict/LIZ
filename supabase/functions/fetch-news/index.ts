@@ -60,7 +60,7 @@ function pickImage(entry: any): string | null {
 
 async function fromRss(feed: { source: string; url: string }): Promise<Article[]> {
   const res = await fetch(feed.url, {
-    headers: { 'user-agent': 'LizNewsBot/1.0 (+https://liz.app)' },
+    headers: { 'user-agent': 'LizNewsBot/1.0 (+https://github.com/jeswinbenedict/LIZ)' },
   });
   if (!res.ok) throw new Error(`${feed.source} ${res.status}`);
   const xml = await res.text();
@@ -114,7 +114,7 @@ async function scrapeHeadlines(
   linkSelector: string,
 ): Promise<Article[]> {
   const res = await fetch(pageUrl, {
-    headers: { 'user-agent': 'LizNewsBot/1.0 (+https://liz.app)' },
+    headers: { 'user-agent': 'LizNewsBot/1.0 (+https://github.com/jeswinbenedict/LIZ)' },
   });
   if (!res.ok) throw new Error(`${source} ${res.status}`);
   const html = await res.text();

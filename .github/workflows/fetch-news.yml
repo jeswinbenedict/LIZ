@@ -16,6 +16,9 @@ name: fetch-news
 # `fetch-news-hourly`, migration 0032), which already calls the function every
 # hour; this workflow called it a second time each hour and spent about 720 of
 # the 2,000 free Actions minutes a month doing so.
+permissions:
+  contents: read
+
 on:
   workflow_dispatch: {} # manual "Run workflow" button
 

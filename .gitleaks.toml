@@ -1,0 +1,23 @@
+# Secret scanning for CI (.github/workflows/ci.yml, job "security").
+# gitleaks' default rules, plus the few places that hold values which only
+# look like secrets.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public client configuration and test fixtures"
+paths = [
+  # Firebase web config: the apiKey identifies the project and is public by
+  # design (it ships in every web client); access is enforced by Firebase
+  # Auth and Supabase row-level security, not by this value.
+  '''lib/core/firebase/firebase_app\.dart''',
+  '''web/firebase-messaging-sw\.js''',
+  # Tests use fake keys and JWTs (signature "signature") to check key
+  # handling and secret redaction.
+  '''supabase/functions/tests/.*''',
+  '''scrapers/tests/.*''',
+  '''test/.*''',
+  # Examples hold placeholders only.
+  '''(^|/)\.env\.example''',
+]

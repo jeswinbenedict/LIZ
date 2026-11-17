@@ -19,7 +19,7 @@ import os
 from dataclasses import dataclass
 
 USER_AGENT = (
-    "LizBot/1.0 (+https://liz.app/bot; AI tool discovery; contact: hello@liz.app)"
+    "LizBot/1.0 (+https://github.com/jeswinbenedict/LIZ; AI tool discovery)"
 )
 
 # Seconds to wait between requests to the same host, unless robots.txt asks for more.

@@ -30,6 +30,9 @@
 
 name: deploy-web
 
+permissions:
+  contents: read
+
 on:
   # After CI, not on push: a commit whose tests fail must not go live. The job
   # below checks that the CI run it follows actually passed.

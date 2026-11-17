@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in Liz does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Security problems must not be reported here. Follow SECURITY.md to
+        report them privately.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Discover
+        2. Filter by "Free"
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - The live site
+        - Running locally on demo data
+        - Running locally against my own Supabase project
+        - Scraper or scheduled job
+        - Edge Function
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: Chrome 131 on Windows 11, Safari on iPhone 15
+  - type: textarea
+    id: logs
+    attributes:
+      label: Errors or logs
+      description: >-
+        Console errors, workflow logs or screenshots. Remove any keys,
+        tokens or personal data first.
+      render: text

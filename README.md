@@ -4,208 +4,334 @@
 
 Liz is a web application for finding AI tools while they are still rising. It
 collects new launches from Product Hunt, Hacker News and GitHub, decides which
-are worth showing, summarises them, and lets people search in plain language,
-follow the ones they care about, and hear when something changes.
+are worth showing, summarises them, ranks them by measured growth, and lets
+people search in plain language, follow tools and hear when something changes.
+It also analyses GitHub repositories and explains how they were built.
 
-Built with Flutter for the web, backed by Supabase. Every AI feature runs on
-free and open models: search uses `gte-small` embeddings computed inside
-Supabase, and summaries use open-source models on Groq's free tier.
+Live at <https://liz-cfp.pages.dev> (sign-in required).
 
----
+![Liz](web/og-card.png)
 
-It also has a **Repository Analyzer**: paste a GitHub repository and Liz
-reads it and explains how it was built — stack, architecture diagrams, data,
-API, build and deployment, security and quality — and answers questions about
-it from its own files, citing path and line
-([docs/REPO_ANALYZER.md](docs/REPO_ANALYZER.md)).
+Licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
-## Run it
+## Contents
 
-### With bundled demo data — no setup
+- [Why Liz](#why-liz)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Technology](#technology)
+- [Repository structure](#repository-structure)
+- [Getting started](#getting-started)
+- [Local development](#local-development)
+- [Configuration](#configuration)
+- [Database](#database)
+- [Testing](#testing)
+- [Building and deploying](#building-and-deploying)
+- [Documentation](#documentation)
+- [Deliberate decisions](#deliberate-decisions)
+- [Known limitations](#known-limitations)
+- [Contributing](#contributing)
+- [Security](#security)
+- [Licence](#licence)
+- [Acknowledgements](#acknowledgements)
+
+## Why Liz
+
+New AI tools launch every day, and the lists that track them rank by fame:
+total stars, total votes, how long a tool has existed. By the time a tool
+tops those lists everyone already knows it. Liz ranks by growth instead. It
+records each tool's signals every day and shows what is rising now, with the
+reason in words ("227 points on Hacker News"). Nothing shown is estimated
+or seeded.
+
+## Features
+
+- **Discover**: the catalog ranked by growth over the last seven days, filtered
+  by category and price, with a "For you" shelf from the categories a person
+  follows.
+- **Ask Liz**: describe what you need in plain words and get the tools that fit,
+  found by semantic search over open-source embeddings.
+- **Tool pages**: summary, pricing, a signal line of recorded history, a
+  timeline (first seen, launches, price changes), related news, alternatives,
+  side-by-side comparison, reviews, and an embeddable "Listed on Liz" badge.
+- **News**: an hourly technology feed with short summaries, linked to the
+  tools it names.
+- **Saved and Alerts**: saving a tool watches it. Price changes and rises arrive
+  in Alerts, in the app and as browser push notifications.
+- **Repository Analyzer**: paste a GitHub repository (HTTPS, SSH or
+  `gh repo clone`) and get its stack, architecture diagrams, data model, API,
+  build and deployment, security and quality, and ask questions answered from
+  its own files with path and line ([docs/REPO_ANALYZER.md](docs/REPO_ANALYZER.md)).
+- **Self-maintaining catalog**: scheduled scrapers, a quality gate that records
+  why anything is held back, malware and phishing screening, and an admin
+  console for moderation and health.
+- **Accounts**: email and password or Google sign-in (Firebase
+  Authentication), password reset, two-step verification for admins, and
+  account deletion.
+
+## Architecture
+
+```
+                ┌──────────────────────────────┐
+  Browser ─────▶│ Flutter web app (CanvasKit)  │  Cloudflare Pages
+                └──────┬───────────────┬───────┘
+          Firebase ID  │               │ supabase-js (anon key + RLS)
+          token        ▼               ▼
+            ┌─────────────────┐  ┌─────────────────────────────────────┐
+            │ Firebase Auth   │  │ Supabase                            │
+            │ (who you are)   │  │  Postgres + pgvector, row-level     │
+            └─────────────────┘  │  security on every table            │
+                                 │  Edge Functions (Deno): Ask Liz,    │
+                                 │  summaries, news, repo analysis,    │
+                                 │  push, ingestion                    │
+                                 │  pg_cron: fetch, embed, rank, health│
+                                 └──────▲──────────────────────▲───────┘
+                                        │ service role         │ ingest key
+                     GitHub Actions ────┘                      └──── n8n (home)
+                     Python scraper, backups, deploys             Python scraper
+```
+
+Firebase handles identity only. Everything else lives in Postgres, which
+trusts Firebase ID tokens as a third-party auth provider
+([docs/AUTH.md](docs/AUTH.md)). The data flow from launch to published tool is
+in [docs/CATALOG_PIPELINE.md](docs/CATALOG_PIPELINE.md), and the schema in
+[docs/DATA_ARCHITECTURE.md](docs/DATA_ARCHITECTURE.md).
+
+## Technology
+
+| Layer | Technology |
+| --- | --- |
+| App | Flutter 3.47 (web), Dart 3.12, Riverpod, go_router |
+| Identity | Firebase Authentication |
+| Data | Supabase: Postgres, pgvector, row-level security, pg_cron, Storage |
+| Server code | Supabase Edge Functions (Deno, TypeScript) |
+| Search | `gte-small` embeddings computed inside Supabase |
+| Summaries | Open models through an OpenAI-compatible API (Groq's free tier by default) |
+| Scraping | Python 3.12, requests, BeautifulSoup, lxml |
+| Scheduling | pg_cron, GitHub Actions, self-hosted n8n |
+| Hosting | Cloudflare Pages (with a Pages Function relaying Firebase sign-in) |
+| Push | Firebase Cloud Messaging |
+
+## Repository structure
+
+```
+lib/                    Flutter web app
+  app/                  router, theme, responsive shell
+  core/                 auth, config, repositories (mock and Supabase), telemetry
+  features/             discover, ask_liz, tool_detail, news, alerts, track,
+                        compare, repo_analyzer, profile, auth, onboarding,
+                        legal, admin, community (built, hidden from navigation)
+  shared/               models and widgets
+shaders/                fragment shader for the ambient light
+assets/                 fonts, icons, illustrations
+web/                    index.html, headers, service worker, icons
+functions/              Cloudflare Pages Function (Firebase sign-in relay)
+supabase/
+  migrations/           schema, RLS policies, triggers, cron jobs, health checks
+  functions/            Edge Functions and their tests
+  seed*.sql             demo content for a local database
+scrapers/               Python scraper, quality gate, maintenance scripts
+n8n/                    workflow for running the scraper from a home connection
+tool/                   CI script, browser QA, brand tooling, git hooks
+test/                   Flutter tests
+docs/                   how each part works
+```
+
+## Getting started
+
+### Prerequisites
+
+- [Flutter](https://docs.flutter.dev/get-started/install) 3.47.2 (stable), with Chrome
+- Optional, for the backend: [Supabase CLI](https://supabase.com/docs/guides/cli)
+  and Docker, [Deno](https://deno.com) 2.x, Python 3.12
+
+### Run it with demo data (no accounts, no keys)
 
 ```bash
+git clone https://github.com/jeswinbenedict/LIZ.git
+cd LIZ
 flutter pub get
 flutter run -d chrome
 ```
 
-With no Supabase credentials the app uses a bundled dataset and a mock backend,
+Without Supabase settings the app uses a bundled dataset and a mock backend,
 so every screen works offline. Sign in with any email and password: the demo
 account is an admin, so the admin console is reachable too.
 
-### Against the live backend
+## Local development
+
+To run against a real backend, use your own Supabase project, either local or
+hosted. Never point a development build at someone else's production project.
+
+1. **Database.** For a local stack: `supabase start`, then `supabase db reset`
+   to apply every migration and `supabase/seed.sql`. For a hosted project:
+   `supabase link --project-ref <ref>` and `supabase db push`.
+2. **Edge Functions.** Copy `supabase/functions/.env.example` to
+   `supabase/functions/.env`, fill in what you need, then
+   `supabase functions serve --env-file supabase/functions/.env`.
+3. **App.** Copy `.env.example` to `.env`, set `SUPABASE_URL` and
+   `SUPABASE_ANON_KEY`, then:
+
+   ```bash
+   flutter run -d chrome --dart-define-from-file=.env
+   ```
+
+   `run_web.ps1`, `.vscode/launch.json` and `.claude/launch.json` do the same.
+4. **Sign-in.** Live mode signs in through Firebase. The Firebase web
+   configuration is in `lib/core/firebase/firebase_app.dart` and names the
+   maintainer's project. For your own deployment, create a Firebase project,
+   replace that configuration and the project ID in `supabase/config.toml`
+   (`[auth.third_party.firebase]`), and follow [docs/AUTH.md](docs/AUTH.md).
+5. **Scraper (optional).** `pip install -r scrapers/requirements.txt`, set the
+   variables in `scrapers/.env.example`, then from `scrapers/`:
+   `python -m liz_scraper --source hackernews --dry-run --limit 20`.
+
+## Configuration
+
+| File | What it configures | Contains secrets |
+| --- | --- | --- |
+| `.env` (from `.env.example`) | The web build: Supabase URL and anon key, Web Push key, legal contact | No. Only public client values, since they are compiled into the bundle |
+| `supabase/functions/.env` (from its `.env.example`) | Edge Functions: AI provider, Firebase Admin key, ingest key | Yes |
+| `scrapers/.env` (from its `.env.example`) | Scraper: service-role key or ingest key, GitHub token | Yes |
+| GitHub Actions secrets | Deploys, scheduled scrapes and backups | Yes |
+
+The Supabase anon key and the Firebase web configuration are public by design:
+they identify the project and grant nothing on their own, and every table is
+protected by row-level security. Every secret, where it is set and what uses
+it is listed in [docs/OPERATIONS.md](docs/OPERATIONS.md#8-secrets).
+
+## Database
+
+`supabase/migrations/` holds 64 numbered migrations: the schema, row-level
+security policies, triggers, pg_cron jobs, ranking and health checks. They are
+applied in order by `supabase db reset` locally and `supabase db push` against
+a hosted project. In this repository's deployment, `deploy-supabase.yml`
+applies them on every push to `main` that changes `supabase/`.
+
+`supabase/seed.sql` mirrors the app's bundled demo catalog, so a fresh local
+database is browsable. A new schema change is always a new migration file,
+never an edit to an applied one.
+
+## Testing
 
 ```bash
-flutter run -d chrome \
-  --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=<anon-key>
+flutter analyze                                            # clean at every level
+flutter test                                               # app
+cd scrapers && python -m pytest tests                      # scraper
+ruff check scrapers tool --config scrapers/pyproject.toml  # Python lint
+deno test --allow-env --no-check supabase/functions/tests  # Edge Functions
+bash tool/ci_local.sh                                      # all of CI, locally
 ```
 
-With both values present the app switches to live data automatically. Only the
-anon key belongs in the client — it is public by design and every table is
-protected by row-level security. `.claude/launch.json` has both configurations.
+CI runs all of these on every push and pull request, along with a type check
+of every Edge Function, every migration applied to a fresh database with its
+schema and policies checked, a secret scan and a dependency vulnerability
+check. `test/screen_sweep_test.dart` puts every
+screen through a 320-pixel phone, 1.5× text and a tablet, and through
+Flutter's accessibility guidelines. In a real browser,
+[`tool/qa`](tool/qa/README.md) walks 14 visitor journeys and audits every
+page's accessibility tree at desktop and phone widths.
 
----
+`python -m liz_scraper.eval_ask` evaluates Ask Liz on 60 questions against a
+live project and is not run in CI.
 
-## What is in here
-
-```
-lib/                Flutter web app
-  app/              router, theme, responsive shell
-  core/             auth, config, repositories (mock + Supabase), telemetry
-  features/         discover, search, ask_liz, tool_detail, news, alerts,
-                    track (saved, follow people), compare, profile, auth, admin,
-                    community (built, hidden from navigation — see below)
-  shared/           models and widgets
-supabase/
-  migrations/       schema, RLS, triggers, cron jobs, health checks
-  functions/        Edge Functions (Deno) and their tests
-scrapers/           Python/BeautifulSoup scraper, quality gate, backlog tools
-n8n/                workflow for running the scraper from your own machine
-docs/               how the pieces work — start here
-test/               Flutter tests
-```
-
-## How the catalog fills itself
-
-Scheduled jobs inside Supabase fetch GitHub tools daily and news hourly,
-compute embeddings and summaries every fifteen minutes, and refresh rankings.
-The Python scraper finds Product Hunt and Hacker News launches, follows each
-listing to the product's own site, and a **quality gate** decides whether the
-result is fit to publish. Anything held back keeps a recorded reason, visible in
-the admin console.
-
-→ [docs/CATALOG_PIPELINE.md](docs/CATALOG_PIPELINE.md)
-
-Product Hunt blocks datacenter addresses, so its launches only resolve when the
-scraper runs from a home connection. That is what the n8n workflow is for.
-
-→ [n8n/README.md](n8n/README.md)
-
-## How "Rising" is decided
-
-Every tool's GitHub stars, Hacker News points, and views, website visits and
-saves on Liz are recorded daily, and tools are ranked by how much those grew in
-the last seven days — with the reason shown in words ("227 points on Hacker
-News"). A famous tool that is not growing is not rising. Nothing shown is
-estimated or seeded.
-
-→ [docs/RANKING.md](docs/RANKING.md)
-
-Each tool page shows that history as a signal line, and a timeline of what
-happened to the tool: when Liz first saw it, its Hacker News launch, and every
-price change since 29 September 2026. Saving a tool is also watching it — its
-price changes and rises arrive in Alerts, and Settings decides which. Headlines
-from the news feed that name a tool appear on its page, and people who pick
-the kinds of tools they follow get a "For you" shelf on Discover.
-
-Every tool can be compared with its closest alternatives, and has an
-"Alternatives to X" page when at least three are genuinely close. Makers get
-an embeddable "Listed on Liz" / "Rising on Liz" badge from their tool's page.
-
-## Found by search engines
-
-The app is drawn on a canvas, so the deploy also writes one HTML page per tool,
-category and alternatives list — own title, description, structured data and
-text — plus a sitemap, so search engines and link previews see real content.
-The same text is shown as a plain page while the app loads, so a slow phone
-reads the tool in under a second instead of watching a logo.
-
-→ [docs/SEO.md](docs/SEO.md)
-
-## Knowing it still works
-
-`system_health()` reports twelve signals derived from the data itself — catalog
-and news freshness, embedding and summary coverage, unexplained backlog, failed
-scheduled calls, crash reports, open reports, and whether the daily signal
-history and outside signals are still being written. It runs hourly and notifies admins
-— in the app and as a phone push through ntfy — when something fails, at most
-once every six hours. The admin console's **Health** tab shows all of it,
-along with real visitors' first-screen times and how many came back.
-
-Backups, crash-report symbolication, deploys, scheduled jobs and every secret
-→ [docs/OPERATIONS.md](docs/OPERATIONS.md)
-
-## Security
-
-What is protected, how it was checked, and what was found — including the
-problems fixed along the way.
-
-→ [docs/SECURITY.md](docs/SECURITY.md)
-
-## Tests
+## Building and deploying
 
 ```bash
-flutter analyze                                           # clean at every level
-flutter test                                              # app
-cd scrapers && python -m pytest tests                     # scraper
-ruff check scrapers tool --config scrapers/pyproject.toml # Python lint
-cd scrapers && python -m liz_scraper.eval_ask              # Ask Liz, 60 questions (live)
-deno test --allow-env --no-check supabase/functions/tests # Edge Functions
+flutter build web --release --dart-define-from-file=.env
 ```
 
-All of these but the live evaluation run in CI on every push, along with a
-type check of every Edge Function, and `flutter analyze` fails on infos too.
-Beyond behaviour, `test/screen_sweep_test.dart` puts every screen, signed out
-and signed in, through a 320-pixel phone, 1.5× text and a tablet, and through
-Flutter's accessibility guidelines — labelled controls, 48-pixel tap targets
-and contrast. A new screen goes in that list. Every Edge
-Function has tests; their decisions live in `logic.ts` files so the tests need
-no network.
+The output is in `build/web`. Any static host works. The repository's own
+deployment uses three workflows:
 
-In a real browser, [`tool/qa`](tool/qa/README.md) walks 13 visitor journeys,
-audits every page's accessibility tree and sweeps every page at four widths
-for errors and overflow — in CI on the demo data, and locally in Chrome, Edge,
-Firefox and Safari's engine against the live catalog.
+| Workflow | Does |
+| --- | --- |
+| `ci.yml` | lint, type checks, tests, browser checks, secret and vulnerability scans |
+| `deploy-web.yml` | builds and publishes to Cloudflare Pages after CI passes on `main`, and daily |
+| `deploy-supabase.yml` | applies migrations and deploys Edge Functions when `supabase/` changes |
 
----
+The scheduled workflows (`scrape-tools`, `fetch-news`, `backup-db`) and the
+secrets each one needs are described in [docs/OPERATIONS.md](docs/OPERATIONS.md).
+In a fork, workflows that need secrets skip their work with a warning until
+the secrets are set.
+
+## Documentation
+
+| Guide | Covers |
+| --- | --- |
+| [AUTH.md](docs/AUTH.md) | Firebase Authentication in front of Supabase |
+| [CATALOG_PIPELINE.md](docs/CATALOG_PIPELINE.md) | scraping, the quality gate, publishing |
+| [DATA_ARCHITECTURE.md](docs/DATA_ARCHITECTURE.md) | the schema and where data lives |
+| [RANKING.md](docs/RANKING.md) | how "Rising" is calculated |
+| [REPO_ANALYZER.md](docs/REPO_ANALYZER.md) | the Repository Analyzer and its API |
+| [OPERATIONS.md](docs/OPERATIONS.md) | alerts, crash reports, backups, deploys, scheduled jobs, secrets |
+| [SECURITY.md](docs/SECURITY.md) | the security model and what was found and fixed |
+| [DESIGN.md](docs/DESIGN.md) | the design system |
+| [FCM_SETUP.md](docs/FCM_SETUP.md) | browser push notifications |
+| [WEB_BUILD.md](docs/WEB_BUILD.md) | the web build and its headers |
+| [SEO.md](docs/SEO.md) | link previews, and the pre-renderer (switched off) |
+
+The Edge Functions' request and response shapes are documented beside each
+function in `supabase/functions/` and, for the Repository Analyzer, in
+[docs/REPO_ANALYZER.md](docs/REPO_ANALYZER.md).
 
 ## Deliberate decisions
 
-- **Web only.** The Android and iOS scaffolds were removed rather than carried
+- **Web first.** The Android and iOS scaffolds were removed rather than carried
   unbuilt. `flutter create --platforms android,ios .` restores them; re-enable
   the platform keys in `pubspec.yaml` for icons and splash at the same time.
+- **Signed-in only.** Since 5 October 2026 the catalog is readable only by
+  signed-in people (migration 0061), so pages are not pre-rendered for search
+  engines.
+- **No paid AI APIs.** Semantic search is embeddings in the database, and
+  summaries use free open models.
 - **Community is built but hidden.** Posts, comments and their moderation work
-  and are tested, but an empty forum reads worse to a first-time visitor than no
-  tab at all. Adding it back is one entry in `kNavDestinations`. Reviews on tool
-  pages are separate and live.
-- **No paid AI APIs.** Semantic search is embeddings in the database; summaries
-  use free open models.
+  and are tested, but are left out of navigation until there is an audience.
+  Adding it back is one entry in `kNavDestinations`.
 
-## Privacy and terms
+## Known limitations
 
-Both live in the app at `/privacy` and `/terms` (`lib/features/legal/`), linked
-from Settings and from sign-up. The privacy policy describes what the schema and
-Edge Functions actually store, and for how long — change one, change the other.
-Build with `--dart-define=LEGAL_CONTACT=you@example.com` to publish a contact
-address in both; without it they point to account deletion and Report instead.
-The deploy reads it from the repository variable `LEGAL_CONTACT`.
-They were written from the code, not by a lawyer.
+- **Product Hunt** blocks data-centre addresses, so its launches only resolve
+  when the scraper runs from a home connection (the n8n workflow,
+  [n8n/README.md](n8n/README.md)).
+- **Firebase configuration is in source** (`lib/core/firebase/firebase_app.dart`)
+  rather than in `.env`. A fork that wants live sign-in must replace it.
+- **The privacy policy and terms** (`/privacy`, `/terms`) were written from
+  the code, not by a lawyer.
+- **No versioned releases.** `main` is what is deployed
+  ([CHANGELOG.md](CHANGELOG.md)).
+- **Mobile apps** are not built (see "Web first").
 
-## Where it stands
+## Contributing
 
-Live at <https://liz-cfp.pages.dev>. Every push to `main` is checked by CI and,
-when it passes, deployed: the web app to Cloudflare Pages, migrations and Edge
-Functions to Supabase. The database is backed up daily, new tools are scraped
-daily, and news is fetched hourly by the database itself.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
+the checks and the conventions, and follow the
+[Code of Conduct](CODE_OF_CONDUCT.md). For help, see [SUPPORT.md](SUPPORT.md).
 
-## Still to do
+## Security
 
-Everything left needs an account, a credential or a decision only the owner
-has.
+Please report vulnerabilities privately, as described in
+[SECURITY.md](SECURITY.md), and never in a public issue.
 
-- **Renew `SUPABASE_ACCESS_TOKEN`** before about 3 January 2027 (Supabase →
-  Account → Access Tokens, then the GitHub secret). Backend deploys fail once
-  it expires.
-- **A custom domain** for Cloudflare Pages. `*.pages.dev` addresses are
-  blocked by some networks, including some in India; add the new domain to
-  Firebase's authorized domains and to the `SITE_URL` secret at the same time.
-- **A legal read** of the privacy policy and terms.
-- **Search Console**: verify the site and submit `sitemap.xml`.
-- **Moderator two-step**: switch on Identity Platform and TOTP in Firebase
-  (`tool/firebase_enable_totp.ts`), then enrol from the admin console.
-- **LinkedIn's preview of the site**: refresh it in LinkedIn's Post Inspector.
-- **The pre-push check**, once per clone: `git config core.hooksPath
-  tool/hooks` runs CI's fast checks before every push
-  ([tool/qa/README.md](tool/qa/README.md)).
+## Licence
+
+Copyright 2026 Jeswin Benedict. Licensed under the
+[Apache License, Version 2.0](LICENSE); see [NOTICE](NOTICE).
+
+Third-party packages, fonts and trademarks keep their own licences and are not
+covered by this project's licence. They are listed in
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+## Acknowledgements
+
+- [Flutter](https://flutter.dev), [Supabase](https://supabase.com) and
+  [Firebase](https://firebase.google.com), on whose free tiers Liz runs.
+- [Space Grotesk](https://github.com/floriankarsten/space-grotesk) and
+  [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono), under the SIL
+  Open Font License.
+- `gte-small` for embeddings, and open models served by [Groq](https://groq.com).
+- Hacker News, Product Hunt and GitHub, whose public data fills the catalog.
+- [URLhaus](https://urlhaus.abuse.ch), OpenPhish, PhishTank and PhishStats,
+  whose lists screen every listed site.

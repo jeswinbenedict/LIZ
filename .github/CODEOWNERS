@@ -1,0 +1,10 @@
+# Every change is reviewed by the maintainer. Paths that guard security,
+# data or deployment are listed explicitly so they stay owned if this file
+# grows.
+*                         @jeswinbenedict
+
+/supabase/migrations/     @jeswinbenedict
+/supabase/functions/      @jeswinbenedict
+/.github/                 @jeswinbenedict
+/web/_headers             @jeswinbenedict
+/functions/               @jeswinbenedict

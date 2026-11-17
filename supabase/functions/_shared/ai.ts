@@ -119,7 +119,7 @@ async function askOne(
         Authorization: `Bearer ${p.apiKey}`,
         'Content-Type': 'application/json',
         // OpenRouter likes these; harmless elsewhere.
-        'HTTP-Referer': 'https://liz.app',
+        'HTTP-Referer': 'https://liz-cfp.pages.dev',
         'X-Title': 'Liz',
       },
       body: JSON.stringify({
