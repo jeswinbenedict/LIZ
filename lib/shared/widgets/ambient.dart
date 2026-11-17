@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import 'ambient_gpu/gpu_stub.dart'
+    if (dart.library.js_interop) 'ambient_gpu/gpu_web.dart';
 
 /// The light behind every page (docs/DESIGN.md §2, Ambient): near-black,
 /// and a ring of the brand's red that reads as light — a white-hot hairline
@@ -41,10 +43,13 @@ class LizAmbient extends StatefulWidget {
 
   static Future<ui.FragmentProgram?>? _program;
 
-  static Future<ui.FragmentProgram?> _load() =>
-      _program ??= ui.FragmentProgram.fromAsset(
-        'shaders/ambient.frag',
-      ).then<ui.FragmentProgram?>((p) => p).catchError((Object _) => null);
+  /// The shader, or null where it would run on the CPU (no WebGL) or
+  /// fails to load; the painted light stands in.
+  static Future<ui.FragmentProgram?> _load() => _program ??= !hasGpuCanvas()
+      ? Future<ui.FragmentProgram?>.value()
+      : ui.FragmentProgram.fromAsset(
+          'shaders/ambient.frag',
+        ).then<ui.FragmentProgram?>((p) => p).catchError((Object _) => null);
 
   @override
   State<LizAmbient> createState() => _LizAmbientState();
@@ -109,6 +114,7 @@ class _LizAmbientState extends State<LizAmbient>
                       canvas: p.canvas,
                       red: p.accent,
                       level: _shown,
+                      dpr: MediaQuery.devicePixelRatioOf(context),
                     ),
             ),
           ),
@@ -121,21 +127,27 @@ class _LizAmbientState extends State<LizAmbient>
 
 const _hot = Color(0xFFFFD6CC);
 
-class _ShaderPainter extends CustomPainter {
-  _ShaderPainter(
-    this.program, {
-    required this.canvas,
-    required this.red,
-    required this.level,
-  }) : super(repaint: level);
-  final ui.FragmentProgram program;
-  final Animation<double> level;
-  final Color canvas;
-  final Color red;
+/// The light computed once per size and level, kept as an image.
+///
+/// The web renderer redraws a page's background on every frame, so drawing
+/// the shader directly recomputed every pixel of the screen whenever
+/// anything animated — invisible on a GPU, crippling without one (software
+/// rendering, low-end phones). Baked, a frame costs one image copy.
+class _Baked {
+  static final _cache = <String, ui.Image>{};
 
-  @override
-  void paint(Canvas c, Size size) {
-    if (size.isEmpty) return;
+  static ui.Image of(
+    ui.FragmentProgram program,
+    Size size,
+    double dpr,
+    Color canvas,
+    Color red,
+    double level,
+  ) {
+    final w = (size.width * dpr).ceil(), h = (size.height * dpr).ceil();
+    final key = '$w×$h ${canvas.toARGB32()} ${red.toARGB32()} $level';
+    final hit = _cache.remove(key);
+    if (hit != null) return _cache[key] = hit; // most recent last
     final (centre, radius) = LizAmbient.geometry(size);
     final s = program.fragmentShader();
     var i = 0;
@@ -155,17 +167,85 @@ class _ShaderPainter extends CustomPainter {
     rgb(canvas);
     rgb(red);
     rgb(_hot);
-    f(level.value);
-    c.drawRect(Offset.zero & size, Paint()..shader = s);
+    f(level);
+    final recorder = ui.PictureRecorder();
+    Canvas(recorder)
+      ..scale(dpr)
+      ..drawRect(Offset.zero & size, Paint()..shader = s);
+    final picture = recorder.endRecording();
+    final image = picture.toImageSync(w, h);
+    picture.dispose();
+    s.dispose();
+    _cache[key] = image;
+    // A window being resized makes a new size each frame; keep the latest.
+    while (_cache.length > 6) {
+      final oldest = _cache.keys.first;
+      _cache.remove(oldest)!.dispose();
+    }
+    return image;
+  }
+}
+
+class _ShaderPainter extends CustomPainter {
+  _ShaderPainter(
+    this.program, {
+    required this.canvas,
+    required this.red,
+    required this.level,
+    required this.dpr,
+  }) : super(repaint: level);
+  final ui.FragmentProgram program;
+  final Animation<double> level;
+  final Color canvas;
+  final Color red;
+  final double dpr;
+
+  static final _image = Paint()..filterQuality = FilterQuality.low;
+
+  @override
+  void paint(Canvas c, Size size) {
+    if (size.isEmpty) return;
+    final dst = Offset.zero & size;
+    // Quiet and full are baked; between them is a cross-fade of the two.
+    final t =
+        ((level.value - LizAmbient.quiet) /
+                (LizAmbient.full - LizAmbient.quiet))
+            .clamp(0.0, 1.0);
+    void draw(double at, double opacity) {
+      final img = _Baked.of(program, size, dpr, canvas, red, at);
+      final src = Rect.fromLTWH(
+        0,
+        0,
+        img.width.toDouble(),
+        img.height.toDouble(),
+      );
+      c.drawImageRect(
+        img,
+        src,
+        dst,
+        opacity >= 1
+            ? _image
+            : (Paint()
+                ..filterQuality = FilterQuality.low
+                ..color = Color.fromRGBO(255, 255, 255, opacity)),
+      );
+    }
+
+    if (t < 1) draw(LizAmbient.quiet, 1);
+    if (t > 0) draw(LizAmbient.full, t);
   }
 
   @override
   bool shouldRepaint(_ShaderPainter old) =>
-      old.program != program || old.canvas != canvas || old.red != red;
+      old.program != program ||
+      old.canvas != canvas ||
+      old.red != red ||
+      old.dpr != dpr;
 }
 
-/// The same ring painted with blurred strokes, added like light (plus), for
-/// where a shader cannot run.
+/// The same ring for where a shader cannot run, without blur filters (which
+/// cost every frame): the glow and bloom are radial gradients banded at the
+/// ring's radius, the core a hairline, all scaled by the level.
 class AmbientPainter extends CustomPainter {
   AmbientPainter({required this.canvas, required this.red, this.level})
     : super(repaint: level);
@@ -179,45 +259,35 @@ class AmbientPainter extends CustomPainter {
     c.drawRect(rect, Paint()..color = canvas);
     if (size.isEmpty) return;
     final (centre, radius) = LizAmbient.geometry(size);
-    c.saveLayer(
+    final k = (level?.value ?? 1).clamp(0.0, 1.0);
+    final outer = radius * 1.4;
+    Color a(double alpha) => red.withValues(alpha: alpha * k);
+    // A band of light around the ring: transparent, lit at the radius,
+    // transparent again, wider outside than in (as the shader's bloom).
+    void band(double inside, double outside, double alpha) => c.drawRect(
       rect,
       Paint()
-        ..color = Color.fromRGBO(0, 0, 0, (level?.value ?? 1).clamp(0.0, 1.0)),
+        ..shader = ui.Gradient.radial(
+          centre,
+          outer,
+          [a(0), a(alpha), a(0)],
+          [
+            ((radius - inside) / outer).clamp(0.0, 1.0),
+            radius / outer,
+            ((radius + outside) / outer).clamp(0.0, 1.0),
+          ],
+        ),
     );
-    final dim = red.withValues(alpha: 0.22);
-    final sweep = ui.Gradient.sweep(
-      centre,
-      [
-        dim,
-        red.withValues(alpha: 0.5),
-        Color.lerp(red, _hot, 0.6)!,
-        red.withValues(alpha: 0.45),
-        dim,
-        Color.lerp(red, _hot, 0.45)!,
-        dim,
-      ],
-      const [0.0, 0.22, 0.39, 0.55, 0.72, 0.9, 1.0],
-      TileMode.clamp,
-      0,
-      math.pi * 2,
-    );
-    void ring(double width, double sigma) => c.drawCircle(
+    band(radius * 0.07, radius * 0.11, 0.22);
+    band(radius * 0.025, radius * 0.03, 0.4);
+    c.drawCircle(
       centre,
       radius,
       Paint()
-        ..blendMode = BlendMode.plus
         ..style = PaintingStyle.stroke
-        ..strokeWidth = width
-        ..shader = sweep
-        ..maskFilter = sigma > 0
-            ? MaskFilter.blur(BlurStyle.normal, sigma)
-            : null,
+        ..strokeWidth = 1.6
+        ..color = Color.lerp(red, _hot, 0.35 * k)!.withValues(alpha: k),
     );
-    ring(radius * 0.18, radius * 0.08);
-    ring(radius * 0.05, radius * 0.02);
-    ring(radius * 0.012, radius * 0.004);
-    ring(1.6, 0.4);
-    c.restore();
     c.drawRect(
       rect,
       Paint()
