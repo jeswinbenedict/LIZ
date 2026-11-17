@@ -10,7 +10,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
-import { json } from '../_shared/cors.ts';
+import { json, failure } from '../_shared/cors.ts';
 import { clipTagline, isNonProduct, websiteFor } from './logic.ts';
 
 // Search buckets → each maps to a Liz category. Kept product-focused.
@@ -144,10 +144,10 @@ Deno.serve(async (req) => {
     const { error } = await admin
       .from('tools')
       .upsert(rows, { onConflict: 'content_hash', ignoreDuplicates: false });
-    if (error) return json({ data: null, error: error.message }, 400);
+    if (error) return failure('fetch-tools', error, 400);
 
     return json({ data: { ingested: rows.length, skipped }, error: null });
   } catch (err) {
-    return json({ data: null, error: String(err) }, 500);
+    return failure('fetch-tools', err, 500);
   }
 });

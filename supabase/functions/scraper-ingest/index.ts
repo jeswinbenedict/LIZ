@@ -23,7 +23,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { constantTimeEquals } from '../_shared/auth.ts';
-import { json } from '../_shared/cors.ts';
+import { json, failure } from '../_shared/cors.ts';
 import {
   cleanRow,
   HELD_UPDATE_COLUMNS,
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
         // the scraper's to change.
         const { data, error } = await db.from('tools').update(update)
           .eq('id', id).eq('status', 'pending').select('id');
-        if (error) return json({ data: null, error: error.message }, 400);
+        if (error) return failure('scraper-ingest', error, 400);
         return json({ data: { updated: (data ?? []).length }, error: null });
       }
 
@@ -121,6 +121,6 @@ Deno.serve(async (req) => {
         return json({ data: null, error: 'unknown action' }, 400);
     }
   } catch (err) {
-    return json({ data: null, error: String((err as Error)?.message ?? err) }, 500);
+    return failure('scraper-ingest', err, 500);
   }
 });

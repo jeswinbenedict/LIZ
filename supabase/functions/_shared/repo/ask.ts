@@ -112,7 +112,7 @@ export function prompt(facts: string, chunks: Chunk[], question: string): string
 /// given, in order, without repeats.
 export function citations(answer: string, chunks: Chunk[]): { path: string; line: number }[] {
   const out: { path: string; line: number }[] = [];
-  for (const m of answer.matchAll(/\[([^\]\s:]+(?:\/[^\]\s:]+)*):(\d+)(?:-\d+)?\]/g)) {
+  for (const m of answer.matchAll(/\[([^\]\s:]+):(\d+)(?:-\d+)?\]/g)) {
     const path = m[1];
     const line = Number(m[2]);
     const ok = chunks.some((c) => c.path === path && line >= c.start && line <= c.end);

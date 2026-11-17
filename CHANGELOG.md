@@ -16,6 +16,13 @@ the detail.
   read-only token unless they need more.
 - Local runs read Supabase settings from a git-ignored `.env`
   (`.env.example`) instead of values written into launch configurations.
+- Deploy workflows run only for pushes to this repository's `main`, never
+  for a pull request's code.
+- Edge Functions answer failures with a generic message and log the cause.
+- Two regular expressions that backtracked on hostile input were replaced,
+  and an XML decoder no longer unescapes twice.
+- `tool/qa/probe_live.py` checks a deployed backend refuses signed-out
+  callers. Security audit, test report and production readiness documents.
 
 ## 2026-11
 

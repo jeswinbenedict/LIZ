@@ -65,7 +65,9 @@ export function readmeIntro(md: string | null): string | null {
   const text = md
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/```[\s\S]*?```/g, '')
-    .replace(/<[^>]+>/g, ' ');
+    .replace(/<[^>]+>/g, ' ')
+    // Plain text only: drop any angle bracket a malformed tag left behind.
+    .replace(/[<>]/g, '');
   for (const block of text.split(/\n\s*\n/)) {
     const b = block.trim();
     if (!b || /^#|^\[!\[|^!\[|^\||^[-*] |^>\s*\[!|^---/.test(b)) continue;

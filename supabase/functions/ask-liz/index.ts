@@ -16,7 +16,7 @@
 // Deploy: supabase functions deploy ask-liz
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { corsHeaders, json, failure } from '../_shared/cors.ts';
 import { presentsEvalKey } from '../_shared/auth.ts';
 import { signedInUid } from '../_shared/signed_in.ts';
 import { callerKey, tooManyRequests, withinRateLimit } from '../_shared/rate_limit.ts';
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
-      return json({ data: null, error: error.message }, 500);
+      return failure('ask-liz', error, 500);
     }
 
     // No result above the floor is a legitimate answer: the client shows its
@@ -87,6 +87,6 @@ Deno.serve(async (req) => {
 
     return json({ data: results, error: null });
   } catch (err) {
-    return json({ data: null, error: String(err) }, 500);
+    return failure('ask-liz', err, 500);
   }
 });

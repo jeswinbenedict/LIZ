@@ -20,7 +20,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { parseFeed } from 'https://deno.land/x/rss@1.1.2/mod.ts';
 import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
-import { json } from '../_shared/cors.ts';
+import { json, failure } from '../_shared/cors.ts';
 import { cleanTitle, newsSnippet, stripHtml } from './logic.ts';
 
 interface Article {
@@ -211,6 +211,6 @@ Deno.serve(async (req) => {
 
     return json({ data: { fetched: rows.length, sources: FEEDS.length + 1, errors }, error: null });
   } catch (err) {
-    return json({ data: null, error: String(err) }, 500);
+    return failure('fetch-news', err, 500);
   }
 });

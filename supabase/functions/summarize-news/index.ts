@@ -13,7 +13,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
-import { json } from '../_shared/cors.ts';
+import { json, failure } from '../_shared/cors.ts';
 import { clampLimit, summarizeBatch } from '../_shared/batch.ts';
 import { summarize } from '../_shared/summary.ts';
 
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       .select('id,title,snippet')
       .limit(limit);
 
-    if (selectError) return json({ data: null, error: selectError.message }, 500);
+    if (selectError) return failure('summarize-news', selectError, 500);
     if (!pending || pending.length === 0) {
       return json({ data: { summarized: 0, remaining: 0 }, error: null });
     }
@@ -85,6 +85,6 @@ Deno.serve(async (req) => {
       error: null,
     });
   } catch (err) {
-    return json({ data: null, error: String(err) }, 500);
+    return failure('summarize-news', err, 500);
   }
 });

@@ -13,7 +13,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
-import { json } from '../_shared/cors.ts';
+import { json, failure } from '../_shared/cors.ts';
 import { accessToken, serviceAccount } from '../_shared/google.ts';
 import { fcmMessage, isDeadToken, targetIds } from './logic.ts';
 
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       .from('devices')
       .select('fcm_token')
       .in('user_id', ids);
-    if (error) return json({ data: null, error: error.message }, 400);
+    if (error) return failure('send-notification', error, 400);
 
     const tokens = (devices ?? []).map((d) => d.fcm_token).filter(Boolean);
     if (tokens.length === 0) {
@@ -89,6 +89,6 @@ Deno.serve(async (req) => {
 
     return json({ data: { sent, pruned: stale.length }, error: null });
   } catch (err) {
-    return json({ data: null, error: String(err) }, 500);
+    return failure('send-notification', err, 500);
   }
 });

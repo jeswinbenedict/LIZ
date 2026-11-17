@@ -7,7 +7,6 @@ HTML, and it already carries the launch date we want.
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass
 
 from bs4 import BeautifulSoup
@@ -21,7 +20,25 @@ FEED_URL = "https://www.producthunt.com/feed?category=artificial-intelligence"
 
 # Feed content ends with navigation links back to the thread ("Discussion",
 # "Link"), which are not part of the product's tagline.
-_FEED_NAV_SUFFIX = re.compile(r"\s*(?:(?:Discussion|Link)\s*\|?\s*)+$", re.IGNORECASE)
+# One word at a time from the end, rather than one regular expression: a
+# repeated group with optional whitespace on both sides backtracks
+# polynomially on long runs of spaces, and this text comes from a third party.
+_FEED_NAV_WORDS = ("discussion", "link")
+
+
+def strip_feed_nav(text: str) -> str:
+    """Drop trailing "Discussion | Link" navigation from a feed tagline."""
+    while True:
+        trimmed = text.rstrip().rstrip("|").rstrip()
+        for word in _FEED_NAV_WORDS:
+            if trimmed.lower().endswith(word) and (
+                len(trimmed) == len(word) or not trimmed[-len(word) - 1].isalnum()
+            ):
+                trimmed = trimmed[: -len(word)]
+                break
+        else:
+            return trimmed
+        text = trimmed
 
 
 @dataclass
@@ -62,7 +79,7 @@ def discover(session: PoliteSession, *, limit: int = 30) -> list[Candidate]:
             tagline = clean_text(
                 BeautifulSoup(content.get_text(), "lxml").get_text(" ")
             )
-            tagline = _FEED_NAV_SUFFIX.sub("", tagline).strip()
+            tagline = strip_feed_nav(tagline).strip()
 
         published = entry.find("published") or entry.find("updated")
         candidates.append(

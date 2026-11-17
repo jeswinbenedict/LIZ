@@ -234,6 +234,13 @@ Flutter's accessibility guidelines. In a real browser,
 [`tool/qa`](tool/qa/README.md) walks 14 visitor journeys and audits every
 page's accessibility tree at desktop and phone widths.
 
+`python tool/qa/probe_live.py` checks a deployed backend from the outside:
+every Edge Function must refuse a caller who is not signed in, and no table or
+view may return rows to the public anon key. It sends empty bodies only and
+needs `SUPABASE_URL` and `SUPABASE_ANON_KEY` in the environment.
+
+The latest results are in [TEST_REPORT.md](TEST_REPORT.md).
+
 `python -m liz_scraper.eval_ask` evaluates Ask Liz on 60 questions against a
 live project and is not run in CI.
 
@@ -314,6 +321,11 @@ the checks and the conventions, and follow the
 
 Please report vulnerabilities privately, as described in
 [SECURITY.md](SECURITY.md), and never in a public issue.
+
+The repository's latest security audit (findings, fixes and what remains) is
+in [SECURITY_AUDIT.md](SECURITY_AUDIT.md), and the state of the deployment in
+[PRODUCTION_READINESS.md](PRODUCTION_READINESS.md). The design of the
+security model is in [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Licence
 

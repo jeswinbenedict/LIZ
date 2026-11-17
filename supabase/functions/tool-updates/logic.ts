@@ -20,9 +20,11 @@ const CURATED_REPO: Record<string, string> = {
 export function decodeXml(s: string): string {
   return s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    // Last, so "&amp;lt;" becomes the text "&lt;", not "<".
+    .replace(/&amp;/g, '&')
     .trim();
 }
 

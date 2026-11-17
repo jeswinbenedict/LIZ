@@ -16,7 +16,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { preflight, requireServiceRole } from '../_shared/auth.ts';
-import { json } from '../_shared/cors.ts';
+import { json, failure } from '../_shared/cors.ts';
 import { clampLimit, embedBatch } from '../_shared/batch.ts';
 import { EMBEDDING_MODEL, EMBEDDING_VERSION, embed, toolText } from '../_shared/embed.ts';
 
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       .limit(limit);
 
     if (selectError) {
-      return json({ data: null, error: selectError.message }, 500);
+      return failure('embed-tools', selectError, 500);
     }
     if (!pending || pending.length === 0) {
       return json({ data: { embedded: 0, remaining: 0, model: EMBEDDING_MODEL }, error: null });
@@ -85,6 +85,6 @@ Deno.serve(async (req) => {
       error: null,
     });
   } catch (err) {
-    return json({ data: null, error: String(err) }, 500);
+    return failure('embed-tools', err, 500);
   }
 });
