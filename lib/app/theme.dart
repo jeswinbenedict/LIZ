@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../shared/widgets/ambient.dart';
+
 /// Liz's design tokens and theme. docs/DESIGN.md explains every value here;
 /// change the two together.
 ///
@@ -452,7 +454,9 @@ class LizTheme {
       extensions: [p],
       fontFamily: _fontFamily,
       textTheme: text,
-      scaffoldBackgroundColor: p.canvas,
+      // Transparent: every page stands on the ambient light (ambient.dart),
+      // painted by the page transition so pages stay opaque to each other.
+      scaffoldBackgroundColor: Colors.transparent,
       canvasColor: p.canvas,
       // No ink ripples: pointer feedback is a quiet hover and press fill.
       splashFactory: NoSplash.splashFactory,
@@ -460,18 +464,15 @@ class LizTheme {
       highlightColor: p.textPrimary.withValues(alpha: 0.06),
       focusColor: p.accent.withValues(alpha: 0.16),
       visualDensity: VisualDensity.standard,
-      pageTransitionsTheme: const PageTransitionsTheme(
+      pageTransitionsTheme: PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-          TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
-          TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
-          TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-          TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-          TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
+          for (final platform in TargetPlatform.values)
+            platform: const AmbientPageTransitionsBuilder(),
         },
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: p.canvas,
+        // Glass over the ambient light, as the sidebar is.
+        backgroundColor: p.canvas.withValues(alpha: 0.55),
         foregroundColor: p.textPrimary,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -562,8 +563,16 @@ class LizTheme {
           padding: const WidgetStatePropertyAll(buttonPadding),
           shape: WidgetStatePropertyAll(controlShape),
           textStyle: WidgetStatePropertyAll(buttonText),
-          // Flat: the fill is the emphasis. Hover deepens it.
-          elevation: const WidgetStatePropertyAll(0),
+          // The fill is the emphasis; a red glow under it, as if it were
+          // lit, stronger under the pointer.
+          elevation: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.disabled)
+                ? 0
+                : s.contains(WidgetState.hovered)
+                ? 8
+                : 3,
+          ),
+          shadowColor: WidgetStatePropertyAll(p.accent.withValues(alpha: 0.55)),
           backgroundColor: WidgetStateProperty.resolveWith((s) {
             if (s.contains(WidgetState.disabled)) return p.surfaceHover;
             if (s.contains(WidgetState.hovered)) {

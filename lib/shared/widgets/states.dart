@@ -128,7 +128,6 @@ class NotFoundScreen extends StatelessWidget {
     final phone = MediaQuery.sizeOf(context).width < 600;
     final asked = path != null && path!.isNotEmpty && path != '/';
     return Scaffold(
-      backgroundColor: p.canvas,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

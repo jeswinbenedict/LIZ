@@ -133,7 +133,6 @@ class StartingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.liz;
     return Scaffold(
-      backgroundColor: p.canvas,
       body: Center(
         child: Semantics(
           container: true,

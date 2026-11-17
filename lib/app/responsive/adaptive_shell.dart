@@ -209,7 +209,7 @@ class _RailScaffold extends StatelessWidget {
           Container(
             width: 72,
             decoration: BoxDecoration(
-              color: p.canvas,
+              color: p.canvas.withValues(alpha: 0.62),
               border: Border(right: BorderSide(color: p.hairline)),
             ),
             child: SafeArea(
@@ -323,7 +323,7 @@ class _SidebarScaffold extends StatelessWidget {
           Container(
             width: 240,
             decoration: BoxDecoration(
-              color: p.canvas,
+              color: p.canvas.withValues(alpha: 0.62),
               border: Border(right: BorderSide(color: p.hairline)),
             ),
             child: SafeArea(

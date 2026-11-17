@@ -54,11 +54,40 @@ class _LizCardState extends State<LizCard> {
       decoration: ShapeDecoration(
         shape: LizRadius.shape(
           widget.radius,
-          // Under the pointer a card lifts and its edge brightens — the
-          // same on every card, and never red: red means an action.
-          side: BorderSide(color: lifted ? p.hairlineStrong : p.hairline),
+          // Under the pointer a card lifts, and its edge takes some of the
+          // red light behind the page (ambient.dart) — never solid red,
+          // which means an action.
+          side: BorderSide(
+            color: lifted
+                ? Color.lerp(p.hairlineStrong, p.accent, 0.4)!
+                : p.hairline,
+          ),
         ),
-        color: lifted ? p.surfaceMuted : p.surface,
+        // Glass: the ambient light shows faintly through, brighter along the
+        // top edge as if lit from above.
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            (lifted ? p.surfaceHover : p.surfaceMuted).withValues(alpha: 0.86),
+            (lifted ? p.surfaceMuted : p.surface).withValues(alpha: 0.8),
+          ],
+        ),
+        shadows: [
+          // Depth under every card; a red glow under a lifted one.
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+          if (lifted)
+            BoxShadow(
+              color: p.accent.withValues(alpha: 0.16),
+              blurRadius: 30,
+              spreadRadius: -4,
+              offset: const Offset(0, 10),
+            ),
+        ],
       ),
       child: Material(
         type: MaterialType.transparency,

@@ -195,6 +195,22 @@ Alerts, Settings, legal pages, alternatives). A back button that always works �
 to the previous page, or a fallback when the page was opened by its address —
 and on wider windows the trail "Liz / Discover / Lensflow".
 
+**Ambient light** (`LizAmbient`, `shared/widgets/ambient.dart`, 17
+November 2026). Every page stands on near-black with a halo of the brand's
+red behind it: a ring with a thin bright core (under 2 px), a glow and a wide
+soft bloom, brightest lower left and upper right where it "catches the
+light", a faint second rim inside, red air in its middle and a vignette at
+the edges. On a desktop it frames the content a little right of centre (the
+sidebar takes the left); on a phone it is sized to the width, behind the top
+of the page. Painted once per size, never animated. Pages are transparent
+over it; each route paints its own (the page transition does), so two pages
+never show through each other. Glass on top of it: the sidebar, rail and app
+bar let it through faintly; cards are about 80% opaque, lighter along the
+top, with a soft shadow beneath — under the pointer their edge takes some
+red and a red glow rises beneath them. The primary button carries a red
+glow. Dialogs, menus, inputs and tables stay opaque, so text contrast never
+depends on the light.
+
 **Brand mark — "the Rise"** (`LizMark`, 28 October 2026). Two flat shapes on
 a 64-unit square: the stem of the *l*, and beside it a blade rising from the
 baseline — a tool climbing past the rest. No outline, no circle, no glow, so
@@ -223,7 +239,7 @@ own padding so the words line up with the section's edge.
 different lengths (headlines, Ask Liz examples) sit in rows where every card
 is as tall as the tallest.
 
-**Buttons.** *Primary* — `accentFill`, white label, flat; one per screen.
+**Buttons.** *Primary* — `accentFill`, white label, a red glow beneath (stronger under the pointer); one per screen.
 *Secondary* (`LizButtons.tonal`) — `surfaceMuted` with a `hairlineStrong`
 edge and a white label. *Outlined* — `hairlineStrong` outline that brightens
 on hover. *Text* — white label, a neutral wash on hover (28 October 2026:

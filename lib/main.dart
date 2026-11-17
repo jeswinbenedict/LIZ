@@ -18,6 +18,7 @@ import 'core/telemetry/analytics.dart';
 import 'core/telemetry/crash_reporter.dart';
 import 'core/telemetry/page_timing.dart';
 import 'core/providers.dart';
+import 'shared/widgets/ambient.dart';
 import 'shared/widgets/page_title.dart';
 
 Future<void> main() async {
@@ -133,6 +134,8 @@ class _LizAppState extends ConsumerState<LizApp> {
       theme: LizTheme.app(),
       themeMode: ThemeMode.dark,
       routerConfig: router,
+      // A base of light under any page that brings none of its own.
+      builder: (context, child) => LizAmbient(child: child),
     );
   }
 }

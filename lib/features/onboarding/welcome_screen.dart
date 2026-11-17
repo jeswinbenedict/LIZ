@@ -115,7 +115,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         : 'Continue';
 
     return Scaffold(
-      backgroundColor: p.canvas,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
