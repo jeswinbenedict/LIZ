@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
     const { error } = await supabase
       .from('news')
       .upsert(rows, { onConflict: 'url', ignoreDuplicates: true });
-    if (error) return json({ data: { fetched: rows.length }, error: error.message }, 500);
+    if (error) return failure('fetch-news', error, 500);
 
     return json({ data: { fetched: rows.length, sources: FEEDS.length + 1, errors }, error: null });
   } catch (err) {

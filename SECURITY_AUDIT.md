@@ -75,7 +75,8 @@ failures with `String(err)` or database error messages, which can carry stack
 traces, SQL, table and column names.
 
 - Fixed: a shared `failure()` in `_shared/cors.ts` logs the full cause to the
-  function's log and returns a generic message, used at all 15 places.
+  function's log and returns a generic message, used at all 18 places
+  (three of them found by CodeQL's re-scan after the first fix).
   `summarize-tools`' structured `ai_credentials` code, which `scrape-tools.yml`
   reads, is unchanged. Tested.
 

@@ -10,7 +10,7 @@
 // Body: { name, source_url?, slug? }
 // -> { data: [{title, note, url, source, published_at}], error }
 
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { corsHeaders, json, failure } from '../_shared/cors.ts';
 import { callerKey, InMemoryLimiter, tooManyRequests } from '../_shared/rate_limit.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import {
@@ -185,6 +185,6 @@ Deno.serve(async (req) => {
 
     return json({ data: items, kind, source, error: null });
   } catch (err) {
-    return json({ data: [], error: String(err) }, 500);
+    return failure('tool-updates', err, 500);
   }
 });

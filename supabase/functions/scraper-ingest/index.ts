@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
         if (rows.length) {
           const { error } = await db.from('tools')
             .upsert(rows, { onConflict: 'content_hash' });
-          if (error) return json({ data: { written: 0, refused }, error: error.message }, 400);
+          if (error) return failure('scraper-ingest', error, 400);
         }
         return json({ data: { written: rows.length, refused }, error: null });
       }
