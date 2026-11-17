@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../app/theme.dart';
 import 'ambient_gpu/gpu_stub.dart'
@@ -19,8 +21,12 @@ import 'ambient_gpu/gpu_stub.dart'
 /// the same ring stands in. Drawn once per size behind a repaint boundary;
 /// nothing animates.
 class LizAmbient extends StatefulWidget {
-  const LizAmbient({super.key, this.child});
+  const LizAmbient({super.key, this.child, this.animate = true});
   final Widget? child;
+
+  /// Whether the light may move. Off for the app-wide light, which every
+  /// page covers with its own: two moving lights would cost twice.
+  final bool animate;
 
   /// The ring's centre and radius in a box of [size].
   static (Offset, double) geometry(Size size) {
@@ -55,9 +61,14 @@ class LizAmbient extends StatefulWidget {
   State<LizAmbient> createState() => _LizAmbientState();
 }
 
-class _LizAmbientState extends State<LizAmbient>
-    with SingleTickerProviderStateMixin {
+class _LizAmbientState extends State<LizAmbient> with TickerProviderStateMixin {
   ui.FragmentProgram? _program;
+
+  /// Live light (web, with WebGL, motion allowed): seconds since start and
+  /// the pointer, eased, as the shader's uTime / uPointer.
+  final _clock = _Live();
+  Ticker? _ticker;
+  Offset? _target;
 
   /// The level shown, easing toward [LizAmbient.level] when it changes.
   late final AnimationController _shown = AnimationController(
@@ -86,8 +97,31 @@ class _LizAmbientState extends State<LizAmbient>
     }
   }
 
+  void _tick(Duration elapsed) {
+    _clock.time = 1 + elapsed.inMicroseconds / 1e6;
+    final target = _target;
+    final on = target == null ? 0.0 : 1.0;
+    _clock.on += (on - _clock.on) * 0.06;
+    if (target != null) {
+      _clock.pointer = Offset.lerp(_clock.pointer, target, 0.08)!;
+    }
+    _clock.notify();
+  }
+
+  void _syncTicker(bool animate) {
+    if (animate && _ticker == null) {
+      _ticker = createTicker(_tick)..start();
+    } else if (!animate && _ticker != null) {
+      _ticker!.dispose();
+      _ticker = null;
+      _clock.time = 0;
+    }
+  }
+
   @override
   void dispose() {
+    _ticker?.dispose();
+    _clock.dispose();
     LizAmbient.level.removeListener(_follow);
     _shown.dispose();
     super.dispose();
@@ -97,7 +131,10 @@ class _LizAmbientState extends State<LizAmbient>
   Widget build(BuildContext context) {
     final p = context.liz;
     final program = _program;
-    return Stack(
+    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final live = program != null && kIsWeb && !reduce && widget.animate;
+    _syncTicker(live);
+    final stack = Stack(
       fit: StackFit.passthrough,
       children: [
         Positioned.fill(
@@ -108,6 +145,14 @@ class _LizAmbientState extends State<LizAmbient>
                       canvas: p.canvas,
                       red: p.accent,
                       level: _shown,
+                    )
+                  : live
+                  ? _LivePainter(
+                      program,
+                      canvas: p.canvas,
+                      red: p.accent,
+                      level: _shown,
+                      clock: _clock,
                     )
                   : _ShaderPainter(
                       program,
@@ -122,7 +167,76 @@ class _LizAmbientState extends State<LizAmbient>
         ?widget.child,
       ],
     );
+    if (!live) return stack;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerHover: (e) => _target = e.localPosition,
+      onPointerMove: (e) => _target = e.localPosition,
+      child: MouseRegion(
+        opaque: false,
+        onExit: (_) => _target = null,
+        child: stack,
+      ),
+    );
   }
+}
+
+class _Live extends ChangeNotifier {
+  double time = 0;
+  Offset pointer = Offset.zero;
+  double on = 0;
+  void notify() => notifyListeners();
+}
+
+/// The shader drawn every frame, moving: used only on the web with WebGL,
+/// where it runs on the GPU. Elsewhere the baked, still light is drawn.
+class _LivePainter extends CustomPainter {
+  _LivePainter(
+    this.program, {
+    required this.canvas,
+    required this.red,
+    required this.level,
+    required this.clock,
+  }) : super(repaint: Listenable.merge([level, clock]));
+  final ui.FragmentProgram program;
+  final Color canvas;
+  final Color red;
+  final Animation<double> level;
+  final _Live clock;
+  late final ui.FragmentShader _s = program.fragmentShader();
+
+  @override
+  void paint(Canvas c, Size size) {
+    if (size.isEmpty) return;
+    final (centre, radius) = LizAmbient.geometry(size);
+    var i = 0;
+    void f(double v) => _s.setFloat(i++, v);
+    void rgb(Color col) {
+      f(col.r);
+      f(col.g);
+      f(col.b);
+    }
+
+    f(size.width);
+    f(size.height);
+    f(centre.dx);
+    f(centre.dy);
+    f(radius);
+    f(1);
+    rgb(canvas);
+    rgb(red);
+    rgb(_hot);
+    f(level.value);
+    f(clock.time);
+    f(clock.pointer.dx);
+    f(clock.pointer.dy);
+    f(clock.on);
+    c.drawRect(Offset.zero & size, Paint()..shader = _s);
+  }
+
+  @override
+  bool shouldRepaint(_LivePainter old) =>
+      old.program != program || old.canvas != canvas || old.red != red;
 }
 
 const _hot = Color(0xFFFFD6CC);
@@ -168,6 +282,10 @@ class _Baked {
     rgb(red);
     rgb(_hot);
     f(level);
+    f(0); // uTime: still
+    f(0);
+    f(0);
+    f(0); // no pointer
     final recorder = ui.PictureRecorder();
     Canvas(recorder)
       ..scale(dpr)

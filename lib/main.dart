@@ -135,7 +135,7 @@ class _LizAppState extends ConsumerState<LizApp> {
       themeMode: ThemeMode.dark,
       routerConfig: router,
       // A base of light under any page that brings none of its own.
-      builder: (context, child) => LizAmbient(child: child),
+      builder: (context, child) => LizAmbient(animate: false, child: child),
     );
   }
 }
