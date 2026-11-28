@@ -49,7 +49,7 @@ dependencies:
   url_launcher: ^6.3.2
   image_picker: ^1.2.4
   firebase_core: ^5.1.0
-  firebase_messaging: ^17.0.1
+  firebase_messaging: ^17.1.0
   # The QR code an authenticator app scans when a moderator turns on
   # two-step verification (features/admin/two_step_gate.dart).
   qr_flutter: ^4.1.0
